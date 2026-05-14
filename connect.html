@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cell Group Meeting Report</title>
+   <link rel="icon" type="image/png" href="../images.png?v=3">
+<link rel="shortcut icon" type="image/x-icon" href="../images.png?v=3">
+<link rel="apple-touch-icon" href="../images.png?v=3">
+ 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+ 
+ <style>
+    :root {
+      --gold: #C9A84C;
+      --gold-light: #E8C97A;
+      --deep: #1A1A2E;
+      --ink: #16213E;
+      --card: #0F3460;
+      --surface: #1A2744;
+      --accent: #E94560;
+      --soft: #A8B2D8;
+    }
+
+    * { box-sizing: border-box; }
+
+     body {
+      font-family: 'DM Sans', sans-serif;
+      background: url('FYF.jpg') center center / cover no-repeat fixed;
+      background-position: center;
+      background-attachment: fixed;
+      backdrop-filter: blur(8px);
+      min-height: 100vh;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0 0 40px;
+    }
+
+    /* --- UNIFIED HEADER --- */
+    header {
+      width: 100%;
+      padding: 1.4rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 1.1rem;
+      border-bottom: 2px solid rgba(201, 168, 76, 0.35);
+      background: rgba(8, 20, 60, 0.45);
+      backdrop-filter: blur(8px);
+      margin-bottom: 4vh;
+    }
+    .logo-wrap {
+      width: 58px; height: 58px; border-radius: 50%;
+      background: #FFFFFF; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; border: 2.5px solid var(--gold); overflow: hidden;
+      animation: pulse-ring 3s ease-in-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%, 100% { box-shadow: 0 0 0 0px rgba(201,168,76,0.5); }
+      50%       { box-shadow: 0 0 0 8px rgba(201,168,76,0); }
+    }
+    .logo-wrap img { width: 50px; height: 50px; object-fit: contain; }
+    .header-text { text-align: left; }
+    .header-text h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.1rem, 3vw, 1.55rem);
+      font-weight: 900; color: #FFFFFF; line-height: 1.15; margin: 0;
+    }
+    .header-text p {
+      font-size: 0.75rem; color: var(--gold-light, var(--gold));
+      font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+      margin-top: 0.2rem; margin-bottom: 0;
+    }
+    .header-date {
+      margin-left: auto; font-size: 0.78rem; color: rgba(255,255,255,0.5);
+    }
+    @media (max-width: 480px) { .header-date { display: none; } }
+    
+    h2 { font-family: 'Playfair Display', serif; }
+
+    .glass-card {
+      background: rgba(10, 25, 70, 0.55);
+      border: 1px solid rgba(201,168,76,0.35);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 1.25rem;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    }
+
+    .form-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-bottom: 0.4rem;
+      display: block;
+    }
+
+    .form-input {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(201,168,76,0.25);
+      border-radius: 0.625rem;
+      padding: 0.75rem 1rem;
+      color: #e2e8f0;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      outline: none;
+      appearance: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201,168,76,0.15);
+      background: rgba(255,255,255,0.09);
+    }
+
+    .form-input::placeholder { color: rgba(168,178,216,0.45); }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { opacity: 0.4; }
+
+    /* Toggle */
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(201,168,76,0.2);
+      border-radius: 0.625rem;
+      padding: 0.75rem 1rem;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 52px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+    .slider {
+      position: absolute; inset: 0;
+      background: rgba(255,255,255,0.1);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.3s;
+      border: 1px solid rgba(201,168,76,0.3);
+    }
+
+    .slider::before {
+      content: '';
+      position: absolute;
+      width: 20px; height: 20px;
+      left: 3px; top: 3px;
+      background: var(--soft);
+      border-radius: 50%;
+      transition: transform 0.3s, background 0.3s;
+    }
+
+    .toggle-switch input:checked + .slider {
+      background: rgba(201,168,76,0.3);
+      border-color: var(--gold);
+    }
+
+    .toggle-switch input:checked + .slider::before {
+      transform: translateX(24px);
+      background: var(--gold);
+    }
+
+    .toggle-label {
+      font-size: 0.95rem;
+      color: #e2e8f0;
+      user-select: none;
+    }
+
+    #toggle-status {
+      margin-left: auto;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      padding: 0.2rem 0.7rem;
+      border-radius: 999px;
+      transition: all 0.3s;
+    }
+
+    .status-yes {
+      background: rgba(201,168,76,0.2);
+      color: var(--gold-light);
+      border: 1px solid rgba(201,168,76,0.4);
+    }
+
+    .status-no {
+      background: rgba(168,178,216,0.1);
+      color: var(--soft);
+      border: 1px solid rgba(168,178,216,0.2);
+    }
+
+    /* Divider */
+    .gold-divider {
+      border: none;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--gold), transparent);
+      opacity: 0.35;
+      margin: 0.25rem 0;
+    }
+
+    /* Submit */
+    .submit-btn {
+      width: 100%;
+      padding: 0.9rem;
+      border-radius: 0.75rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: none;
+      background: linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%);
+      background-size: 200% 100%;
+      color: #1A1A2E;
+      transition: background 0.5s ease, background-position 0.4s, transform 0.15s, box-shadow 0.3s, color 0.3s;
+      box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .submit-btn:hover {
+      background-position: 100% 0;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 28px rgba(201,168,76,0.45);
+    }
+
+    .submit-btn:active { transform: translateY(0); }
+
+    .submit-btn.success {
+      background: linear-gradient(135deg, #16a34a 0%, #22c55e 50%, #16a34a 100%) !important;
+      box-shadow: 0 4px 24px rgba(34,197,94,0.4) !important;
+      color: #fff !important;
+      transform: translateY(0);
+    }
+
+    .submit-btn.success:hover {
+      box-shadow: 0 6px 30px rgba(34,197,94,0.5) !important;
+      transform: translateY(-1px);
+    }
+
+    /* Logo placeholder */
+    .logo-placeholder {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      border: 2px dashed rgba(201,168,76,0.5);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      background: rgba(201,168,76,0.06);
+      transition: border-color 0.2s, background 0.2s;
+      margin: 0 auto 1rem auto;
+    }
+
+    .logo-placeholder:hover {
+      border-color: var(--gold);
+      background: rgba(201,168,76,0.1);
+    }
+
+    .logo-placeholder img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      position: absolute; inset: 0;
+      border-radius: 50%;
+    }
+
+    .logo-placeholder .upload-hint {
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(201,168,76,0.6);
+      margin-top: 0.3rem;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    #logo-input { display: none; }
+
+    /* Reset */
+    .reset-btn {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 0.75rem;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      background: transparent;
+      border: 1px solid rgba(168,178,216,0.25);
+      color: var(--soft);
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .reset-btn:hover {
+      border-color: rgba(168,178,216,0.5);
+      color: #e2e8f0;
+    }
+
+    /* Summary modal */
+    #summary-modal {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(10,10,20,0.85);
+      backdrop-filter: blur(6px);
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    #summary-modal.open { display: flex; }
+
+    .summary-card {
+      background: rgba(10,20,60,0.92);
+      border: 1px solid rgba(201,168,76,0.35);
+      border-radius: 1.25rem;
+      padding: 2rem;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+      animation: slideUp 0.35s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 0.9rem;
+    }
+
+    .summary-row:last-child { border-bottom: none; }
+    .summary-key { color: var(--soft); }
+    .summary-val { color: #e2e8f0; font-weight: 500; text-align: right; max-width: 55%; }
+
+    .close-btn {
+      margin-top: 1.5rem;
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 0.625rem;
+      background: rgba(201,168,76,0.12);
+      border: 1px solid rgba(201,168,76,0.4);
+      color: var(--gold-light);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .close-btn:hover { background: rgba(201,168,76,0.22); }
+
+    /* Responsive grid */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 500px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    /* Cross icon for currency */
+    .currency-wrap { position: relative; }
+    .currency-wrap::before {
+      content: '₦';
+      position: absolute;
+      left: 0.9rem; top: 50%;
+      transform: translateY(-50%);
+      color: var(--gold);
+      font-size: 0.9rem;
+      font-weight: 600;
+      pointer-events: none;
+    }
+    .currency-wrap .form-input { padding-left: 1.9rem; }
+
+    /* Section header */
+    .section-tag {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold);
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-wrap">
+      <img src="images.png?v=3" alt="NCF UNN Logo" />
+    </div>
+    <div class="header-text">
+      <h1>Cell Group Report</h1>
+      <p>Weekly Meeting Summary</p>
+    </div>
+    <div class="header-date" id="live-date"></div>
+  </header>
+
+  <div class="flex flex-col items-center justify-start w-full px-4">
+
+    <!-- Form Card -->
+    <div class="glass-card w-full max-w-lg p-6 space-y-6">
+
+      <!-- Section: Identity -->
+      <div>
+        <p class="section-tag mb-3">Cell Info</p>
+        <div class="space-y-4">
+          <div>
+            <label class="form-label" for="leader-name">Cell Leader Name</label>
+            <input id="leader-name" type="text" class="form-input" placeholder="e.g. Pastor John Doe" />
+          </div>
+          <div>
+            <label class="form-label" for="location">Location / Venue</label>
+            <input id="location" type="text" class="form-input" placeholder="e.g. 12 Amadi St, GRA Phase 2" />
+          </div>
+        </div>
+      </div>
+
+      <hr class="gold-divider"/>
+
+      <!-- Section: Time -->
+      <div>
+        <p class="section-tag mb-3">Meeting Time</p>
+        <div class="grid-2">
+          <div>
+            <label class="form-label" for="time-in">Time In</label>
+            <input id="time-in" type="time" class="form-input" />
+          </div>
+          <div>
+            <label class="form-label" for="time-out">Time Out</label>
+            <input id="time-out" type="time" class="form-input" />
+          </div>
+        </div>
+      </div>
+
+      <hr class="gold-divider"/>
+
+      <!-- Section: Stats -->
+      <div>
+        <p class="section-tag mb-3">Attendance & Growth</p>
+        <div class="grid-2">
+          <div>
+            <label class="form-label" for="attendance">Attendance</label>
+            <input id="attendance" type="number" min="0" class="form-input" placeholder="0" />
+          </div>
+          <div>
+            <label class="form-label" for="converts">New Converts</label>
+            <input id="converts" type="number" min="0" class="form-input" placeholder="0" />
+          </div>
+        </div>
+      </div>
+
+      <hr class="gold-divider"/>
+
+      <!-- Section: Offering & Refreshments -->
+      <div>
+        <p class="section-tag mb-3">Finances & Extras</p>
+        <div class="space-y-4">
+          <div>
+            <label class="form-label" for="offering">Offering (₦)</label>
+            <div class="currency-wrap">
+              <input id="offering" type="number" min="0" step="0.01" class="form-input" placeholder="0.00" />
+            </div>
+          </div>
+
+          <div>
+            <label class="form-label">Refreshments Served?</label>
+            <div class="toggle-wrap">
+              <label class="toggle-switch">
+                <input type="checkbox" id="refreshments-toggle" />
+                <span class="slider"></span>
+              </label>
+              <span class="toggle-label">Refreshments</span>
+              <span id="toggle-status" class="status-no">No</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="gold-divider"/>
+      <div class="pt-2">
+  <label class="form-label" for="report-notes">Comments / Notes (Optional)</label>
+  <textarea id="report-notes" class="form-input" placeholder="Enter any specific testimonies, prayer requests, or highlights..."></textarea>
+</div>
+
+      <!-- Actions -->
+      <div class="space-y-3 pt-1">
+        <button class="submit-btn" onclick="submitReport()">Submit Report</button>
+        <button class="reset-btn" onclick="resetForm()">Clear Form</button>
+      </div>
+
+    </div>
+
+    <p class="text-xs mt-6" style="color: rgba(168,178,216,0.3); letter-spacing: 0.05em;">
+      © <span id="yr"></span> Cell Group Ministry Report Tool
+    </p>
+  </div>
+
+  <!-- Summary Modal -->
+  <div id="summary-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="summary-card">
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center"
+             style="background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.4);">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <h2 id="modal-title" class="text-lg font-semibold" style="color: var(--gold-light);">Meeting Summary</h2>
+      </div>
+
+      <div id="summary-body"></div>
+
+      <button class="close-btn" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+<!-- 1. Ensure the Supabase Library is loaded first -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+    // 2. CONFIGURATION - Declared ONLY ONCE
+   const supabaseUrl = "https://cjbedftdexzcsydwayig.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmVkZnRkZXh6Y3N5ZHdheWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTUwMjgsImV4cCI6MjA5MzYzMTAyOH0.xsvtG5NmI_9TDZQ5-MhcjtX4UIIAiH2kyOlpIPDkCdg";
+    
+    // We use 'db' or keep 'supabase' but ensure no other line says 'const supabase'
+    const supabaseConnection = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Set copyright year
+    const yrEl = document.getElementById('yr');
+    if(yrEl) yrEl.textContent = new Date().getFullYear();
+
+    const d = new Date();
+    const liveDateEl = document.getElementById('live-date');
+    if(liveDateEl) {
+        liveDateEl.textContent = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
+    }
+
+    // 4. TOGGLE LOGIC
+    const refreshmentsToggle = document.getElementById('refreshments-toggle');
+    const statusLabel = document.getElementById('toggle-status');
+    if(refreshmentsToggle) {
+        refreshmentsToggle.addEventListener('change', () => {
+            if (refreshmentsToggle.checked) {
+                statusLabel.textContent = 'Yes';
+                statusLabel.className = 'status-yes';
+            } else {
+                statusLabel.textContent = 'No';
+                statusLabel.className = 'status-no';
+            }
+        });
+    }
+
+    // 5. HELPER FUNCTIONS
+    function formatTime(val) {
+        if (!val) return '—';
+        const [h, m] = val.split(':');
+        const hour = parseInt(h);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const disp = hour % 12 === 0 ? 12 : hour % 12;
+        return `${disp}:${m} ${ampm}`;
+    }
+
+    function formatCurrency(val) {
+        const num = parseFloat(val);
+        if (isNaN(num)) return '₦0.00';
+        return '₦' + num.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // 6. THE MAIN SUBMIT FUNCTION
+    // This was "not defined" because of the syntax error above
+   async function submitReport() {
+    // 1. Collect all field values
+    const leader = document.getElementById('leader-name').value.trim();
+    const location = document.getElementById('location').value.trim();
+    const timeIn = document.getElementById('time-in').value;
+    const timeOut = document.getElementById('time-out').value;
+    const attendance = document.getElementById('attendance').value;
+    const converts = document.getElementById('converts').value;
+    const offering = document.getElementById('offering').value;
+    const refresh = document.getElementById('refreshments-toggle').checked;
+    const notes = document.getElementById('report-notes').value.trim(); // Collect the new note
+
+    // 2. Define Required Fields for validation (Note: 'notes' is NOT here)
+    const requiredFields = [
+        { id: 'leader-name', value: leader, label: 'Cell Leader Name' },
+        { id: 'location', value: location, label: 'Location' },
+        { id: 'time-in', value: timeIn, label: 'Time In' },
+        { id: 'time-out', value: timeOut, label: 'Time Out' },
+        { id: 'attendance', value: attendance, label: 'Attendance' },
+        { id: 'converts', value: converts, label: 'New Converts' },
+        { id: 'offering', value: offering, label: 'Offering' }
+    ];
+
+    // 3. Strict Validation Loop (Only checks requiredFields)
+    for (let field of requiredFields) {
+        if (!field.value || field.value === "") {
+            const el = document.getElementById(field.id);
+            el.style.borderColor = '#E94560';
+            el.focus();
+            alert(`Please fill in the ${field.label}. All fields are required.`);
+            return; 
+        }
+    }
+
+    // 4. Submission to Supabase
+    const btn = document.querySelector('.submit-btn');
+    btn.textContent = 'Submitting...';
+    btn.disabled = true;
+
+    try {
+        const { data, error } = await supabaseConnection
+            .from('cell_reports')
+            .insert([
+                {
+                    leader_name: leader,
+                    location: location,
+                    time_in: timeIn,
+                    time_out: timeOut,
+                    attendance: parseInt(attendance),
+                    new_converts: parseInt(converts),
+                    offering: parseFloat(offering),
+                    refreshments: refresh,
+                    notes: notes, // Send the optional note
+                    report_date: new Date().toISOString().split('T')[0]
+                }
+            ]);
+
+        if (error) throw error;
+
+        btn.classList.add('success');
+        btn.textContent = '✓ Submitted';
+        
+        // Include notes in the summary modal if you wish
+        showSummary(leader, location, timeIn, timeOut, attendance, converts, offering, refresh, notes);
+
+    } catch (err) {
+        console.error("Database Error:", err.message);
+        alert("Error: " + err.message);
+        btn.textContent = 'Submit Report';
+    } finally {
+        btn.disabled = false;
+        setTimeout(() => {
+            btn.classList.remove('success');
+            btn.textContent = 'Submit Report';
+        }, 3000);
+    }
+}
+    function showSummary(leader, location, timeIn, timeOut, attend, converts, offering, refresh) {
+        const rows = [
+            { key: 'Cell Leader', val: leader },
+            { key: 'Location', val: location },
+            { key: 'Time In', val: formatTime(timeIn) },
+            { key: 'Time Out', val: formatTime(timeOut) },
+            { key: 'Attendance', val: attend },
+            { key: 'New Converts', val: converts },
+            { key: 'Offering', val: formatCurrency(offering) },
+            { key: 'Refreshments', val: refresh ? 'Yes ✓' : 'No' },
+        ];
+
+        const body = document.getElementById('summary-body');
+        body.innerHTML = rows.map(r => `
+            <div class="summary-row">
+                <span class="summary-key">${r.key}</span>
+                <span class="summary-val">${r.val}</span>
+            </div>
+        `).join('');
+
+        document.getElementById('summary-modal').classList.add('open');
+    }
+
+    function closeModal() {
+        document.getElementById('summary-modal').classList.remove('open');
+    }
+
+    function resetForm() {
+        document.getElementById('leader-name').value = '';
+        document.getElementById('location').value = '';
+        document.getElementById('time-in').value = '';
+        document.getElementById('time-out').value = '';
+        document.getElementById('attendance').value = '';
+        document.getElementById('converts').value = '';
+        document.getElementById('offering').value = '';
+        const toggle = document.getElementById('refreshments-toggle');
+        if(toggle) toggle.checked = false;
+        if(statusLabel) {
+            statusLabel.textContent = 'No';
+            statusLabel.className = 'status-no';
+        }
+    }
+
+    // Close modal on backdrop click
+    window.onclick = function(event) {
+        const modal = document.getElementById('summary-modal');
+        if (event.target == modal) closeModal();
+    }
+</script>
+</body>
+</html>

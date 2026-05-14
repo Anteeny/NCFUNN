@@ -1,0 +1,2229 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>DASHBOARD</title>
+    <link rel="icon" type="image/png" href="images.png?v=3">
+<link rel="shortcut icon" type="image/x-icon" href="images.png?v=3">
+<link rel="apple-touch-icon" href="images.png?v=3">
+</head>
+<body>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --gold:#B8860B;--gold-light:#F5E6A0;--gold-soft:#FDF8E8;
+    --navy:#0D1B2A;--navy-mid:#1B2F45;--navy-soft:#E8EDF2;
+    --text:#1a1a2e;--text-muted:#5a6070;--border:#e0e4eb;
+    --bg:#FAFBFC;--card:#fff;--radius:10px;
+  }
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  
+  #app{display:flex;flex-direction:column;min-height:100vh}
+  
+  .sidebar{position:fixed;top:0;left:0;width:220px;height:100vh;background:var(--navy);z-index:100;display:flex;flex-direction:column;overflow-y:auto}
+  .sidebar-logo{padding:20px 16px;border-bottom:1px solid rgba(255,255,255,0.1)}
+  .logo-cross{font-size:22px;margin-bottom:4px}
+  .logo-title{font-family:'Playfair Display',serif;color:#fff;font-size:15px;line-height:1.3;font-weight:600}
+  .logo-sub{color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:0.08em;margin-top:2px}
+  
+  .nav{flex:1;padding:12px 0}
+  .nav-section{padding:8px 16px 4px;font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:0.1em;font-weight:500}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;color:rgba(255,255,255,0.6);font-size:13px;transition:all 0.15s;border-left:3px solid transparent;margin:1px 0}
+  .nav-item:hover{color:#fff;background:rgba(255,255,255,0.06)}
+  .nav-item.active{color:#fff;background:rgba(184,134,11,0.2);border-left-color:var(--gold)}
+  .nav-item i{font-size:16px;width:18px}
+  .nav-badge{margin-left:auto;background:var(--gold);color:var(--navy);font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px}
+  
+  .sidebar-user{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.1)}
+  .user-info{display:flex;align-items:center;gap:10px}
+  .user-avatar{width:32px;height:32px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--navy);flex-shrink:0}
+  .user-name{font-size:12px;color:#fff;font-weight:500}
+  .user-role{font-size:10px;color:rgba(255,255,255,0.4)}
+  
+  .main{margin-left:220px;flex:1;display:flex;flex-direction:column}
+  .topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+  .page-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--text)}
+  .topbar-right{display:flex;align-items:center;gap:12px}
+  .topbar-btn{background:none;border:0.5px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif}
+  .topbar-btn:hover{background:var(--bg)}
+  .topbar-btn.primary{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:500}
+  .topbar-btn.primary:hover{background:#9a7009}
+  .topbar-date{font-size:12px;color:var(--text-muted)}
+  
+  .content{padding:24px;flex:1}
+  .page{display:none}
+  .page.active{display:block}
+  
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+  .stat-card{background:var(--card);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px}
+  .stat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;font-size:16px}
+  .stat-icon.gold{background:var(--gold-soft);color:var(--gold)}
+  .stat-icon.navy{background:var(--navy-soft);color:var(--navy)}
+  .stat-icon.green{background:#eaf3de;color:#3B6D11}
+  .stat-icon.red{background:#FCEBEB;color:#A32D2D}
+  .stat-num{font-size:26px;font-weight:500;font-family:'Playfair Display',serif;color:var(--text);line-height:1}
+  .stat-label{font-size:11px;color:var(--text-muted);margin-top:4px}
+  .stat-change{font-size:11px;margin-top:6px}
+  .stat-change.up{color:#3B6D11}
+  .stat-change.down{color:#A32D2D}
+  
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+  
+  .card{background:var(--card);border:0.5px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+  .card-title{font-size:13px;font-weight:500;color:var(--text);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+  .card-title span{font-size:11px;color:var(--text-muted);font-weight:400;cursor:pointer}
+  .card-title span:hover{color:var(--gold)}
+  
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;padding:8px 12px;font-size:11px;font-weight:500;color:var(--text-muted);border-bottom:0.5px solid var(--border);background:var(--bg)}
+  td{padding:10px 12px;border-bottom:0.5px solid var(--border);color:var(--text)}
+  tr:hover td{background:#f8f9fb}
+  tr:last-child td{border-bottom:none}
+  
+  .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+  .badge-green{background:#eaf3de;color:#3B6D11}
+  .badge-amber{background:#FAEEDA;color:#854F0B}
+  .badge-blue{background:#E6F1FB;color:#185FA5}
+  .badge-gray{background:#F1EFE8;color:#5F5E5A}
+  .badge-red{background:#FCEBEB;color:#A32D2D}
+  .badge-gold{background:var(--gold-soft);color:var(--gold)}
+  
+  .bar-chart{margin:4px 0}
+  .bar-row{display:flex;align-items:center;gap:10px;margin:6px 0}
+  .bar-label{font-size:11px;color:var(--text-muted);width:80px;flex-shrink:0;text-align:right}
+  .bar-track{flex:1;background:var(--bg);border-radius:4px;height:12px;overflow:hidden;border:0.5px solid var(--border)}
+  .bar-fill{height:100%;border-radius:4px;background:var(--navy);transition:width 0.6s ease}
+  .bar-fill.gold{background:var(--gold)}
+  .bar-fill.green{background:#639922}
+  .bar-val{font-size:11px;color:var(--text-muted);width:36px}
+  
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .form-group{margin-bottom:12px}
+  .form-group.full{grid-column:1/-1}
+  label{display:block;font-size:12px;color:var(--text-muted);margin-bottom:4px;font-weight:500}
+  input,select,textarea{width:100%;padding:8px 10px;border:0.5px solid var(--border);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--card);outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(184,134,11,0.12)}
+  textarea{min-height:80px;resize:vertical}
+  
+  .btn{padding:8px 16px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px}
+  .btn-primary{background:var(--navy);color:#fff}
+  .btn-primary:hover{background:var(--navy-mid)}
+  .btn-gold{background:var(--gold);color:#fff}
+  .btn-gold:hover{background:#9a7009}
+  .btn-outline{background:transparent;color:var(--text-muted);border:0.5px solid var(--border)}
+  .btn-outline:hover{background:var(--bg)}
+  .btn-sm{padding:5px 12px;font-size:12px}
+  .btn-danger{background:#FCEBEB;color:#A32D2D;border:0.5px solid #F7C1C1}
+  
+  .search-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .search-input{flex:1;max-width:280px;padding:8px 10px 8px 32px;border:0.5px solid var(--border);border-radius:6px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--card);outline:none;position:relative}
+  .search-wrap{position:relative;flex:1;max-width:280px}
+  .search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:14px;pointer-events:none}
+  .search-wrap input{width:100%;padding:8px 10px 8px 32px}
+  
+  .member-row{display:flex;align-items:center;gap:10px}
+  .member-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;color:#fff}
+  
+  .timeline{padding:4px 0}
+  .timeline-item{display:flex;gap:12px;padding:8px 0;border-bottom:0.5px solid var(--border)}
+  .timeline-item:last-child{border-bottom:none}
+  .timeline-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+  .timeline-dot.gold{background:var(--gold-soft);color:var(--gold)}
+  .timeline-dot.navy{background:var(--navy-soft);color:var(--navy)}
+  .timeline-dot.green{background:#eaf3de;color:#3B6D11}
+  .timeline-text{flex:1}
+  .timeline-title{font-size:13px;font-weight:500;color:var(--text)}
+  .timeline-sub{font-size:11px;color:var(--text-muted);margin-top:1px}
+  
+  .progress-ring{display:flex;align-items:center;gap:12px;margin:8px 0}
+  .ring-wrap{position:relative;width:56px;height:56px;flex-shrink:0}
+  .ring-wrap svg{position:absolute;top:0;left:0;transform:rotate(-90deg)}
+  .ring-center{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--text)}
+  
+  .attendance-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:8px 0}
+  .att-cell{aspect-ratio:1;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500}
+  .att-cell.high{background:#3B6D11;color:#fff}
+  .att-cell.mid{background:#97C459;color:#27500A}
+  .att-cell.low{background:#eaf3de;color:#3B6D11}
+  .att-cell.none{background:var(--bg);color:var(--text-muted);border:0.5px solid var(--border)}
+  .att-cell.hdr{font-size:9px;color:var(--text-muted);font-weight:500;aspect-ratio:unset;height:16px}
+  
+  .modal-backdrop{display:none;position:fixed;inset:0;background:rgba(13,27,42,0.5);z-index:200;align-items:center;justify-content:center}
+  .modal-backdrop.open{display:flex}
+  .modal{background:var(--card);border-radius:12px;width:500px;max-width:95%;max-height:90vh;overflow-y:auto;border:0.5px solid var(--border)}
+  .modal-header{padding:20px 20px 0;border-bottom:0.5px solid var(--border);padding-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+  .modal-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:600}
+  .modal-close{background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:20px;padding:0;line-height:1}
+  .modal-body{padding:20px}
+  .modal-footer{padding:0 20px 20px;display:flex;gap:8px;justify-content:flex-end}
+  
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--navy);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;z-index:300;display:none;align-items:center;gap:8px;animation:slideIn 0.2s ease}
+  .toast.show{display:flex}
+  @keyframes slideIn{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+  
+  .announcement-banner{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 100%);border-radius:var(--radius);padding:20px;color:#fff;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+  .ann-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:600;margin-bottom:4px}
+  .ann-sub{font-size:12px;color:rgba(255,255,255,0.6)}
+  .ann-badge{background:var(--gold);color:var(--navy);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600}
+  
+  .empty-state{text-align:center;padding:40px 20px;color:var(--text-muted)}
+  .empty-state i{font-size:36px;margin-bottom:12px;opacity:0.3}
+  .empty-state p{font-size:13px}
+  
+  .tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;background:var(--bg);border:0.5px solid var(--border);color:var(--text-muted);margin:2px}
+  
+  .flex-between{display:flex;align-items:center;justify-content:space-between}
+  .flex-center{display:flex;align-items:center}
+  .gap-8{gap:8px}
+  .mb-16{margin-bottom:16px}
+  .text-sm{font-size:12px;color:var(--text-muted)}
+  
+  .unit-card{background:var(--card);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px}
+  .unit-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:10px}
+  .unit-name{font-size:14px;font-weight:500;margin-bottom:4px}
+  .unit-count{font-size:12px;color:var(--text-muted)}
+  .unit-bar{height:4px;background:var(--bg);border-radius:2px;margin-top:10px;overflow:hidden}
+  .unit-bar-fill{height:100%;border-radius:2px}
+
+  /* MOBILE RESPONSIVENESS */
+  .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 90; }
+  .sidebar-overlay.open { display: block; }
+  
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); transition: transform 0.3s ease; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; }
+    #mobile-menu-btn { display: block !important; }
+    .grid-2, .grid-3, .form-grid { grid-template-columns: 1fr !important; }
+    .search-bar { flex-direction: column; align-items: stretch; }
+    .search-wrap, .search-wrap input { max-width: 100%; width: 100%; }
+    .search-bar select, .search-bar button { width: 100% !important; }
+    .content { padding: 16px; }
+    .topbar { padding: 0 16px; }
+    .modal { width: 90%; max-width: 400px; margin: 20px auto; }
+    .table-wrap { -webkit-overflow-scrolling: touch; }
+
+    /* Improve touch targets and readability for mobile */
+    .nav-item { font-size: 15px; padding: 14px 16px; margin: 4px 0; }
+    .nav-item i { font-size: 20px; }
+    .stat-num { font-size: 32px; }
+    .stat-label, .card-title { font-size: 14px; }
+    th, td { font-size: 13px; padding: 14px 12px; }
+    input, select, textarea { font-size: 16px !important; padding: 12px 14px !important; } /* 16px prevents iOS zoom */
+    .btn { font-size: 15px; padding: 12px 16px; justify-content: center; }
+    .btn-sm { padding: 8px 12px !important; font-size: 13px !important; }
+  }
+  @media (max-width: 480px) { .topbar-date { display: none; } }
+</style>
+
+<div id="app">
+  <div id="mobile-overlay" class="sidebar-overlay" onclick="toggleMobileMenu()"></div>
+  <nav class="sidebar">
+   <div class="sidebar-logo" style="text-align: center;">
+  <img src="images.png" alt="Logo" style="width: 50px; height: auto; margin-bottom: 10px;">
+  <div class="logo-title">New Covenant Family</div>
+  <div class="logo-sub">NCF · UNN</div>
+</div>
+    <div class="nav">
+      <div class="nav-section">OVERVIEW</div>
+      <div class="nav-item active" onclick="showPage('dashboard',this)"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
+      <div class="nav-section">CONGREGATION</div>
+      <div class="nav-item" onclick="showPage('members',this)"><i class="ti ti-users"></i> Members <span class="nav-badge" id="nb-members">—</span></div>
+      <div class="nav-item" onclick="showPage('attendance',this)"><i class="ti ti-calendar-check"></i> Attendance</div>
+      <div class="nav-section">FOLLOW-UP</div>
+      <div class="nav-item" onclick="showPage('followup',this)"><i class="ti ti-phone-call"></i> Follow-Up <span class="nav-badge" id="nb-followup">—</span></div>
+      <div class="nav-item" onclick="showPage('units',this)"><i class="ti ti-grid-dots"></i> Units</div>
+      <div class="nav-section">INSIGHTS</div>
+      <div class="nav-item" onclick="showPage('reports',this)"><i class="ti ti-chart-bar"></i> Reports</div>
+      <div class="nav-section">SYSTEM</div>
+      <div class="nav-item" onclick="showPage('settings',this)"><i class="ti ti-settings"></i> Settings</div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-info">
+        <div class="user-avatar">AD</div>
+        <div>
+          <div class="user-name">Admin</div>
+          <div class="user-role">Super Admin</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main">
+   <div class="topbar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <button id="mobile-menu-btn" onclick="toggleMobileMenu()" style="display:none;background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">&#9776;</button>
+    <div class="page-title" id="page-title">Dashboard</div>
+  </div>
+  <div class="topbar-right">
+    <span class="topbar-date" id="today-date"></span>
+    </div>
+</div>
+
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="announcement-banner">
+          <div>
+            <div class="ann-title">Welcome back to NCF UNN Portal</div>
+            <div class="ann-sub">Track your congregation, follow-ups, and growth all in one place</div>
+          </div>
+          <div class="ann-badge">✝ Active</div>
+        </div>
+
+        <div class="stats-grid" id="dash-stats"></div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Weekly Attendance Trend <span onclick="showPage('attendance',null)">View all →</span></div>
+            <div id="att-trend"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Recent Follow-Ups <span onclick="showPage('followup',null)">View all →</span></div>
+            <div id="recent-followups"></div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Unit Performance</div>
+            <div id="unit-performance"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Recent Activity</div>
+            <div id="recent-activity"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MEMBERS -->
+      <div class="page" id="page-members">
+        <div class="search-bar">
+          <div class="search-wrap">
+            <i class="ti ti-search"></i>
+            <input type="text" id="member-search" placeholder="Search members..." oninput="filterMembers()">
+          </div>
+          <select id="member-filter-department" onchange="filterMembers()" style="width:auto;font-size:12px;padding:7px 10px">
+            <option value="">All Departments</option>
+          </select>
+          <select id="member-filter-leader-type" onchange="filterMembers()" style="width:auto;font-size:12px;padding:7px 10px">
+            <option value="">All Leader Types</option>
+            <option>DH</option>
+            <option>G12</option>
+          </select>
+          <button class="btn btn-gold" onclick="openModal('add-member')"><i class="ti ti-plus"></i> Add Member</button>
+        </div>
+        <div class="card" style="padding:0">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Department</th>
+                  <th>G12 Leader</th>
+                  <th>Leader Type</th>
+                  <th>School Address</th>
+                  <th>Home Address</th>
+                  <th>G12 Phone</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="members-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ATTENDANCE -->
+      <div class="page" id="page-attendance">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Record Attendance</div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="att-date">
+            </div>
+            <div class="form-group">
+              <label>Service Type</label>
+              <select id="att-type">
+                <option>Sunday Service</option>
+                <option>Midweek Service</option>
+                <option>Unit Meeting</option>
+                <option>Special Programme</option>
+                <option>Outreach</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Total Count</label>
+              <input type="number" id="att-count" placeholder="Number present">
+            </div>
+            <div class="form-group">
+              <label>First-Timers</label>
+              <input type="number" id="att-firsttimers" placeholder="New visitors today">
+            </div>
+            <div class="form-group">
+              <label>Notes</label>
+              <textarea id="att-notes" placeholder="Optional notes..."></textarea>
+            </div>
+            <button class="btn btn-gold" onclick="saveAttendance()"><i class="ti ti-check"></i> Save Attendance</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Attendance Heatmap (Last 7 Weeks)</div>
+            <div id="att-heatmap"></div>
+            <div style="margin-top:16px">
+              <div class="card-title">Service Breakdown</div>
+              <div id="att-breakdown"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card" style="padding:0">
+          <div style="padding:16px 20px 12px;font-size:13px;font-weight:500">Attendance Log</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Service</th><th>Total</th><th>First-Timers</th><th>Notes</th></tr></thead>
+              <tbody id="att-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOLLOW-UP -->
+      <div class="page" id="page-followup">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Log Follow-Up</div>
+            <div class="form-group">
+              <label>Member Name</label>
+              <input type="text" id="fu-member" placeholder="Name of person followed up">
+            </div>
+            <div class="form-group">
+              <label>Type</label>
+              <select id="fu-type">
+                <option>Phone Call</option>
+                <option>Home Visit</option>
+                <option>Text Message</option>
+                <option>WhatsApp</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Outcome</label>
+              <select id="fu-outcome">
+                <option>Positive – will return</option>
+                <option>Saved / Rededicated</option>
+                <option>No response</option>
+                <option>Needs follow-up again</option>
+                <option>Joined a unit</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="fu-date">
+            </div>
+            <div class="form-group">
+              <label>Assigned To</label>
+              <input type="text" id="fu-assigned" placeholder="Worker's name">
+            </div>
+            <div class="form-group">
+              <label>Notes</label>
+              <textarea id="fu-notes" placeholder="Details..."></textarea>
+            </div>
+            <button class="btn btn-gold" onclick="saveFollowup()"><i class="ti ti-check"></i> Save Follow-Up</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Follow-Up Stats</div>
+            <div id="fu-stats"></div>
+          </div>
+        </div>
+        <div class="card" style="padding:0">
+          <div style="padding:16px 20px 12px;font-size:13px;font-weight:500">Follow-Up Log</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Member</th><th>Type</th><th>Outcome</th><th>Date</th><th>Assigned To</th></tr></thead>
+              <tbody id="fu-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- UNITS -->
+      <div class="page" id="page-units">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px" id="units-grid"></div>
+        <div class="card">
+          <div class="card-title">Unit Members</div>
+          <div class="search-bar">
+            <select id="unit-select-filter" onchange="filterByUnit()" style="font-size:12px;padding:7px 10px;width:auto">
+              <option value="">All Units</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Name</th><th>Phone</th><th>Status</th><th>Joined</th></tr></thead>
+              <tbody id="unit-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPORTS -->
+    <div class="page" id="page-reports">
+ <div id="reports-landing" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:16px;">
+  
+  <div class="card unit-card" style="cursor:pointer; text-align:center; padding:40px;" onclick="enterReportCategory('g12')">
+    <div class="unit-icon" style="background:var(--gold-soft); width:60px; height:60px; margin:0 auto 20px;">
+      <i class="ti ti-users" style="color:var(--gold); font-size:28px;"></i>
+    </div>
+    <div class="unit-name" style="font-size:18px; font-weight:600;">G12 Reports</div>
+    <p class="text-sm">Cell system growth</p>
+  </div>
+
+  <div class="card unit-card" style="cursor:pointer; text-align:center; padding:40px;" onclick="enterReportCategory('department')">
+    <div class="unit-icon" style="background:var(--navy-soft); width:60px; height:60px; margin:0 auto 20px;">
+      <i class="ti ti-grid-dots" style="color:var(--navy); font-size:28px;"></i>
+    </div>
+    <div class="unit-name" style="font-size:18px; font-weight:600;">Dept. Reports</div>
+    <p class="text-sm">Unit & worker activity</p>
+  </div>
+
+  <div class="card unit-card" style="cursor:pointer; text-align:center; padding:40px; border-top: 4px solid #E94560;" onclick="enterReportCategory('connect')">
+    <div class="unit-icon" style="background:#FCEBEB; width:60px; height:60px; margin:0 auto 20px;">
+      <i class="ti ti-heart-handshake" style="color:#E94560; font-size:28px;"></i>
+    </div>
+    <div class="unit-name" style="font-size:18px; font-weight:600;">Connect</div>
+    <p class="text-sm">New converts & visitors</p>
+  </div>
+
+</div>
+
+  <div id="reports-detail-view" style="display:none;">
+    <div class="flex-between mb-16">
+      <button class="btn btn-outline" onclick="exitReportCategory()">
+        <i class="ti ti-arrow-left"></i> Back to Categories
+      </button>
+      <div id="category-action-area"></div>
+    </div>
+    
+    <div id="category-content" class="card">
+      </div>
+  </div>
+</div>
+
+  <!-- DETAILED CATEGORY VIEW (Hidden by default) -->
+  <div id="reports-detail-view" style="display:none;">
+    <div class="flex-between mb-16">
+      <button class="btn btn-outline" onclick="exitReportCategory()">
+        <i class="ti ti-arrow-left"></i> Back to Categories
+      </button>
+      <div id="category-action-area">
+        <!-- Add Member Button will be injected here -->
+      </div>
+    </div>
+    
+    <div id="category-content" class="card">
+      <!-- Data/Charts will load here -->
+    </div>
+  </div>
+</div>
+
+      <!-- SETTINGS -->
+      <div class="page" id="page-settings">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">Church Info</div>
+            <div class="form-group"><label>Church Name</label><input value="New Covenant Family"></div>
+            <div class="form-group"><label>Campus</label><input value="UNN — University of Nigeria, Nsukka"></div>
+            <div class="form-group"><label>Main Service Day</label>
+              <select><option>Sunday</option><option>Saturday</option></select>
+            </div>
+            <div class="form-group"><label>Service Time</label><input value="8:00 AM"></div>
+            <button class="btn btn-gold">Save Changes</button>
+          </div>
+          <div class="card">
+            <div class="card-title">Manage Units</div>
+            <div id="units-list-settings"></div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <input type="text" id="new-unit-name" placeholder="New unit name" style="flex:1" onkeypress="if(event.key === 'Enter') addUnit()">
+              <button class="btn btn-primary" onclick="addUnit()"><i class="ti ti-plus"></i> Add</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">User Roles</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Role</th><th>Permissions</th><th>Count</th></tr></thead>
+              <tbody>
+                <tr><td><span class="badge badge-gold">Admin</span></td><td>Full access — view, edit, delete all data</td><td>1</td></tr>
+                <tr><td><span class="badge badge-blue">Leader</span></td><td>View members, submit attendance and follow-ups</td><td>5</td></tr>
+                <tr><td><span class="badge badge-gray">Data Entry</span></td><td>Input only — attendance and follow-ups</td><td>3</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ADD MEMBER MODAL -->
+<div class="modal-backdrop" id="modal-add-member">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add New Member</div>
+      <button class="modal-close" onclick="closeModal('add-member')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full"><label>Member Name *</label><input type="text" id="new-member-name" placeholder="First and last name"></div>
+        <div class="form-group"><label>Member Phone</label><input type="text" id="new-member-phone" placeholder="08012345678"></div>
+        <div class="form-group"><label>Course of Study</label><input type="text" id="new-course" placeholder="E.g. Computer Science"></div>
+        <div class="form-group"><label>Level</label>
+          <select id="new-level">
+            <option value="">Select level</option>
+            <option value="100">100 lvl</option>
+            <option value="200">200 lvl</option>
+            <option value="300">300 lvl</option>
+            <option value="400">400 lvl</option>
+            <option value="500">500 lvl</option>
+            <option value="600">600 lvl</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Department</label>
+          <select id="new-department">
+            <option value="">Select department</option>
+            <option>NCF Angels</option>
+            <option>Media Unit</option>
+            <option>Technical Unit</option>
+            <option>Ushers</option>
+            <option>Temple tenders</option>
+            <option>Administration</option>
+            <option>MVP</option>
+            <option>Intercessory</option>
+            <option>Greeters</option>
+            <option>Evangelism</option>
+            <option>Deep Oasis</option>
+          </select>
+        </div>
+        <div class="form-group"><label>G12 Leader</label><input type="text" id="new-g12-leader" placeholder="Leader name"></div>
+        <div class="form-group"><label>Leader Type</label>
+          <select id="new-leader-type">
+            <option value="">Select type</option>
+            <option>DH</option>
+            <option>G12</option>
+          </select>
+        </div>
+        <div class="form-group full"><label>School Address</label><textarea id="new-school-address" placeholder="School address" style="min-height:60px"></textarea></div>
+        <div class="form-group full"><label>Home Address</label><textarea id="new-home-address" placeholder="Home address" style="min-height:60px"></textarea></div>
+        <div class="form-group"><label>G12 Phone</label><input type="text" id="new-g12-phone" placeholder="Leader phone number"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('add-member')">Cancel</button>
+      <button class="btn btn-gold" onclick="saveMember()"><i class="ti ti-check"></i> Save Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MEMBER MODAL -->
+<div class="modal-backdrop" id="modal-edit-member">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Edit Member Details</div>
+      <button class="modal-close" onclick="closeModal('edit-member')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-member-id">
+      <div class="form-grid">
+        <div class="form-group full"><label>Member Name *</label><input type="text" id="edit-member-name" placeholder="First and last name"></div>
+        <div class="form-group"><label>Member Phone</label><input type="text" id="edit-member-phone" placeholder="08012345678"></div>
+        <div class="form-group"><label>Course of Study</label><input type="text" id="edit-course" placeholder="E.g. Computer Science"></div>
+        <div class="form-group"><label>Level</label>
+          <select id="edit-level">
+            <option value="">Select level</option>
+            <option value="100">100 lvl</option>
+            <option value="200">200 lvl</option>
+            <option value="300">300 lvl</option>
+            <option value="400">400 lvl</option>
+            <option value="500">500 lvl</option>
+            <option value="600">600 lvl</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Department</label>
+          <select id="edit-department">
+            <option value="">Select department</option>
+            <option>NCF Angels</option>
+            <option>Media Unit</option>
+            <option>Technical Unit</option>
+            <option>Ushers</option>
+            <option>Temple tenders</option>
+            <option>Administration</option>
+            <option>MVP</option>
+            <option>Intercessory</option>
+            <option>Greeters</option>
+            <option>Evangelism</option>
+            <option>Deep Oasis</option>
+          </select>
+        </div>
+        <div class="form-group"><label>G12 Leader</label><input type="text" id="edit-g12-leader" placeholder="Leader name"></div>
+        <div class="form-group"><label>Leader Type</label>
+          <select id="edit-leader-type">
+            <option value="">Select type</option>
+            <option value="DH">DH</option>
+            <option value="G12">G12</option>
+          </select>
+        </div>
+        <div class="form-group full"><label>School Address</label><textarea id="edit-school-address" placeholder="School address" style="min-height:60px"></textarea></div>
+        <div class="form-group full"><label>Home Address</label><textarea id="edit-home-address" placeholder="Home address" style="min-height:60px"></textarea></div>
+        <div class="form-group"><label>G12 Phone</label><input type="text" id="edit-g12-phone" placeholder="Leader phone number"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('edit-member')">Cancel</button>
+      <button class="btn btn-gold" onclick="submitEditMember()"><i class="ti ti-check"></i> Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div class="modal-backdrop" id="modal-login">
+  <div class="modal" style="width: 400px;">
+    <div class="modal-header">
+      <div class="modal-title">Sign In Required</div>
+      <button class="modal-close" onclick="cancelLogin()">×</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">Please sign in to access restricted areas.</p>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="admin@example.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="••••••••">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="cancelLogin()">Cancel</button>
+      <button class="btn btn-gold" onclick="submitLogin()">Sign In</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+<script>
+  const supabaseUrl = "https://cjbedftdexzcsydwayig.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmVkZnRkZXh6Y3N5ZHdheWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTUwMjgsImV4cCI6MjA5MzYzMTAyOH0.xsvtG5NmI_9TDZQ5-MhcjtX4UIIAiH2kyOlpIPDkCdg";
+  
+  const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+  const state = {
+  members: [],
+  attendance: [
+    {date:"2025-04-27",type:"Sunday Service",count:187,firstTimers:12,notes:"Good turnout"},
+    {date:"2025-04-23",type:"Midweek Service",count:94,firstTimers:3,notes:""},
+    {date:"2025-04-20",type:"Sunday Service",count:201,firstTimers:18,notes:"Evangelism Sunday"},
+    {date:"2025-04-16",type:"Midweek Service",count:78,firstTimers:2,notes:""},
+    {date:"2025-04-13",type:"Sunday Service",count:175,firstTimers:8,notes:""},
+    {date:"2025-04-09",type:"Unit Meeting",count:45,firstTimers:0,notes:"Choir unit meeting"},
+    {date:"2025-04-06",type:"Sunday Service",count:193,firstTimers:14,notes:""},
+  ],
+  followups: [
+    {member:"James Uchenna",type:"Phone Call",outcome:"Positive – will return",date:"2025-04-28",assignedTo:"Pastor Mike",notes:"Called after 3 weeks absence"},
+    {member:"Faith Okeke",type:"Home Visit",outcome:"Saved / Rededicated",date:"2025-04-26",assignedTo:"Adaeze Nwosu",notes:"Wonderful visit"},
+    {member:"Solomon Yusuf",type:"WhatsApp",outcome:"No response",date:"2025-04-25",assignedTo:"Bello Musa",notes:"Left on seen"},
+    {member:"Grace Anyanwu",type:"Phone Call",outcome:"Needs follow-up again",date:"2025-04-24",assignedTo:"Ngozi Eze",notes:"Was busy, call again"},
+  ],
+  units: ["NCF Angels","Intercessory","Ushering","Media","MVP","Evangelism","Technical Crew"],
+  nextId: 9
+};
+
+let isAuthenticated = false;
+let pendingPage = null;
+let pendingNavEl = null;
+
+async function fetchAndRenderMembers() {
+  console.log("Fetching members without ID column..."); 
+  
+  const { data, error } = await supabaseClient
+    .from('members')
+    .select('*')
+    .order('id', { ascending: false }); 
+
+  if (error) {
+    console.error('Supabase Error:', error.message);
+    showToast('Fetch failed: ' + error.message);
+    return;
+  }
+
+  // Update global state
+  state.members = data || [];
+  console.log("Total members loaded into state:", state.members.length);
+
+  renderMembers(); 
+  updateBadges();
+}
+
+function initDate(){
+  const d = new Date();
+  document.getElementById('today-date').textContent = d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  const today = d.toISOString().split('T')[0];
+  ['att-date','fu-date','new-date-joined'].forEach(id => {const el = document.getElementById(id); if(el) el.value = today;});
+}
+
+function toggleMobileMenu() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('mobile-overlay').classList.toggle('open');
+}
+
+function showPage(name, navEl){
+  if (name !== 'dashboard' && !isAuthenticated) {
+    pendingPage = name;
+    pendingNavEl = navEl;
+    openModal('login');
+    return;
+  }
+
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  
+  if(navEl) {
+    navEl.classList.add('active');
+  } else {
+    // Select the sidebar item if opened from a dashboard link
+    const fallbackNav = document.querySelector(`.nav-item[onclick*="showPage('${name}'"]`);
+    if(fallbackNav) fallbackNav.classList.add('active');
+  }
+  
+  // Close mobile menu if open
+  const sidebar = document.querySelector('.sidebar');
+  if(sidebar && sidebar.classList.contains('open')) {
+    toggleMobileMenu();
+  }
+  
+  const titles = {dashboard:'Dashboard',members:'Members',attendance:'Attendance',followup:'Follow-Up',units:'Units',reports:'Reports',settings:'Settings'};
+  document.getElementById('page-title').textContent = titles[name] || name;
+
+  // FIX: If we are going to reports, ALWAYS show the landing screen first
+  if (name === 'reports') {
+    exitReportCategory(); 
+  } else {
+    renderPage(name);
+  }
+}
+
+function cancelLogin() {
+  closeModal('login');
+  pendingPage = null;
+  pendingNavEl = null;
+}
+
+async function submitLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-password').value.trim();
+  
+  if (!email || !pass) {
+    alert("Please enter both email and password.");
+    return;
+  }
+
+  const btn = document.querySelector('#modal-login .btn-gold');
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="ti ti-loader"></i> Signing in...';
+  btn.disabled = true;
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({
+    email: email,
+    password: pass,
+  });
+
+  btn.innerHTML = originalText;
+  btn.disabled = false;
+
+  if (error) {
+    alert("Login failed: " + error.message);
+  } else {
+    isAuthenticated = true;
+    closeModal('login');
+    showToast('Signed in successfully!');
+    testConnection(); // Test connection after authenticated login
+    if (pendingPage) {
+      showPage(pendingPage, pendingNavEl);
+      pendingPage = null;
+      pendingNavEl = null;
+    }
+  }
+}
+
+  async function testConnection() {
+  console.log("🔍 Testing Supabase connections...");
+  
+  // Test members table
+  const { data: membersData, error: membersError } = await supabaseClient
+    .from('members')
+    .select('*')
+    .limit(1);
+  console.log("✅ Members table:", { count: membersData?.length, error: membersError?.message });
+
+  // Test g12_reports table - no ordering
+  const { data: g12Data, error: g12Error } = await supabaseClient
+    .from('g12_reports')
+    .select('*');
+  console.log("✅ G12 Reports table (no order):", { count: g12Data?.length, error: g12Error?.message, sample: g12Data?.[0] });
+
+  // Test g12_reports with ID ordering
+  const { data: g12DataOrdered, error: g12ErrorOrdered } = await supabaseClient
+    .from('g12_reports')
+    .select('*')
+    .order('id', { ascending: false });
+  console.log("✅ G12 Reports table (with order):", { count: g12DataOrdered?.length, error: g12ErrorOrdered?.message });
+}
+
+function renderPage(name){
+  if(name==='dashboard') renderDashboard();
+  else if(name==='members') renderMembers();
+  else if(name==='attendance') renderAttendance();
+  else if(name==='followup') renderFollowup();
+  else if(name==='units') renderUnits();
+  else if(name==='reports') renderReports();
+  populateUnitDropdowns();
+  updateBadges();
+}
+
+let currentReportContext = null;
+
+function enterReportCategory(category) {
+  currentReportContext = category;
+  document.getElementById('reports-landing').style.display = 'none';
+  document.getElementById('reports-detail-view').style.display = 'block';
+  
+  // Set the Title based on selection
+  let title = '';
+  if(category === 'g12') title = 'G12 Leadership Reports';
+  else if(category === 'department') title = 'Departmental Reports';
+  else if(category === 'connect') title = 'Connect & Membership Growth'; // New Title
+  
+  document.getElementById('page-title').textContent = title;
+  
+  const content = document.getElementById('category-content');
+  content.innerHTML = '<div class="empty-state"><p>Loading reports...</p></div>';
+
+  renderCategoryData(category);
+}
+
+function exitReportCategory() {
+  currentReportContext = null;
+  document.getElementById('reports-landing').style.display = 'grid';
+  document.getElementById('reports-detail-view').style.display = 'none';
+  document.getElementById('page-title').textContent = 'Reports';
+}
+
+function openCategorizedAddModal(category) {
+  // We can reuse your existing add-member modal
+  openModal('add-member');
+  
+  // Customizing the modal title dynamically
+  const modalTitle = document.querySelector('#modal-add-member .modal-title');
+  modalTitle.textContent = category === 'g12' ? 'Add G12 Member' : 'Add Departmental Worker';
+  
+  // Logic: You can set a hidden input or auto-select a status 
+  // to ensure they are saved correctly to Supabase
+  if(category === 'g12') {
+    document.getElementById('new-status').value = 'Member';
+  } else {
+    document.getElementById('new-status').value = 'Worker';
+  }
+}
+
+const departmentalUnits = ["NCF Angels", "T.Crew", "Media Unit", "Ushering", "Intercessory Team", "MVP", "Admin"];
+
+// Add this to your <script> section
+
+async function fetchG12Reports(leaderName = "") {
+  let query = supabaseClient
+    .from('g12_reports')
+    .select('*');
+
+  if (leaderName) {
+    query = query.ilike('leader_name', `%${leaderName}%`);
+  }
+
+  const { data, error } = await query;
+  console.log("🔍 G12 Reports Raw Response:", JSON.stringify({ data, error, dataType: typeof data, dataIsArray: Array.isArray(data), dataLength: data?.length }));
+  
+  if (error) {
+    console.error("❌ Error fetching G12 reports:", error);
+    showToast("Failed to fetch G12 reports: " + error.message);
+    return [];
+  }
+  
+  if (!data) {
+    console.warn("⚠️ Data is null/undefined");
+    return [];
+  }
+  
+  if (!Array.isArray(data)) {
+    console.error("❌ Data is not an array:", data);
+    return [];
+  }
+  
+  // Sort in JavaScript instead of Supabase to avoid null issues
+  const sorted = data.sort((a, b) => {
+    const dateA = new Date(a.report_date || a.meeting_date || 0);
+    const dateB = new Date(b.report_date || b.meeting_date || 0);
+    return dateB - dateA;
+  });
+  
+  console.log("✅ Fetched " + sorted.length + " G12 reports");
+  if (sorted.length > 0) {
+    console.log("📋 First report:", sorted[0]);
+  }
+  return sorted;
+}
+
+async function renderCategoryData(category) {
+  const content = document.getElementById('category-content');
+  
+  if(category === 'g12') {
+    content.innerHTML = `
+      <div class="search-bar">
+        <input type="text" id="g12-leader-search" placeholder="Search Leader..." oninput="filterG12()">
+      </div>
+      <div id="g12-list-area"></div>`;
+    filterG12(); 
+  } 
+  else if(category === 'department') {
+      content.innerHTML = `
+        <div class="card-title">Departmental Reports</div>
+        <div id="dept-list-area">
+          <div class="empty-state"><p>Fetching reports...</p></div>
+        </div>
+      `;
+      renderDeptTable();
+  }
+  else if(category === 'connect') {
+    content.innerHTML = `
+      <div class="card-title">Cell Group Meeting Reports (Connect)</div>
+      <div id="connect-list-area">
+        <div class="empty-state"><p>Fetching reports...</p></div>
+      </div>
+    `;
+    renderConnectTable(); // New function defined below
+  }
+}
+
+async function renderConnectTable() {
+    const listArea = document.getElementById('connect-list-area');
+    listArea.innerHTML = '<div class="empty-state"><i class="ti ti-loader"></i><p>Fetching latest reports...</p></div>';
+
+    try {
+        const { data: reports, error } = await supabaseClient
+            .from('cell_reports')
+            .select('*')
+            .order('id', { ascending: false }); // Show newest first
+
+        if (error) throw error;
+
+        if (!reports || reports.length === 0) {
+            listArea.innerHTML = `<div class="empty-state"><i class="ti ti-clipboard-off"></i><p>No cell reports found.</p></div>`;
+            return;
+        }
+
+        listArea.innerHTML = `
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Leader</th>
+                            <th>Time (In/Out)</th> <!-- Added Header -->
+                            <th>Stats</th>
+                            <th>Offering</th>
+                            <th>Notes</th> <!-- Added Notes for completeness -->
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${reports.map(r => {
+                            const dateStr = r.report_date ? new Date(r.report_date).toLocaleDateString() : '—';
+                            const offering = (parseFloat(r.offering) || 0).toLocaleString();
+                            return `
+                            <tr>
+                                <td style="white-space:nowrap">${dateStr}</td>
+                                <td><strong>${r.leader_name || 'Unknown Leader'}</strong><br><small>${r.location || '—'}</small></td>
+                                <td>
+                                    <span class="badge badge-blue">${r.time_in || '—'}</span> to 
+                                    <span class="badge badge-blue">${r.time_out || '—'}</span>
+                                </td>
+                                <td>
+                                    <div style="font-size: 11px">Att: ${r.attendance || 0}</div>
+                                    <div style="font-size: 11px">New: ${r.new_converts || 0}</div>
+                                </td>
+                                <td style="font-weight:600">₦${offering}</td>
+                                <td style="font-size:11px; max-width:150px; overflow:hidden; text-overflow:ellipsis;">
+                                    ${r.notes || '—'}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteCellReport(${r.id})">
+                                        <i class="ti ti-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `}).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } catch (err) {
+        console.error("Fetch Error:", err.message);
+        listArea.innerHTML = `<div class="empty-state"><p>Error loading reports.</p></div>`;
+    }
+}
+
+async function renderDeptTable() {
+  const listArea = document.getElementById('dept-list-area');
+  if (!listArea) return;
+
+  listArea.innerHTML = '<div class="empty-state"><i class="ti ti-loader"></i><p>Fetching reports...</p></div>';
+
+  try {
+    const { data: reports, error } = await supabaseClient
+      .from('dept_reports')
+      .select('*')
+      .order('id', { ascending: false });
+
+    if (error) throw error;
+
+    if (!reports || reports.length === 0) {
+      listArea.innerHTML = `<div class="empty-state"><i class="ti ti-clipboard-off"></i><p>No departmental reports found.</p></div>`;
+      return;
+    }
+
+    // Group reports by dept_name, then by report_date within each dept
+    const deptMap = {};
+    reports.forEach(r => {
+      const dept = r['dept name'] || r.dept_name || 'Unknown Dept';
+      if (!deptMap[dept]) deptMap[dept] = {};
+      const dateKey = r.report_date || 'Unknown Date';
+      if (!deptMap[dept][dateKey]) deptMap[dept][dateKey] = [];
+      deptMap[dept][dateKey].push(r);
+    });
+
+    const deptNames = Object.keys(deptMap).sort();
+
+    listArea.innerHTML = `
+      <div id="dept-groups">
+        ${deptNames.map(dept => {
+          const dates = Object.keys(deptMap[dept]).sort((a, b) => new Date(b) - new Date(a));
+          const totalReports = dates.reduce((sum, d) => sum + deptMap[dept][d].length, 0);
+          const safeDeptId = dept.replace(/[^a-zA-Z0-9]/g, '_');
+
+          return `
+          <div class="card" style="margin-bottom:16px;border-left:4px solid var(--gold);">
+            <div class="flex-between" style="cursor:pointer;padding:8px 0;"
+                 onclick="toggleDeptGroup('${safeDeptId}')">
+              <div>
+                <strong style="font-size:14px;color:var(--gold);">${dept}</strong>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">${totalReports} record(s) across ${dates.length} date(s)</div>
+              </div>
+              <span class="badge badge-gold">${totalReports}</span>
+            </div>
+
+            <div id="dept_${safeDeptId}" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
+              ${dates.map(dateStr => {
+                const rows = deptMap[dept][dateStr];
+                const safeDateId = dateStr.replace(/[^a-zA-Z0-9]/g, '_');
+                const present = rows.filter(r => r.status === 'Present').length;
+                const absent = rows.filter(r => r.status === 'Absent').length;
+                const displayDate = dateStr !== 'Unknown Date'
+                  ? new Date(dateStr).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' })
+                  : 'Unknown Date';
+
+                return `
+                <div style="margin-bottom:10px;background:var(--bg);border-radius:6px;padding:10px;border-left:3px solid var(--navy);">
+                  <div class="flex-between" style="cursor:pointer;"
+                       onclick="toggleDeptDateGroup('${safeDeptId}_${safeDateId}')">
+                    <div>
+                      <strong style="font-size:13px;">${displayDate}</strong>
+                      <span class="badge badge-green" style="margin-left:8px;">${present} present</span>
+                      ${absent > 0 ? `<span class="badge badge-red" style="margin-left:4px;">${absent} absent</span>` : ''}
+                    </div>
+                    <span style="font-size:11px;color:var(--text-muted);">▾ expand</span>
+                  </div>
+
+                  <div id="deptdate_${safeDeptId}_${safeDateId}" style="display:none;margin-top:10px;">
+                    <table style="width:100%;font-size:12px;">
+                      <thead>
+                        <tr>
+                          <th>Member</th>
+                          <th>Status</th>
+                          <th>Reason for Absence</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${rows.map(r => `
+                        <tr>
+                          <td>${r.member_name || '—'}</td>
+                          <td>
+                            <span class="badge ${r.status === 'Present' ? 'badge-green' : 'badge-red'}">
+                              ${r.status || '—'}
+                            </span>
+                          </td>
+                          <td style="font-size:11px;color:var(--text-muted);">
+                            ${r.reason_for_absence || (r.status === 'Present' ? '—' : 'Not given')}
+                          </td>
+                          <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteDeptReport(${r.id})">
+                              <i class="ti ti-trash"></i>
+                            </button>
+                          </td>
+                        </tr>`).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+
+  } catch (err) {
+    console.error("Dept Reports Error:", err.message);
+    listArea.innerHTML = `<div class="empty-state"><i class="ti ti-alert-circle"></i><p>Error loading reports: ${err.message}</p></div>`;
+  }
+}
+
+function toggleDeptGroup(deptId) {
+  const el = document.getElementById('dept_' + deptId);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleDeptDateGroup(groupId) {
+  const el = document.getElementById('deptdate_' + groupId);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function deleteDeptReport(reportId) {
+  if (!confirm("Delete this record permanently?")) return;
+  try {
+    const { error } = await supabaseClient.from('dept_reports').delete().eq('id', reportId);
+    if (error) throw error;
+    showToast("Record deleted");
+    renderDeptTable();
+  } catch (err) {
+    showToast("Failed to delete: " + err.message);
+  }
+}
+
+function renderDeptFromMembers(listArea) {
+  // Group members by department and display a summary
+  const deptMap = {};
+  state.members.forEach(m => {
+    if (!m.department) return;
+    if (!deptMap[m.department]) deptMap[m.department] = [];
+    deptMap[m.department].push(m);
+  });
+
+  const depts = Object.entries(deptMap).sort((a, b) => b[1].length - a[1].length);
+
+  if (depts.length === 0) {
+    listArea.innerHTML = `<div class="empty-state"><i class="ti ti-clipboard-off"></i><p>No departmental data found. Add members with departments to see a breakdown here.</p></div>`;
+    return;
+  }
+
+  listArea.innerHTML = `
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
+      No <code>dept_reports</code> table found — showing member breakdown by department instead.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Total Members</th>
+            <th>Leaders (DH)</th>
+            <th>Leaders (G12)</th>
+            <th>Members</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${depts.map(([dept, members]) => {
+            const dh = members.filter(m => m.leader_type === 'DH').length;
+            const g12 = members.filter(m => m.leader_type === 'G12').length;
+            const pct = Math.round((members.length / state.members.length) * 100);
+            return `
+            <tr>
+              <td><strong>${dept}</strong></td>
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden;border:0.5px solid var(--border)">
+                    <div style="width:${pct}%;height:100%;background:var(--gold);border-radius:3px"></div>
+                  </div>
+                  <span style="font-weight:600;min-width:24px">${members.length}</span>
+                </div>
+              </td>
+              <td>${dh > 0 ? `<span class="badge badge-gold">${dh}</span>` : '—'}</td>
+              <td>${g12 > 0 ? `<span class="badge badge-blue">${g12}</span>` : '—'}</td>
+              <td>${members.map(m => `<span class="tag">${m.member_name || '?'}</span>`).join('')}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+async function deleteDeptReport(reportId) {
+  if (!confirm("Delete this report permanently?")) return;
+  try {
+    const { error } = await supabaseClient.from('dept_reports').delete().eq('id', reportId);
+    if (error) throw error;
+    showToast("Report deleted");
+    renderDeptTable();
+  } catch (err) {
+    showToast("Failed to delete: " + err.message);
+  }
+}
+// 4. NEW: Delete Function for Cell Reports
+async function deleteCellReport(reportId) {
+    // 1. Confirm with the user
+    if (!confirm("Are you sure you want to permanently delete this report?")) return;
+
+    try {
+        // 2. Delete from Supabase
+        const { error } = await supabaseClient
+            .from('cell_reports')
+            .delete()
+            .eq('id', reportId);
+
+        if (error) throw error;
+
+        // 3. Success Feedback
+        showToast("Report deleted successfully");
+
+        // 4. CRITICAL: Refresh the table so the UI updates
+        renderConnectTable(); 
+        
+    } catch (err) {
+        console.error("Delete Error:", err.message);
+        showToast("Failed to delete report");
+    }
+}
+
+
+
+let selectedDept = "";
+
+function viewDepartmentMembers(dept) {
+  selectedDept = dept;
+  const area = document.getElementById('dept-members-area');
+  
+  area.innerHTML = `
+    <div class="flex-between mb-16" style="border-top: 1px solid var(--border); padding-top: 15px;">
+      <h4 style="font-size: 14px;">Members in ${dept}</h4>
+      <button class="btn btn-gold btn-sm" onclick="openDeptAddModal('${dept}')">
+        <i class="ti ti-plus"></i> Add to ${dept}
+      </button>
+    </div>
+    <div id="dept-table-container"></div>
+  `;
+  
+  // Filter state.members to show only those in this department
+  renderUnitTable(dept); 
+}
+
+function openDeptAddModal(dept) {
+  openModal('add-member');
+  // Logic: Automatically set the unit dropdown to the selected department
+  const unitSelect = document.getElementById('new-unit');
+  unitSelect.value = dept;
+  
+  // Optional: Lock the dropdown so it can't be changed in this context
+  unitSelect.disabled = true; 
+}
+
+// Helper function to calculate attendance stats for today's service
+async function getTodayAttendanceStats() {
+  try {
+    const today = new Date();
+    const serviceDate = getServiceDate(today.toISOString().split('T')[0]);
+    
+    const { data: reports, error } = await supabaseClient
+      .from('g12_reports')
+      .select('*')
+      .eq('zone', 'G12');
+    
+    if (error) throw error;
+    if (!reports || reports.length === 0) return { present: 0, absent: 0, total: 0 };
+    
+    // Filter reports for today's service date
+    const todayReports = reports.filter(r => {
+      const reportServiceDate = getServiceDate(r.report_date || r.meeting_date);
+      return reportServiceDate === serviceDate;
+    });
+    
+    const present = todayReports.filter(r => r.status === 'Present').length;
+    const absent = todayReports.filter(r => r.status === 'Absent').length;
+    const total = new Set(todayReports.map(r => r.member_name)).size;
+    
+    return { present, absent, total };
+  } catch (err) {
+    console.error('Error fetching attendance stats:', err);
+    return { present: 0, absent: 0, total: 0 };
+  }
+}
+
+// Helper function to create WhatsApp link
+function getWhatsAppLink(memberName, isAbsent = false) {
+  const text = isAbsent 
+    ? `Hi ${memberName}, I noticed you were absent from the last service. How are you doing?`
+    : `Hi ${memberName}`;
+  const encoded = encodeURIComponent(text);
+  return `https://wa.me/?text=${encoded}`;
+}
+
+// Helper: Get a consistent avatar color based on the member's name
+function getAvatarColor(name) {
+  const colors = ['#0D1B2A', '#B8860B', '#185FA5', '#3B6D11', '#E94560', '#5F5E5A'];
+  if (!name) return colors[0];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function initials(name) {
+  if (!name) return "?";
+  return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function renderDashboard(){
+  const totalMembers = state.members.length;
+  const leaders = state.members.filter(m=>m.leader_type).length;
+  const g12Members = state.members.filter(m=>m.leader_type==='G12').length;
+  const lastAtt = state.attendance[0] ? state.attendance[0].count : 0;
+  
+  // Fetch today's attendance stats and update dashboard
+  getTodayAttendanceStats().then(stats => {
+    const presentPercentage = stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : 0;
+    
+    document.getElementById('dash-stats').innerHTML = `
+      <div class="stat-card"><div class="stat-icon gold"><i class="ti ti-users"></i></div><div class="stat-num">${totalMembers}</div><div class="stat-label">Total Members</div><div class="stat-change up"><i class="ti ti-arrow-up"></i> +2 this month</div></div>
+      <div class="stat-card"><div class="stat-icon green"><i class="ti ti-check-circle"></i></div><div class="stat-num">${stats.present}</div><div class="stat-label">Present Today</div><div class="stat-change up"><i class="ti ti-arrow-up"></i> ${presentPercentage}% attendance</div></div>
+      <div class="stat-card"><div class="stat-icon red"><i class="ti ti-x-circle"></i></div><div class="stat-num">${stats.absent}</div><div class="stat-label">Absent Today</div><div class="stat-change down"><i class="ti ti-arrow-down"></i> Follow-up needed</div></div>
+      <div class="stat-card"><div class="stat-icon navy"><i class="ti ti-users-group"></i></div><div class="stat-num">${stats.total}</div><div class="stat-label">Today's G12 Reports</div><div class="stat-change up"><i class="ti ti-arrow-up"></i> ${stats.total > 0 ? 'Reports submitted' : 'No reports yet'}</div></div>
+    `;
+  });
+  
+  const attHTML = state.attendance.slice(0,5).map((a,i) => {
+    const max = Math.max(...state.attendance.map(x=>x.count));
+    const pct = Math.round((a.count/max)*100);
+    return `<div class="bar-row"><div class="bar-label">${new Date(a.date).toLocaleDateString('en-GB',{month:'short',day:'numeric'})}</div><div class="bar-track"><div class="bar-fill ${i===0?'gold':''}" style="width:${pct}%"></div></div><div class="bar-val">${a.count}</div></div>`;
+  }).join('');
+  document.getElementById('att-trend').innerHTML = attHTML;
+  
+  const fuHTML = state.followups.slice(0,4).map(f => `
+    <div class="timeline-item">
+      <div class="timeline-dot ${f.outcome.includes('Saved')?'green':f.outcome.includes('Positive')?'gold':'navy'}"><i class="ti ti-phone" style="font-size:13px"></i></div>
+      <div class="timeline-text"><div class="timeline-title">${f.member}</div><div class="timeline-sub">${f.type} · ${f.outcome} · ${f.assignedTo}</div></div>
+    </div>`).join('');
+  document.getElementById('recent-followups').innerHTML = fuHTML || '<div class="empty-state"><i class="ti ti-phone-off"></i><p>No follow-ups yet</p></div>';
+  
+  const unitCounts = {};
+  // Note: Unit membership is no longer part of members table
+  // For now, we can show department breakdown instead
+  state.members.forEach(m => { if(m.department) unitCounts[m.department] = (unitCounts[m.department]||0)+1; });
+  const maxUnit = Math.max(...Object.values(unitCounts),1);
+  const perfHTML = Object.entries(unitCounts).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([u,c]) => 
+    `<div class="bar-row"><div class="bar-label" style="font-size:10px">${u}</div><div class="bar-track"><div class="bar-fill green" style="width:${Math.round((c/maxUnit)*100)}%"></div></div><div class="bar-val">${c}</div></div>`
+  ).join('');
+  document.getElementById('unit-performance').innerHTML = perfHTML || '<div class="empty-state"><p>No departments yet</p></div>';
+  
+  const actHTML = [
+    {icon:'ti-user-plus',color:'gold',text:'New member added: Amara Igwe',time:'2h ago'},
+    {icon:'ti-calendar-check',color:'navy',text:'Sunday attendance recorded: 187',time:'3 days ago'},
+    {icon:'ti-phone-call',color:'green',text:'Follow-up: Faith Okeke rededicated',time:'4 days ago'},
+    {icon:'ti-users',color:'navy',text:'Choir unit meeting logged',time:'5 days ago'},
+  ].map(a => `
+    <div class="timeline-item">
+      <div class="timeline-dot ${a.color}"><i class="ti ${a.icon}" style="font-size:13px"></i></div>
+      <div class="timeline-text"><div class="timeline-title">${a.text}</div><div class="timeline-sub">${a.time}</div></div>
+    </div>`).join('');
+  document.getElementById('recent-activity').innerHTML = actHTML;
+}
+
+function renderMembers() {
+    const q = (document.getElementById('member-search') || {}).value || '';
+    const deptFilter = (document.getElementById('member-filter-department') || {}).value || '';
+    const typeFilter = (document.getElementById('member-filter-leader-type') || {}).value || '';
+
+    const list = state.members.filter(m => {
+        const matchesSearch = !q || (m.member_name && m.member_name.toLowerCase().includes(q.toLowerCase()));
+        const matchesDept = !deptFilter || m.department === deptFilter;
+        const matchesType = !typeFilter || m.leader_type === typeFilter;
+        return matchesSearch && matchesDept && matchesType;
+    });
+
+    const tbody = document.getElementById('members-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = list.map(m => {
+      const realIndex = state.members.indexOf(m);
+      return `
+    <tr data-index="${realIndex}">
+      <td>
+        <div class="member-row" onclick="openEditMemberModal(${realIndex})" style="cursor: pointer;" title="Click to edit member details">
+          <div class="member-avatar" style="background:${getAvatarColor(m.member_name || 'U')}">
+            ${initials(m.member_name || 'U')}
+          </div>
+          <span style="color: var(--navy); font-weight: 500;">${m.member_name || ''}</span>
+        </div>
+      </td>
+      <td>${m.member_phone || ''}</td>
+      <td>${m.department || '—'}</td>
+      <td>${m.g12_leader || ''}</td>
+      <td>${m.leader_type || '—'}</td>
+      <td style="font-size:11px;max-width:150px;">${m.School_Address || ''}</td>
+      <td style="font-size:11px;max-width:150px;">${m.Home_Address || ''}</td>
+      <td>${m.g12_phone || ''}</td>
+      <td>
+        <button class="btn btn-sm btn-danger" onclick="deleteMember(${realIndex})">
+          <i class="ti ti-trash"></i>
+        </button>
+      </td>
+    </tr>`;
+    }).join('');
+}
+
+function filterMembers(){renderMembers();}
+
+async function deleteMember(id) {
+  if (!confirm('Are you sure you want to remove this member?')) return;
+
+  const { error } = await supabaseClient
+    .from('members')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    showToast('Error deleting member');
+  } else {
+    showToast('Member removed');
+    fetchAndRenderMembers(); // Refresh the list
+  }
+}
+
+function renderAttendance(){
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const cells = days.map(d=>`<div class="att-cell hdr">${d}</div>`).join('');
+  const recentDates = state.attendance.slice(0,28);
+  const countMap = {};
+  recentDates.forEach(a => { const k = a.date; countMap[k] = (countMap[k]||0)+a.count; });
+  const heatHTML = cells + Object.entries(countMap).slice(0,28).map(([d,c]) => {
+    const cls = c>180?'high':c>100?'mid':c>0?'low':'none';
+    return `<div class="att-cell ${cls}" title="${d}: ${c}">${c||''}</div>`;
+  }).join('');
+  document.getElementById('att-heatmap').innerHTML = `<div class="attendance-grid">${heatHTML}</div>`;
+  
+  const types = {};
+  state.attendance.forEach(a => { types[a.type] = (types[a.type]||0)+a.count; });
+  const maxT = Math.max(...Object.values(types),1);
+  document.getElementById('att-breakdown').innerHTML = Object.entries(types).map(([t,c]) =>
+    `<div class="bar-row"><div class="bar-label" style="font-size:10px;width:100px">${t}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round((c/maxT)*100)}%"></div></div><div class="bar-val">${c}</div></div>`
+  ).join('');
+  
+  document.getElementById('att-tbody').innerHTML = state.attendance.map(a => `
+    <tr>
+      <td>${new Date(a.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}</td>
+      <td><span class="badge badge-blue">${a.type}</span></td>
+      <td style="font-weight:500">${a.count}</td>
+      <td>${a.firstTimers || 0}</td>
+      <td style="color:var(--text-muted);font-size:12px">${a.notes||'—'}</td>
+    </tr>`).join('') || '<tr><td colspan="5"><div class="empty-state"><p>No attendance records</p></div></td></tr>';
+}
+
+function renderFollowup(){
+  const total = state.followups.length;
+  const saved = state.followups.filter(f=>f.outcome.includes('Saved')).length;
+  const positive = state.followups.filter(f=>f.outcome.includes('Positive')).length;
+  const noResp = state.followups.filter(f=>f.outcome.includes('No response')).length;
+  
+  document.getElementById('fu-stats').innerHTML = `
+    <div class="stats-grid" style="grid-template-columns:1fr 1fr;gap:10px">
+      <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Total Follow-Ups</div></div>
+      <div class="stat-card"><div class="stat-num">${saved}</div><div class="stat-label">Souls Won / Rededicated</div></div>
+      <div class="stat-card"><div class="stat-num">${positive}</div><div class="stat-label">Positive Responses</div></div>
+      <div class="stat-card"><div class="stat-num">${noResp}</div><div class="stat-label">No Response</div></div>
+    </div>
+    <div style="margin-top:16px">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px">Success Rate</div>
+      <div style="height:8px;background:var(--bg);border-radius:4px;overflow:hidden;border:0.5px solid var(--border)">
+        <div style="height:100%;background:var(--gold);width:${total?Math.round(((saved+positive)/total)*100):0}%"></div>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px">${total?Math.round(((saved+positive)/total)*100):0}% effective</div>
+    </div>`;
+  
+  const outcomeColor = {
+    'Positive – will return':'badge-green',
+    'Saved / Rededicated':'badge-gold',
+    'No response':'badge-gray',
+    'Needs follow-up again':'badge-amber',
+    'Joined a unit':'badge-blue'
+  };
+  document.getElementById('fu-tbody').innerHTML = state.followups.map(f => `
+    <tr>
+      <td><strong>${f.member}</strong></td>
+      <td>${f.type}</td>
+      <td><span class="badge ${outcomeColor[f.outcome]||'badge-gray'}">${f.outcome}</span></td>
+      <td>${new Date(f.date).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</td>
+      <td>${f.assignedTo||'—'}</td>
+    </tr>`).join('') || '<tr><td colspan="5"><div class="empty-state"><p>No follow-ups recorded</p></div></td></tr>';
+}
+
+function renderUnits(){
+  // Note: Unit membership is no longer stored in the members table
+  // Units are managed separately. Display unit cards without member counts.
+  const unitColors = ['#0D1B2A','#B8860B','#185FA5','#3B6D11','#993556','#993C1D','#5F5E5A'];
+  const unitIcons = {Choir:'ti-music',Prayer:'ti-heart','Prayer Team':'ti-heart',Ushering:'ti-door',Media:'ti-device-tv',Welfare:'ti-gift',Evangelism:'ti-world',Technical:'ti-tool'};
+  
+  document.getElementById('units-grid').innerHTML = state.units.map((u,i) => {
+    const icon = Object.entries(unitIcons).find(([k])=>u.includes(k));
+    const iconClass = icon ? icon[1] : 'ti-users';
+    const color = unitColors[i%unitColors.length];
+    return `<div class="unit-card">
+      <div class="unit-icon" style="background:${color}20"><i class="ti ${iconClass}" style="color:${color};font-size:18px"></i></div>
+      <div class="unit-name">${u}</div>
+      <div class="unit-count">—</div>
+      <div class="unit-bar"><div class="unit-bar-fill" style="width:0%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+  
+  renderUnitTable('');
+  
+  const unitSel = document.getElementById('unit-select-filter');
+  if(unitSel){ unitSel.innerHTML = '<option value="">All Units</option>' + state.units.map(u=>`<option>${u}</option>`).join(''); }
+  
+  const uListSet = document.getElementById('units-list-settings');
+  if(uListSet) uListSet.innerHTML = state.units.map(u=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid var(--border)"><span style="font-size:13px">${u}</span><button class="btn btn-sm btn-danger" onclick="removeUnit('${u}')"><i class="ti ti-trash"></i></button></div>`).join('');
+}
+
+function renderUnitTable(unit) {
+  // Note: Unit membership is no longer stored in members table
+  // Display all members regardless of unit selection
+  const list = state.members;
+  
+  document.getElementById('unit-tbody').innerHTML = list.map(m => {
+    const safeName = m.member_name || "Unnamed Member"; // Fallback for missing data
+    return `
+    <tr>
+      <td>
+        <div class="member-row">
+          <div class="member-avatar" style="background:${getAvatarColor(safeName)}">
+            ${initials(safeName)}
+          </div>
+          ${safeName}
+        </div>
+      </td>
+      <td>${m.member_phone || '—'}</td>
+      <td><span class="badge badge-blue">${m.leader_type || '—'}</span></td>
+      <td>${m.department || '—'}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="4"><div class="empty-state"><p>No members</p></div></td></tr>';
+}
+
+function filterByUnit(){
+  const val = document.getElementById('unit-select-filter').value;
+  renderUnitTable(val);
+}
+
+async function renderReports() {
+  const content = document.getElementById('category-content');
+  if (!content) return;
+
+  // 1. Fetch data - Ordering by ID DESC ensures the newest report is ALWAYS first
+  const { data: reports, error } = await supabaseClient
+    .from('g12_reports')
+    .select('*')
+    .order('id', { ascending: false });
+
+  if (error) {
+    console.error("Fetch Error:", error.message);
+    return;
+  }
+
+  // 2. Render the table
+  content.innerHTML = `
+    <div class="card-title">Live Reports Handshake <span onclick="renderReports()" style="cursor:pointer; color:var(--gold)">↻ Refresh</span></div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Leader/Zone</th>
+            <th>Member</th>
+            <th>Status</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${reports.map(r => {
+            const dateStr = r.report_date ? new Date(r.report_date).toLocaleDateString() : '—';
+            return `
+            <tr>
+              <td>${dateStr}</td>
+              <td><strong>${r.leader_name || 'Unknown Leader'}</strong><br><small>${r.zone || '—'}</small></td>
+              <td>${r.member_name || 'Unknown Member'}</td>
+              <td><span class="badge ${r.status === 'Present' ? 'badge-green' : 'badge-amber'}">${r.status || '—'}</span></td>
+              <td style="font-size:11px">${r.notes || '—'}</td>
+            </tr>
+          `}).join('') || '<tr><td colspan="5" style="text-align:center">No reports found.</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// Helper: Get the service date for a given report date
+function getServiceDate(reportDate) {
+  if (!reportDate) return 'Unknown Date';
+  const date = new Date(reportDate);
+  if (isNaN(date.getTime())) return 'Unknown Date';
+  const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ..., 3=Wednesday, ..., 6=Saturday
+  
+  let serviceDate;
+  if (dayOfWeek === 0 || dayOfWeek === 1) {
+    // Sunday or Monday → group under Sunday
+    serviceDate = new Date(date);
+    if (dayOfWeek === 1) {
+      // If Monday, go back to Sunday
+      serviceDate.setDate(serviceDate.getDate() - 1);
+    }
+  } else if (dayOfWeek === 3 || dayOfWeek === 4) {
+    // Wednesday or Thursday → group under Wednesday
+    serviceDate = new Date(date);
+    if (dayOfWeek === 4) {
+      // If Thursday, go back to Wednesday
+      serviceDate.setDate(serviceDate.getDate() - 1);
+    }
+  } else {
+    // Other days (Tue, Fri, Sat) - shouldn't happen in normal reports
+    // but we'll group them under the nearest service day
+    serviceDate = new Date(date);
+  }
+  
+  return serviceDate.toISOString().split('T')[0]; // Return as YYYY-MM-DD
+}
+
+// Helper: Format service date display
+function formatServiceDate(dateStr) {
+  if (dateStr === 'Unknown Date') return 'Unknown Date';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  const dayOfWeek = date.getDay();
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  return `${dayNames[dayOfWeek]}, ${date.toLocaleDateString('en-GB', {month: 'short', day: 'numeric', year: 'numeric'})}`;
+}
+
+// This function groups the reports by Service Dates (Sunday and Wednesday) and then by Leader
+async function filterG12() {
+  const searchInput = document.getElementById('g12-leader-search');
+  const searchTerm = searchInput ? searchInput.value.toLowerCase() : "";
+  const reports = await fetchG12Reports();
+  const listArea = document.getElementById('g12-list-area');
+
+  console.log("🔍 filterG12 Debug:", { reportsLength: reports?.length, searchTerm, listArea: !!listArea });
+
+  if (!listArea) return;
+
+  if (reports.length === 0) {
+    listArea.innerHTML = `<div class="empty-state"><p>No reports found.</p></div>`;
+    console.warn("⚠️ No reports returned from Supabase");
+    return;
+  }
+
+  // Group reports by service date
+  const groupedByService = reports.reduce((acc, report) => {
+    const serviceDate = getServiceDate(report.report_date || report.meeting_date);
+    if (!acc[serviceDate]) acc[serviceDate] = [];
+    acc[serviceDate].push(report);
+    return acc;
+  }, {});
+
+  // Sort service dates in descending order (newest first)
+  const serviceDates = Object.keys(groupedByService).sort((a, b) => {
+    if (a === 'Unknown Date') return 1;
+    if (b === 'Unknown Date') return -1;
+    return new Date(b) - new Date(a);
+  });
+
+  // Filter by search term if provided
+  let filteredReports = {};
+  serviceDates.forEach(date => {
+    const filtered = groupedByService[date].filter(r => 
+      (r.leader_name && r.leader_name.toLowerCase().includes(searchTerm)) || 
+      (r.member_name && r.member_name.toLowerCase().includes(searchTerm))
+    );
+    if (filtered.length > 0) {
+      filteredReports[date] = filtered;
+    }
+  });
+
+  const filteredDates = Object.keys(filteredReports);
+  
+  if (filteredDates.length === 0) {
+    listArea.innerHTML = `<div class="empty-state"><p>No reports found for "${searchTerm}"</p></div>`;
+    return;
+  }
+
+  listArea.innerHTML = `
+    <div id="service-date-groups">
+      ${filteredDates.map(serviceDate => {
+        // Group reports by leader within this service date
+        const leaderGroups = filteredReports[serviceDate].reduce((acc, report) => {
+          const leader = report.leader_name || "Unknown Leader";
+          if (!acc[leader]) acc[leader] = [];
+          acc[leader].push(report);
+          return acc;
+        }, {});
+        
+        const leaders = Object.keys(leaderGroups).sort();
+        
+        return `
+          <div class="card" style="margin-bottom: 16px; border-left: 4px solid var(--gold);">
+            <div class="flex-between" style="cursor: pointer; padding: 12px 0;" 
+                 onclick="toggleServiceDateGroup('${serviceDate.replace(/[^a-zA-Z0-9]/g, '_')}')">
+              <div>
+                <strong style="font-size: 14px; color: var(--gold);">${formatServiceDate(serviceDate)}</strong>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">${filteredReports[serviceDate].length} report(s) submitted</div>
+              </div>
+              <span class="badge badge-gold" style="height: fit-content;">${filteredReports[serviceDate].length}</span>
+            </div>
+            <div id="group_${serviceDate.replace(/[^a-zA-Z0-9]/g, '_')}" style="display:none; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+              ${leaders.map(leader => {
+                const safeLeaderId = leader.replace(/[^a-zA-Z0-9]/g, '_');
+                const safeDateId = serviceDate.replace(/[^a-zA-Z0-9]/g, '_');
+                return `
+                <div style="margin-bottom: 12px; background: var(--bg); border-radius: 6px; padding: 12px; border-left: 3px solid var(--navy);">
+                  <div class="flex-between" style="cursor: pointer;" 
+                       onclick="toggleLeaderGroup('${safeDateId}_${safeLeaderId}')">
+                    <strong style="font-size: 13px;">${leader}</strong>
+                    <span class="badge badge-navy" style="height: fit-content;">${leaderGroups[leader].length}</span>
+                  </div>
+                  <div id="leader_${safeDateId}_${safeLeaderId}" style="display:none; margin-top: 12px;">
+                    <table style="width: 100%; font-size: 12px;">
+                      <thead>
+                        <tr>
+                          <th>Report Date</th>
+                          <th>Member</th>
+                          <th>Status</th>
+                          <th>Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${leaderGroups[leader].map(r => {
+                          const dateVal = r.report_date || r.meeting_date;
+                          const dateStr = dateVal ? new Date(dateVal).toLocaleDateString() : '—';
+                          return `
+                          <tr>
+                            <td style="white-space: nowrap; font-size: 11px;">${dateStr}</td>
+                            <td>${r.member_name || '—'}</td>
+                            <td><span class="badge ${r.status === 'Present' ? 'badge-green' : 'badge-red'}">${r.status || '—'}</span></td>
+                            <td style="font-size: 11px; color: var(--text-muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${r.notes || '—'}</td>
+                          </tr>
+                        `}).join('')}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              `}).join('')}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+// Helper function to show/hide the details when a service date is clicked
+function toggleServiceDateGroup(serviceDateId) {
+  const el = document.getElementById('group_' + serviceDateId);
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// Helper function to show/hide the details when a leader is clicked
+function toggleLeaderGroup(groupId) {
+  const el = document.getElementById('leader_' + groupId);
+  if (el.style.display === 'none') {
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function populateUnitDropdowns(){
+  // Populate Department filter
+  const deptEl = document.getElementById('member-filter-department');
+  if(deptEl) {
+    const departments = [...new Set(state.members.map(m => m.department).filter(Boolean))];
+    const curDept = deptEl.value;
+    deptEl.innerHTML = '<option value="">All Departments</option>' + departments.map(d=>`<option ${d===curDept?'selected':''}>${d}</option>`).join('');
+  }
+
+  // Leader Type is static, so no need to populate dynamically
+}
+
+function updateBadges(){
+  document.getElementById('nb-members').textContent = state.members.length;
+  document.getElementById('nb-followup').textContent = state.followups.filter(f=>f.outcome.includes('No response')||f.outcome.includes('again')).length;
+}
+
+function openModal(name){
+  document.getElementById('modal-'+name).classList.add('open');
+  populateUnitDropdowns();
+  const d = new Date().toISOString().split('T')[0];
+  const djEl = document.getElementById('new-date-joined');
+  if(djEl && !djEl.value) djEl.value = d;
+}
+
+function closeModal(name){ document.getElementById('modal-'+name).classList.remove('open'); }
+
+function showToast(msg){
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.className = 'toast';
+    t.innerHTML = '<span id="toast-msg"></span>';
+    document.body.appendChild(t);
+  }
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+async function saveMember() {
+  const member_name = document.getElementById('new-member-name').value.trim();
+  const member_phone = document.getElementById('new-member-phone').value.trim();
+  const course_of_study = document.getElementById('new-course').value.trim();
+  const level = document.getElementById('new-level').value;
+  const department = document.getElementById('new-department').value.trim();
+  const g12_leader = document.getElementById('new-g12-leader').value.trim();
+  const leader_type = document.getElementById('new-leader-type').value;
+  const School_Address = document.getElementById('new-school-address').value.trim();
+  const Home_Address = document.getElementById('new-home-address').value.trim();
+  const g12_phone = document.getElementById('new-g12-phone').value.trim();
+
+  if (!member_name) { 
+    alert('Please enter member name'); 
+    return; 
+  }
+
+  // Logic: Insert data into the 'members' table in Supabase
+  const { data, error } = await supabaseClient
+    .from('members')
+    .insert([
+      { 
+        member_name: member_name,
+        member_phone: member_phone,
+        course_of_study: course_of_study || null,
+        level: level || null,
+        department: department,
+        g12_leader: g12_leader,
+        leader_type: leader_type,
+        School_Address: School_Address,
+        Home_Address: Home_Address,
+        g12_phone: g12_phone
+      }
+    ]);
+
+  if (error) {
+    console.error('Error saving member:', error.message);
+    showToast('Error: Could not save to database');
+  } else {
+    closeModal('add-member');
+    showToast('Member saved to Supabase!');
+    // Clear form
+    document.getElementById('new-member-name').value = '';
+    document.getElementById('new-member-phone').value = '';
+    document.getElementById('new-course').value = '';
+    document.getElementById('new-level').value = '';
+    document.getElementById('new-department').value = '';
+    document.getElementById('new-g12-leader').value = '';
+    document.getElementById('new-leader-type').value = '';
+    document.getElementById('new-school-address').value = '';
+    document.getElementById('new-home-address').value = '';
+    document.getElementById('new-g12-phone').value = '';
+    // Refresh the list after saving
+    fetchAndRenderMembers();
+  }
+}
+
+async function updateMember(element, id, field, value) {
+  const newValue = value.trim();
+
+  const member = state.members.find(m => m.id === id);
+  // Use a loose comparison for the old value in case of null/undefined vs empty string
+  const oldValue = member ? (member[field] || '') : '';
+
+  if (member && oldValue === newValue) {
+    return; // No change, don't hit the database
+  }
+
+  const { data, error } = await supabaseClient
+    .from('members')
+    .update({ [field]: newValue })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Update Error:', error.message);
+    showToast('Update failed: ' + error.message);
+    // Revert the UI change on failure
+    if (element.tagName === 'SELECT') {
+        element.value = oldValue;
+    } else {
+        element.innerText = oldValue;
+    }
+  } else {
+    showToast('Member updated!');
+    // Update local state to prevent re-fetching
+    if (member) {
+      member[field] = newValue;
+      // If name was changed, re-render the single row to update avatar
+      if (field === 'member_name') renderMembers();
+    }
+  }
+}
+
+async function deleteMember(index) {
+  if (!confirm('Remove this member from the database?')) return;
+
+  const member = state.members[index];
+  if (!member) return;
+
+  let query = supabaseClient.from('members').delete();
+  if (member.id) {
+    query = query.eq('id', member.id);
+  } else if (member.member_phone) {
+    query = query.eq('member_name', member.member_name).eq('member_phone', member.member_phone);
+  } else {
+    query = query.eq('member_name', member.member_name);
+  }
+
+  const { error } = await query;
+
+  if (error) {
+    console.error('Error deleting:', error.message);
+    showToast('Error: Could not delete from database');
+  } else {
+    showToast('Member removed successfully');
+    // 2. Refresh the local state to match the database
+    fetchAndRenderMembers();
+  }
+}
+
+function openEditMemberModal(index) {
+  const member = state.members[index];
+  if (!member) return;
+  
+  document.getElementById('edit-member-id').value = index;
+  document.getElementById('edit-member-name').value = member.member_name || '';
+  document.getElementById('edit-member-phone').value = member.member_phone || '';
+  document.getElementById('edit-course').value = member.course_of_study || '';
+  document.getElementById('edit-level').value = member.level || '';
+  document.getElementById('edit-department').value = member.department || '';
+  document.getElementById('edit-g12-leader').value = member.g12_leader || '';
+  document.getElementById('edit-leader-type').value = member.leader_type || '';
+  document.getElementById('edit-school-address').value = member.School_Address || '';
+  document.getElementById('edit-home-address').value = member.Home_Address || '';
+  document.getElementById('edit-g12-phone').value = member.g12_phone || '';
+  
+  openModal('edit-member');
+}
+
+async function submitEditMember() {
+  try {
+    const indexStr = document.getElementById('edit-member-id').value;
+    if (!indexStr) {
+      alert("Error: Member not found in state.");
+      return;
+    }
+    const memberIndex = parseInt(indexStr, 10);
+    const member = state.members[memberIndex];
+    
+    if (!member) {
+      alert("Error: Member not found in state.");
+      return;
+    }
+    
+    const member_name = document.getElementById('edit-member-name').value.trim();
+    const member_phone = document.getElementById('edit-member-phone').value.trim();
+    const course_of_study = document.getElementById('edit-course').value.trim();
+    const level = document.getElementById('edit-level').value;
+    const department = document.getElementById('edit-department').value.trim();
+    const g12_leader = document.getElementById('edit-g12-leader').value.trim();
+    let leader_type = document.getElementById('edit-leader-type').value;
+    const School_Address = document.getElementById('edit-school-address').value.trim();
+    const Home_Address = document.getElementById('edit-home-address').value.trim();
+    const g12_phone = document.getElementById('edit-g12-phone').value.trim();
+
+    if (leader_type === "") leader_type = null;
+
+    if (!member_name) { 
+      alert('Please enter member name'); 
+      return; 
+    }
+
+    const updates = { 
+      member_name, member_phone, 
+      course_of_study: course_of_study || null, level: level || null,
+      department: department || null, g12_leader: g12_leader || null, 
+      leader_type, School_Address: School_Address || null, 
+      Home_Address: Home_Address || null, g12_phone: g12_phone || null
+    };
+
+    const submitBtn = document.querySelector('#modal-edit-member .btn-gold');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="ti ti-loader"></i> Saving...';
+    submitBtn.disabled = true;
+
+    let query = supabaseClient.from('members').update(updates);
+    
+    if (member.id) {
+      query = query.eq('id', member.id);
+    } else if (member.member_phone) {
+      query = query.eq('member_name', member.member_name).eq('member_phone', member.member_phone);
+    } else {
+      query = query.eq('member_name', member.member_name);
+    }
+
+    const { error } = await query;
+
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+
+    if (error) {
+      console.error('Update Error:', error.message);
+      alert('Update failed: ' + error.message);
+      showToast('Update failed: ' + error.message);
+    } else {
+      showToast('Member updated!');
+      closeModal('edit-member');
+      state.members[memberIndex] = { ...state.members[memberIndex], ...updates };
+      renderMembers();
+    }
+  } catch (err) {
+    console.error("Unexpected error:", err);
+    alert("Unexpected error: " + err.message);
+  }
+}
+
+function saveAttendance(){
+  const date = document.getElementById('att-date').value;
+  const count = parseInt(document.getElementById('att-count').value);
+  if(!date || isNaN(count)){ alert('Please fill in date and count'); return; }
+  state.attendance.unshift({
+    date,
+    type: document.getElementById('att-type').value,
+    count,
+    firstTimers: parseInt(document.getElementById('att-firsttimers').value)||0,
+    notes: document.getElementById('att-notes').value
+  });
+  document.getElementById('att-count').value='';
+  document.getElementById('att-firsttimers').value='';
+  document.getElementById('att-notes').value='';
+  renderAttendance();
+  showToast('Attendance saved');
+}
+
+function saveFollowup(){
+  const member = document.getElementById('fu-member').value.trim();
+  if(!member){ alert('Please enter member name'); return; }
+  state.followups.unshift({
+    member,
+    type: document.getElementById('fu-type').value,
+    outcome: document.getElementById('fu-outcome').value,
+    date: document.getElementById('fu-date').value,
+    assignedTo: document.getElementById('fu-assigned').value,
+    notes: document.getElementById('fu-notes').value
+  });
+  document.getElementById('fu-member').value='';
+  document.getElementById('fu-assigned').value='';
+  document.getElementById('fu-notes').value='';
+  renderFollowup();
+  updateBadges();
+  showToast('Follow-up recorded');
+}
+
+function addUnit(){
+  const name = document.getElementById('new-unit-name').value.trim();
+  if(!name || state.units.includes(name)){ alert('Enter a unique unit name'); return; }
+  state.units.push(name);
+  document.getElementById('new-unit-name').value='';
+  renderUnits();
+  populateUnitDropdowns();
+  showToast('Unit added: '+name);
+}
+
+function removeUnit(name){
+  if(!confirm('Remove unit: '+name+'?')) return;
+  state.units = state.units.filter(u=>u!==name);
+  renderUnits();
+  showToast('Unit removed');
+}
+
+async function checkSession() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (session) {
+    isAuthenticated = true;
+  }
+}
+
+document.querySelectorAll('.modal-backdrop').forEach(b => b.addEventListener('click', e => { if(e.target===b) b.classList.remove('open'); }));
+
+// Allow pressing Enter to submit forms/modals
+const enterListeners = [
+  { id: 'modal-login', action: submitLogin },
+  { id: 'modal-add-member', action: saveMember },
+  { id: 'modal-edit-member', action: submitEditMember },
+  { id: 'page-attendance', action: saveAttendance },
+  { id: 'page-followup', action: saveFollowup }
+];
+enterListeners.forEach(({ id, action }) => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('keypress', e => {
+      if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        action();
+      }
+    });
+  }
+});
+
+initDate();
+renderDashboard();
+updateBadges();
+populateUnitDropdowns();
+checkSession();
+fetchAndRenderMembers();
+renderReports();
+
+</script>
+
+</body>
+</html>

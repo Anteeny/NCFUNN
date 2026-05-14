@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+<script>
+  const supabaseUrl = "https://cjbedftdexzcsydwayig.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmVkZnRkZXh6Y3N5ZHdheWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTUwMjgsImV4cCI6MjA5MzYzMTAyOH0.xsvtG5NmI_9TDZQ5-MhcjtX4UIIAiH2kyOlpIPDkCdg";
+  const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+</script>
+
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NCF Accountability System</title>
+   <link rel="icon" type="image/png" href="../images.png?v=3">
+<link rel="shortcut icon" type="image/x-icon" href="../images.png?v=3">
+<link rel="apple-touch-icon" href="../images.png?v=3">
+  
+  
+  <style>
+    :root {
+      --gold: #C9A84C;
+      --gold-light: #E8C97A;
+      --deep: #1A1A2E;
+      --ink: #16213E;
+      --card: #0F3460;
+      --surface: #1A2744;
+      --accent: #E94560;
+      --soft: #A8B2D8;
+      --danger: #E05A5A;
+      --success: #4CAF7C;
+      --border: rgba(201,168,76,0.25);
+      --text: #E8EDF2;
+      --muted: #A8B2D8;
+      --absent-bg: rgba(224,90,90,0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+     body {
+      font-family: 'DM Sans', sans-serif;
+      background: url('FYF.jpg') center center / cover no-repeat fixed;
+      background-position: center;
+      background-attachment: fixed;
+      backdrop-filter: blur(8px);
+      min-height: 100vh;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0 0 40px;
+    }
+
+    h1, h2, h3 { font-family: 'Playfair Display', serif; }
+
+    /* --- UNIFIED HEADER --- */
+    header {
+      width: 100%;
+      padding: 1.4rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 1.1rem;
+      border-bottom: 2px solid rgba(201, 168, 76, 0.35);
+      background: rgba(8, 20, 60, 0.45);
+      backdrop-filter: blur(8px);
+      margin-bottom: 4vh;
+    }
+    .logo-wrap {
+      width: 58px; height: 58px; border-radius: 50%;
+      background: #FFFFFF; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; border: 2.5px solid var(--gold); overflow: hidden;
+      animation: pulse-ring 3s ease-in-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%, 100% { box-shadow: 0 0 0 0px rgba(201,168,76,0.5); }
+      50%       { box-shadow: 0 0 0 8px rgba(201,168,76,0); }
+    }
+    .logo-wrap img { width: 50px; height: 50px; object-fit: contain; }
+    .header-text { text-align: left; }
+    .header-text h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.1rem, 3vw, 1.55rem);
+      font-weight: 900; color: #FFFFFF; line-height: 1.15; margin: 0;
+    }
+    .header-text p {
+      font-size: 0.75rem; color: var(--gold-light, var(--gold));
+      font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+      margin-top: 0.2rem; margin-bottom: 0;
+    }
+    .header-date {
+      margin-left: auto; font-size: 0.78rem; color: rgba(255,255,255,0.5);
+    }
+    @media (max-width: 480px) { .header-date { display: none; } }
+
+    /* ── CONTAINER ── */
+    .container { max-width: 680px; margin: 0 auto; padding: 0 16px 60px; width: 100%; }
+
+    /* ── PROGRESS ── */
+    .progress-wrap { display:flex; gap:8px; margin-bottom:28px; align-items:center; }
+    .progress-dot { width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.1); border:2px solid rgba(201,168,76,0.3); transition:all 0.3s; }
+    .progress-dot.done { background:var(--gold); border-color:var(--gold); box-shadow: 0 0 8px rgba(201,168,76,0.5); }
+    .progress-line { flex:1; height:2px; background:rgba(201,168,76,0.15); position:relative; overflow:hidden; }
+    .progress-line::after { content:''; position:absolute; top:0; left:0; height:100%; width:0; background:var(--gold); transition:width 0.5s ease; }
+    .progress-line.filled::after { width:100%; }
+
+    /* ── STEPS ── */
+    .step { display:none; }
+    .step.active { display:block; animation:fadeUp 0.4s ease; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+    /* ── GLASS CARD ── */
+    .card {
+      background: rgba(10,25,70,0.55);
+      border: 1px solid rgba(201,168,76,0.35);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 1.25rem;
+      padding: 28px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    }
+
+    .step-label { font-size:11px; text-transform:uppercase; letter-spacing:3px; color:var(--gold); margin-bottom:6px; opacity:0.8; }
+    .step-title { font-family:'Playfair Display',serif; font-size:clamp(18px,4vw,24px); margin-bottom:22px; color: var(--gold-light); }
+
+    /* ── CATEGORY TABS ── */
+    .cat-tabs { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:8px; }
+    .cat-tab {
+      padding:22px 16px; border-radius:14px; border:2px solid rgba(201,168,76,0.25);
+      background:rgba(255,255,255,0.05); cursor:pointer; text-align:center; transition:all 0.25s;
+    }
+    .cat-tab:hover { border-color:var(--gold); background:rgba(201,168,76,0.08); }
+    .cat-tab .cat-icon { font-size:32px; display:block; margin-bottom:10px; }
+    .cat-tab .cat-name { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; color:var(--text); }
+    .cat-tab .cat-sub { font-size:12px; color:var(--muted); margin-top:4px; }
+    .cat-tab.dh-tab.selected { border-color:var(--gold); background:rgba(201,168,76,0.12); }
+    .cat-tab.dh-tab.selected .cat-name { color:var(--gold); }
+    .cat-tab.g12-tab.selected { border-color:#5B8FD4; background:rgba(91,143,212,0.12); }
+    .cat-tab.g12-tab.selected .cat-name { color:#5B8FD4; }
+
+    /* ── FIELDS ── */
+    label.field-label {
+      display:block; font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase;
+      color:var(--gold-light); margin-bottom:8px; font-weight:600;
+    }
+    select, input[type="date"], input[type="text"] {
+      width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(201,168,76,0.25);
+      border-radius:0.625rem; color:var(--text); font-family:'DM Sans',sans-serif;
+      font-size:15px; padding:13px 16px; outline:none; transition:border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      appearance:none;
+    }
+    select:focus, input:focus {
+      border-color:var(--gold); box-shadow:0 0 0 3px rgba(201,168,76,0.15);
+      background:rgba(255,255,255,0.09);
+    }
+    select option { background: #1A2744; }
+    input::placeholder { color:rgba(168,178,216,0.45); }
+
+    /* ── SERVICE TAGS ── */
+    .service-tags { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+    .tag-btn {
+      padding:9px 18px; border-radius:30px; border:1.5px solid rgba(201,168,76,0.25);
+      background:transparent; color:var(--muted); font-family:'DM Sans',sans-serif;
+      font-size:13px; cursor:pointer; transition:all 0.2s;
+    }
+    .tag-btn:hover { border-color:var(--gold); color:var(--gold-light); }
+    .tag-btn.selected { background:var(--gold); border-color:var(--gold); color:#1A1A2E; font-weight:600; }
+
+    /* ── ATTENDANCE ── */
+    .att-header {
+      display:grid; grid-template-columns:1fr 80px 80px; gap:8px;
+      padding:0 0 10px; border-bottom:1px solid rgba(201,168,76,0.2); margin-bottom:6px;
+      font-size:11px; text-transform:uppercase; letter-spacing:2px; color:var(--muted);
+    }
+    .att-header span:last-child, .att-header span:nth-child(2) { text-align:center; }
+    .member-row { border-radius:10px; margin-bottom:5px; overflow:hidden; }
+    .member-main {
+      display:grid; grid-template-columns:1fr 80px 80px; gap:8px;
+      align-items:center; padding:11px 0; border-bottom:1px solid transparent; outline:none;
+    }
+    .member-row.absent-row { background:var(--absent-bg); border-radius:10px; padding:0 12px; }
+    .member-row.absent-row .member-main { border-bottom-color:rgba(224,90,90,0.15); }
+    .member-name { font-size:14px; font-weight:500; color:var(--text); outline:none; user-select:none; }
+    .check-cell { display:flex; justify-content:center; }
+    .radio-wrap input[type="radio"] { display:none; }
+    .radio-wrap label {
+      display:flex; align-items:center; justify-content:center;
+      width:34px; height:34px; border-radius:50%;
+      border:2px solid rgba(201,168,76,0.25); cursor:pointer; font-size:15px;
+      transition:all 0.2s; color:transparent;
+    }
+    .radio-wrap.present-wrap input:checked + label { background:var(--success); border-color:var(--success); color:white; }
+    .radio-wrap.absent-wrap input:checked + label { background:var(--danger); border-color:var(--danger); color:white; }
+    .radio-wrap label:hover { border-color:var(--gold); }
+    .absence-reason { display:none; padding:9px 0 11px; animation:fadeUp 0.3s ease; }
+    .absence-reason.show { display:block; }
+    .absence-reason input { background:rgba(255,255,255,0.05); font-size:13px; padding:9px 13px; border: 2px solid rgba(201,168,76,0.4); border-radius: 5px; transition: all 0.2s; outline:none; }
+    .absence-reason input:focus { background:rgba(201,168,76,0.1); border-color: var(--gold); box-shadow: 0 0 8px rgba(201,168,76,0.3); }
+    .absence-reason input.error { border-color: var(--danger) !important; background:rgba(224,90,90,0.12) !important; box-shadow: 0 0 8px rgba(224,90,90,0.2) !important; }
+
+    /* ── BUTTONS ── */
+    .btn-row { display:flex; gap:10px; margin-top:24px; justify-content:flex-end; }
+    .btn { padding:12px 24px; border-radius:10px; border:none; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.2s; letter-spacing:0.04em; }
+    .btn-ghost {
+      background:transparent; border:1.5px solid rgba(168,178,216,0.25); color:var(--muted);
+    }
+    .btn-ghost:hover { border-color:rgba(168,178,216,0.5); color:var(--text); }
+    .btn-primary {
+      background:linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%);
+      background-size:200% 100%; color:#1A1A2E;
+      box-shadow:0 4px 20px rgba(201,168,76,0.3);
+    }
+    .btn-primary:hover { background-position:100% 0; transform:translateY(-1px); box-shadow:0 6px 28px rgba(201,168,76,0.45); }
+    .btn-submit { font-size:15px; padding:13px 36px; }
+
+    /* ── MISC ── */
+    .error-msg { color:var(--danger); font-size:13px; margin-top:6px; display:none; }
+    .error-msg.show { display:block; }
+
+    .cat-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; letter-spacing:1px; margin-bottom:14px; }
+    .cat-badge.dh { background:rgba(201,168,76,0.15); color:var(--gold); border:1px solid rgba(201,168,76,0.3); }
+    .cat-badge.g12 { background:rgba(91,143,212,0.15); color:#5B8FD4; border:1px solid rgba(91,143,212,0.3); }
+
+    .info-box {
+      background:rgba(201,168,76,0.07); border:1px solid rgba(201,168,76,0.2);
+      border-radius:10px; padding:12px 16px; margin-bottom:20px; font-size:13px;
+      color:var(--muted); line-height:1.6;
+    }
+    .info-box strong { color:var(--gold); }
+
+    /* ── GOLD DIVIDER ── */
+    .gold-divider {
+      border:none; height:1px;
+      background:linear-gradient(to right, transparent, var(--gold), transparent);
+      opacity:0.3; margin:4px 0;
+    }
+
+    /* ── SUCCESS SCREEN ── */
+    .success-screen { display:none; text-align:center; padding:40px 20px; }
+    .success-screen.active { display:block; animation:fadeUp 0.5s ease; }
+    .success-card {
+      background: rgba(10,20,60,0.55);
+      border: 1px solid rgba(201,168,76,0.35);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 1.25rem;
+      padding: 40px 28px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .checkmark { font-size:60px; margin-bottom:14px; }
+    .success-screen h2 { font-family:'Playfair Display',serif; font-size:26px; color:var(--gold-light); margin-bottom:10px; }
+    .success-screen p { color:var(--muted); line-height:1.7; }
+    .restart-btn { margin-top:24px; }
+
+    @media(max-width:480px){
+      .card{ padding:18px 14px; }
+      .att-header{ grid-template-columns:1fr 64px 64px; }
+      .member-main{ grid-template-columns:1fr 64px 64px; }
+      .cat-tabs{ grid-template-columns:1fr 1fr; }
+    }
+    /* Styles for the Admin Accordion */
+.member-sub-list {
+  display: none; /* Hidden by default */
+  padding-left: 15px;
+  border-left: 2px solid var(--gold);
+  margin-top: 10px;
+}
+
+.member-sub-list.active {
+  display: block; /* Shown when leader is clicked */
+}
+
+.leader-header {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(201, 168, 76, 0.1);
+  padding: 12px 16px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.leader-header:hover {
+  background: rgba(201, 168, 76, 0.2);
+}
+
+.add-member-btn {
+  background: var(--gold);
+  color: #1A1A2E;
+  border: none;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  font-weight: bold;
+  cursor: pointer;
+}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-wrap">
+    <img src="images.png?v=3" alt="NCF UNN Logo" />
+  </div>
+  <div class="header-text">
+    <h1>New Covenant Family</h1>
+    <p>Leader Accountability System</p>
+  </div>
+  <div class="header-date" id="live-date"></div>
+</header>
+
+
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-dot done" id="dot1"></div>
+    <div class="progress-line" id="line1"></div>
+    <div class="progress-dot" id="dot2"></div>
+    <div class="progress-line" id="line2"></div>
+    <div class="progress-dot" id="dot3"></div>
+    <div class="progress-line" id="line3"></div>
+    <div class="progress-dot" id="dot4"></div>
+  </div>
+
+  <!-- STEP 1: Category -->
+  <!-- STEP 1: Category -->
+  <div class="step active" id="step1">
+    <div class="card">
+      <div class="step-label">Step 1 of 3</div>
+      <h2 class="step-title">Select appropriate category</h2>
+      
+      <style>
+        .cat-tabs { grid-template-columns: repeat(3, 1fr) !important; }
+        @media(max-width:550px) { .cat-tabs { grid-template-columns: 1fr !important; } }
+      </style>
+
+      <div class="cat-tabs">
+        <div class="cat-tab dh-tab" onclick="selectCategory('DH', this)">
+          <div class="cat-name">DH Leader</div>
+          <div class="cat-sub">Discipleship House</div>
+        </div>
+        <div class="cat-tab g12-tab" onclick="selectCategory('G12', this)">
+          <div class="cat-name">G12 Leader</div>
+          <div class="cat-sub">Government of 12</div>
+        </div>
+        <div class="cat-tab admin-tab" id="adminTabBtn" onclick="selectCategory('ADMIN', this)">
+          <span class="cat-icon">🔐</span>
+          <div class="cat-name">Admin</div>
+          <div class="cat-sub">Manage Leaders</div>
+        </div>
+      </div>
+
+      <!-- Admin Login Fields -->
+      <div id="adminAuthFields" style="display:none; margin-top: 20px; border-top: 1px solid rgba(201,168,76,0.2); padding-top: 20px;">
+        <label class="field-label">Admin Username</label>
+        <input type="text" id="adminUser" placeholder="Enter username" style="margin-bottom: 15px;">
+        
+        <label class="field-label">Access PIN</label>
+        <input type="password" id="adminPin" placeholder="••••" maxlength="4" style="letter-spacing: 0.5em; text-align: center;">
+        <p class="error-msg" id="errAdminAuth">Invalid Username or PIN.</p>
+      </div>
+
+      <p class="error-msg" id="errCat">Please select a category.</p>
+      
+      <!-- THIS WAS MISSING: The Next Button -->
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="goStep(2)">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Leader + Service -->
+  <div class="step" id="step2">
+    <div class="card">
+      <div class="step-label">Step 2 of 3</div>
+      <h2 class="step-title">Your Details</h2>
+      <div id="catBadge2" class="cat-badge"></div>
+
+      <label class="field-label" for="leaderSelect">Select Your Name</label>
+      <select id="leaderSelect"><option value="">— Choose your name —</option></select>
+      <p class="error-msg" id="errLeader">Please select your name.</p>
+
+      <div style="margin-top:20px;">
+        <label class="field-label">Service Type</label>
+        <div class="service-tags">
+          <button class="tag-btn" onclick="selectService(this,'Sunday Service')">☀️ Sunday Service</button>
+          <button class="tag-btn" onclick="selectService(this,'Wednesday Equipped')">⚡ Wednesday Equipped</button>
+          <button class="tag-btn" onclick="selectService(this,'Midweek Service')">📖 Midweek Service</button>
+          <button class="tag-btn" onclick="selectService(this,'Equip Training')">🎓 Equip Training</button>
+        </div>
+        <p class="error-msg" id="errService">Please select a service type.</p>
+      </div>
+
+      <div style="margin-top:20px;">
+        <label class="field-label" for="serviceDate">Service Date</label>
+        <input type="date" id="serviceDate"/>
+        <p class="error-msg" id="errDate">Please select the service date.</p>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+        <button class="btn btn-primary" onclick="goStep(3)">Next →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Attendance -->
+  <div class="step" id="step3">
+    <div class="card">
+      <div class="step-label">Step 3 of 3</div>
+      <h2 class="step-title">Mark Attendance</h2>
+      <div id="catBadge3" class="cat-badge"></div>
+      <div class="info-box" id="reportInfo"></div>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:18px;">
+        Tap <strong style="color:var(--success)">✓ Present</strong> or <strong style="color:var(--danger)">✗ Absent</strong>. Add a reason for anyone absent.
+      </p>
+      <div class="att-header">
+        <span>Member</span><span>Present</span><span>Absent</span>
+      </div>
+      <div id="memberList"></div>
+      <p class="error-msg" id="errAtt">Please mark attendance for all members before submitting.</p>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goStep(2)">← Back</button>
+        <button class="btn btn-primary btn-submit" onclick="submitReport()">Submit Report ✦</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN DASHBOARD STEP -->
+<div class="step" id="adminDashboard">
+  <div class="card">
+    <div class="step-label">Admin Control Panel</div>
+    <h2 class="step-title">Database Management</h2>
+    
+    <div id="adminDataList">
+        <!-- Data from Supabase will be injected here -->
+        <p style="text-align:center; color:var(--muted);">Loading database...</p>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="restart()">Logout</button>
+    </div>
+  </div>
+</div>
+
+  <!-- Success -->
+  <div class="success-screen" id="successScreen">
+    <div class="success-card">
+      <div class="checkmark">✅</div>
+      <h2>Report Submitted!</h2>
+      <p id="successMsg"></p>
+      <button class="btn btn-primary restart-btn" onclick="restart()">Submit Another Report</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// --- GLOBAL STATE ---
+let selectedCategory = '';
+let selectedService = '';
+let currentStep = 1;
+let currentMembers = [];
+
+// --- CONFIGURATION ---
+const ADMIN_CREDENTIALS = {
+  user: "admin",
+  pin: "1234" 
+};
+
+// --- NAVIGATION & UI LOGIC ---
+/**
+ * Handles the selection of a Service Type.
+ * Updates the global state and toggles CSS classes for visual feedback.
+ */
+function selectService(btn, val) {
+  // 1. Clear the 'selected' class from all other service buttons
+  document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
+  
+  // 2. Add the 'selected' class to the button that was just clicked
+  btn.classList.add('selected');
+  
+  // 3. Update the global variable so the 'goStep' validation can see it
+  selectedService = val;
+  
+  // 4. Hide any existing error messages since a selection is now made
+  hideErr('errService');
+  
+  // Optional: Log for debugging to ensure the value is captured
+  console.log("Active Service Set To:", selectedService);
+}
+
+function selectCategory(cat, el) {
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedCategory = cat;
+  
+  // FIX: Hide all step-specific errors when a new category is picked
+  hideErr('errCat');
+  hideErr('errLeader');
+  hideErr('errService');
+  hideErr('errDate');
+
+  const authFields = document.getElementById('adminAuthFields');
+  if (cat === 'ADMIN') {
+    authFields.style.display = 'block';
+  } else {
+    authFields.style.display = 'none';
+  }
+}
+
+async function handleAdminLogin() {
+    const user = document.getElementById('adminUser').value;
+    const pin = document.getElementById('adminPin').value;
+
+    if (user === ADMIN_CREDENTIALS.user && pin === ADMIN_CREDENTIALS.pin) {
+        hideErr('errAdminAuth');
+        document.getElementById('step1').classList.remove('active');
+        document.getElementById('progressWrap').style.display = 'none';
+        document.getElementById('adminDashboard').classList.add('active');
+        currentStep = 'adminDashboard';
+        loadAdminData(); 
+        console.log("Admin authenticated.");
+    } else {
+        showErr('errAdminAuth');
+    }
+}
+
+function goStep(n) {
+  if (currentStep === 1 && n === 2) {
+    if (!selectedCategory) { showErr('errCat'); return; }
+    if (selectedCategory === 'ADMIN') { handleAdminLogin(); return; }
+    populateLeaders();
+  }
+
+  if (currentStep === 2 && n === 3) {
+    const leader = document.getElementById('leaderSelect').value;
+    const date = document.getElementById('serviceDate').value;
+    if (!leader) { showErr('errLeader'); return; }
+    if (!selectedService) { showErr('errService'); return; }
+    if (!date) { showErr('errDate'); return; }
+    hideErr('errLeader'); hideErr('errService'); hideErr('errDate');
+    renderAttendance();
+  }
+
+  // Clear all error messages when navigating to a new step
+  if (currentStep !== n) {
+    document.querySelectorAll('.error-msg').forEach(msg => msg.classList.remove('show'));
+  }
+
+  document.getElementById('step' + currentStep).classList.remove('active');
+  currentStep = n;
+  document.getElementById('step' + currentStep).classList.add('active');
+  updateProgress();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateProgress() {
+  for (let i = 1; i <= 4; i++) {
+    const d = document.getElementById('dot' + i);
+    if (d) d.classList.toggle('done', i <= currentStep);
+  }
+  for (let i = 1; i <= 3; i++) {
+    const l = document.getElementById('line' + i);
+    if (l) l.classList.toggle('filled', i < currentStep);
+  }
+}
+
+// --- DATABASE: ADMIN CRUD OPERATIONS ---
+
+/**
+ * Admin Dashboard: Cleaned Accordion View
+ * This version fixes duplicate folders and duplicate members by
+ * trimming whitespace and checking for existing entries.
+ */
+/**
+ * Admin Dashboard: Numbered List View with Collapsible Members
+ * Displays leaders as numbered lists with expandable member sections.
+ */
+async function loadAdminData() {
+  const listDiv = document.getElementById('adminDataList');
+  listDiv.innerHTML = '<p style="text-align:center; color:var(--muted);">Syncing database...</p>';
+  
+  const { data, error } = await supabaseClient
+    .from('members')
+    .select('*');
+
+  if (error) {
+    listDiv.innerHTML = `<p style="color:var(--danger)">Error: ${error.message}</p>`;
+    return;
+  }
+
+  // Group data by Type ('DH' or 'G12') and then by Leader Name
+  const grouped = data.reduce((acc, current) => {
+    const type = current.leader_type || "G12";
+    const leader = current.g12_leader ? current.g12_leader.trim() : "Unassigned";
+    if (!acc[type]) acc[type] = {};
+    if (!acc[type][leader]) acc[type][leader] = [];
+    acc[type][leader].push(current);
+    return acc;
+  }, {});
+
+  // Cache data globally
+  window.cachedDHData = grouped['DH'] || {};
+  window.cachedG12Data = grouped['G12'] || {};
+
+  let html = '';
+
+  // --- DH SECTION ---
+  html += `
+    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--gold); color:black; padding:8px 12px; margin-top:20px; border-radius:5px;">
+      <span style="font-weight:bold;">🏠 DH SECTION</span>
+      <button class="btn" style="padding:2px 8px; font-size:10px; background:white;" onclick="showAddModal('leader', 'DH')">+ New DH Leader</button>
+    </div>
+    <div style="margin-top:15px;">
+  `;
+  
+  const dhLeaders = Object.keys(window.cachedDHData).sort();
+  dhLeaders.forEach((leader, index) => {
+    const members = window.cachedDHData[leader].filter(m => m.member_name !== leader);
+    html += `
+      <div style="margin-bottom: 15px; border-left: 3px solid var(--gold); padding-left: 10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; padding: 8px; background: rgba(201,168,76,0.1); border-radius: 5px;" onclick="toggleLeaderMembers('dh_${index}')">
+          <span style="font-weight:600; color:var(--text);">${index + 1}. ${leader}</span>
+          <div>
+            <button class="btn" style="padding: 2px 8px; font-size: 11px; margin-right: 5px;" onclick="event.stopPropagation(); editLeader('${leader}', 'DH')">🖋️</button>
+            <button class="btn" style="padding: 2px 8px; font-size: 11px;" onclick="event.stopPropagation(); quickAddMember('${leader}', 'DH')">+</button>
+          </div>
+        </div>
+        <div id="dh_${index}" style="display:none; margin-top: 10px; margin-left: 10px;">
+          ${members.map(m => `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding: 6px; background: rgba(255,255,255,0.03); border-radius: 3px; margin-bottom: 5px;">
+              <span style="font-size:13px; color:var(--muted);">• ${m.member_name}</span>
+              <div>
+                <button class="btn" style="padding: 2px 8px; font-size: 11px; margin-right: 3px;" onclick="editMember('${m.id}', '${m.member_name}')">🖋️</button>
+                <button class="btn btn-ghost" style="padding: 2px 8px; font-size: 10px; border-color: var(--danger); color: var(--danger);" onclick="deleteMember('${m.id}', '${m.member_name}')">Delete</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `</div>`;
+
+  // --- G12 SECTION ---
+  html += `
+    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--gold); color:black; padding:8px 12px; margin-top:30px; border-radius:5px;">
+      <span style="font-weight:bold;">🌿 G12 SECTION</span>
+      <button class="btn" style="padding:2px 8px; font-size:10px; background:white;" onclick="showAddModal('leader', 'G12')">+ New G12 Leader</button>
+    </div>
+    <div style="margin-top:15px;">
+  `;
+  
+  const g12Leaders = Object.keys(window.cachedG12Data).sort();
+  g12Leaders.forEach((leader, index) => {
+    const members = window.cachedG12Data[leader].filter(m => m.member_name !== leader);
+    html += `
+      <div style="margin-bottom: 15px; border-left: 3px solid var(--gold); padding-left: 10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; padding: 8px; background: rgba(201,168,76,0.1); border-radius: 5px;" onclick="toggleLeaderMembers('g12_${index}')">
+          <span style="font-weight:600; color:var(--text);">${index + 1}. ${leader}</span>
+          <div>
+            <button class="btn" style="padding: 2px 8px; font-size: 11px; margin-right: 5px;" onclick="event.stopPropagation(); editLeader('${leader}', 'G12')">🖋️</button>
+            <button class="btn" style="padding: 2px 8px; font-size: 11px;" onclick="event.stopPropagation(); quickAddMember('${leader}', 'G12')">+</button>
+          </div>
+        </div>
+        <div id="g12_${index}" style="display:none; margin-top: 10px; margin-left: 10px;">
+          ${members.map(m => `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding: 6px; background: rgba(255,255,255,0.03); border-radius: 3px; margin-bottom: 5px;">
+              <span style="font-size:13px; color:var(--muted);">• ${m.member_name}</span>
+              <div>
+                <button class="btn" style="padding: 2px 8px; font-size: 11px; margin-right: 3px;" onclick="editMember('${m.id}', '${m.member_name}')">🖋️</button>
+                <button class="btn btn-ghost" style="padding: 2px 8px; font-size: 10px; border-color: var(--danger); color: var(--danger);" onclick="deleteMember('${m.id}', '${m.member_name}')">Delete</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  });
+  
+  html += `</div>`;
+
+  listDiv.innerHTML = html;
+}
+
+// Toggle member list visibility
+function toggleLeaderMembers(id) {
+  const element = document.getElementById(id);
+  element.style.display = element.style.display === 'none' ? 'block' : 'none';
+}
+
+/**
+ * Toggles the visibility of a leader's member list.
+ */
+function toggleLeaderGroup(index) {
+  const list = document.getElementById('group_' + index);
+  list.classList.toggle('active');
+}
+
+
+async function quickAddMember(leaderName, type) {
+  const name = prompt(`Add new member under ${leaderName} (${type}):`);
+  if (!name || name.trim() === "") return;
+  
+  const cleanName = name.trim();
+  const cleanLeader = leaderName.trim();
+
+  // Check if member already exists in this specific group to prevent duplicates
+  const { data: existing } = await supabaseClient
+    .from('members')
+    .select('id')
+    .eq('member_name', cleanName)
+    .eq('g12_leader', cleanLeader)
+    .eq('leader_type', type);
+
+  if (existing && existing.length > 0) {
+    alert(`${cleanName} is already synced in ${cleanLeader}'s ${type} group.`);
+    return;
+  }
+
+  const { error } = await supabaseClient
+    .from('members')
+    .insert([{ 
+        member_name: cleanName, 
+        g12_leader: cleanLeader, 
+        leader_type: type 
+    }]);
+
+  if (error) {
+    alert("Sync failed: " + error.message);
+  } else {
+    loadAdminData(); // Refresh UI from Supabase
+  }
+}
+
+async function showAddModal(type, leaderType) {
+    const name = prompt(`Enter the name of the new ${type}:`);
+    if (!name || name.trim() === "") return;
+
+    const cleanName = name.trim();
+    let leaderName = cleanName;
+
+    // If adding a member, we need to know who their leader is
+    if (type === 'member') {
+        leaderName = prompt(`Enter the exact name of the ${leaderType} Leader:`);
+        if (!leaderName) return;
+        leaderName = leaderName.trim();
+    }
+
+    // Step 1: Check if this specific entry already exists to avoid duplicates
+    const { data: existing } = await supabaseClient
+        .from('members')
+        .select('id')
+        .eq('member_name', cleanName)
+        .eq('g12_leader', leaderName)
+        .eq('leader_type', leaderType);
+
+    if (existing && existing.length > 0) {
+        alert("This record already exists in the database.");
+        return;
+    }
+
+    // Step 2: Insert into Supabase
+    const { error } = await supabaseClient
+        .from('members')
+        .insert([{ 
+            member_name: cleanName, 
+            g12_leader: leaderName, 
+            leader_type: leaderType 
+        }]);
+
+    if (error) {
+        console.error("Sync Error:", error.message);
+        alert("Failed to sync to Supabase: " + error.message);
+    } else {
+        alert("Successfully synced to database!");
+        loadAdminData(); // Refresh the list
+    }
+}
+
+async function editMember(id, oldName) {
+  const newName = prompt("Enter new name:", oldName);
+  if (!newName || newName === oldName) return;
+
+  const { error } = await supabaseClient
+    .from('members')
+    .update({ member_name: newName })
+    .eq('id', id);
+
+  if (error) { alert("Update failed: " + error.message); } 
+  else { loadAdminData(); }
+}
+
+/**
+ * Deletes a member from the Supabase 'members' table.
+ * Includes a safety check to ensure leaders are handled via the rename/edit function.
+ */
+async function deleteMember(id, name) {
+  // 1. Confirm intention with the user
+  if (!confirm(`Permanently remove ${name} from the database?`)) return;
+
+  // 2. Fetch the specific record to check if it's a 'Leader Row'
+  const { data: record, error: fetchError } = await supabaseClient
+    .from('members')
+    .select('member_name, g12_leader')
+    .eq('id', id)
+    .single(); // Get just the one record
+
+  if (fetchError || !record) {
+    alert("Record not found or already deleted.");
+    return;
+  }
+
+  // 3. Safety Guard: Prevent deleting the 'Folder' (Leader entry)
+  // If the name and leader fields match, this is the row that defines the group.
+  if (record.member_name.trim() === record.g12_leader.trim()) {
+    alert(`Cannot delete "${name}" because they are a Leader. Use the Rename/Edit function to manage Leaders.`);
+    return;
+  }
+
+  // 4. Execution: Delete the member if they are not a leader
+  const { error } = await supabaseClient
+    .from('members')
+    .delete()
+    .eq('id', id);
+
+  // 5. Sync Feedback
+  if (error) {
+    alert("Delete failed to sync: " + error.message);
+  } else {
+    // Refresh the UI to show the updated list
+    loadAdminData();
+  }
+}
+
+async function editLeader(oldName, leaderType) {
+  const newName = prompt(`Rename ${leaderType} Leader "${oldName}" to:`, oldName);
+  if (!newName || newName.trim() === "" || newName.trim() === oldName) return;
+
+  const cleanNewName = newName.trim();
+
+  // Step 1: Update the 'g12_leader' field for everyone in that group
+  const { error: groupError } = await supabaseClient
+    .from('members')
+    .update({ g12_leader: cleanNewName })
+    .eq('g12_leader', oldName)
+    .eq('leader_type', leaderType);
+
+  if (groupError) {
+    alert("Group sync failed: " + groupError.message);
+    return;
+  }
+
+  // Step 2: Update the leader's own row (where they were a member of themselves)
+  const { error: selfError } = await supabaseClient
+    .from('members')
+    .update({ member_name: cleanNewName })
+    .eq('member_name', oldName)
+    .eq('leader_type', leaderType);
+
+  if (selfError) {
+    alert("Leader self-row sync failed: " + selfError.message);
+  } else {
+    alert(`${leaderType} Leader successfully renamed and synced.`);
+    loadAdminData();
+  }
+}
+
+// --- DATABASE: LEADER REPORTING OPERATIONS ---
+
+/**
+ * Fetches leaders from Supabase filtered by the selected category (DH or G12).
+ * This ensures the DH list and G12 list are unique.
+ */
+async function populateLeaders() {
+  const sel = document.getElementById('leaderSelect');
+  sel.value = ""; // FIX: Reset the selection value
+  hideErr('errLeader');
+  sel.innerHTML = '<option value="">— Loading Leaders... —</option>';
+  
+  const badge = document.getElementById('catBadge2');
+  badge.textContent = selectedCategory === 'DH' ? '🏠 DH Leader' : '🌿 G12 Leader';
+  badge.className = 'cat-badge ' + (selectedCategory === 'DH' ? 'dh' : 'g12');
+
+  try {
+    // We now filter the query based on the selectedCategory
+    // We select g12_leader and member_name to ensure we have data
+    const { data, error } = await supabaseClient
+      .from('members')
+      .select('g12_leader')
+      .eq('leader_type', selectedCategory); // FILTER: Match DH or G12
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      sel.innerHTML = `<option value="">No ${selectedCategory} leaders found</option>`;
+      return;
+    }
+
+    // Extract unique, trimmed leader names to prevent duplicate folders
+    const uniqueLeaders = [...new Set(data.map(item => 
+        item.g12_leader ? item.g12_leader.trim() : ""
+    ))].filter(name => name !== "").sort();
+
+    sel.innerHTML = '<option value="">— Choose your name —</option>';
+    uniqueLeaders.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    });
+
+  } catch (err) {
+    console.error("Database Error:", err.message);
+    sel.innerHTML = '<option value="">Error loading list</option>';
+  }
+}
+
+async function renderAttendance() {
+  const leader = document.getElementById('leaderSelect').value;
+  const list = document.getElementById('memberList');
+  list.innerHTML = '<p style="text-align:center;">Loading members...</p>';
+
+    const { data, error } = await supabaseClient
+    .from('members')
+    .select('id, member_name')
+    .eq('g12_leader', leader)
+    .eq('leader_type', selectedCategory);
+
+  if (error) { list.innerHTML = '<p>Error loading.</p>'; return; }
+
+  // Filter out the leader's own entry (where member_name === g12_leader)
+  const filteredData = data.filter(m => m.member_name !== leader);
+  
+  currentMembers = filteredData.map(m => m.member_name);
+  list.innerHTML = ''; 
+
+  if (currentMembers.length === 0) {
+    list.innerHTML = '<p style="text-align:center; color:var(--muted);">No members found for this leader.</p>';
+    return;
+  }
+
+  // Clear any error messages when rendering a fresh form
+  hideErr('errAtt');
+
+  currentMembers.forEach((name, i) => {
+    const row = document.createElement('div');
+    row.className = 'member-row';
+    row.innerHTML = `
+      <div class="member-main">
+        <span class="member-name">${name}</span>
+        <div class="check-cell"><div class="radio-wrap present-wrap">
+            <input type="radio" name="att_${i}" id="p_${i}" value="present" onchange="onAttChange(${i},'present')">
+            <label for="p_${i}">✓</label>
+        </div></div>
+        <div class="check-cell"><div class="radio-wrap absent-wrap">
+            <input type="radio" name="att_${i}" id="a_${i}" value="absent" onchange="onAttChange(${i},'absent')">
+            <label for="a_${i}">✗</label>
+        </div></div>
+      </div>
+      <div class="absence-reason" id="reason_${i}">
+        <input type="text" placeholder="Reason?" id="reasonText_${i}" oninput="clearReasonError(${i})"/>
+      </div>`;
+    list.appendChild(row);
+  });
+}
+
+async function submitReport() {
+  const leader = document.getElementById('leaderSelect').value;
+  const date = document.getElementById('serviceDate').value;
+  
+  let validationError = false;
+  
+  // Validate all radios are checked
+  currentMembers.forEach((name, i) => {
+    const radio = document.querySelector(`input[name="att_${i}"]:checked`);
+    if (!radio) validationError = true;
+  });
+
+  if (validationError) {
+    showErr('errAtt');
+    return;
+  }
+
+  // Build the data array
+  const reportsToSubmit = currentMembers.map((name, i) => {
+    const radio = document.querySelector(`input[name="att_${i}"]:checked`);
+    const reasonField = document.getElementById(`reasonText_${i}`);
+    
+    return {
+      report_date: date,
+      leader_name: leader,
+      member_name: name,
+      status: radio.value === 'present' ? 'Present' : 'Absent',
+      notes: reasonField.value || "",
+      zone: selectedCategory,
+      service_type: selectedService // Added this to capture your Step 2 selection
+    };
+  });
+
+  // Send to Supabase
+  const { data, error } = await supabaseClient
+    .from('g12_reports')
+    .insert(reportsToSubmit);
+
+  if (error) {
+    alert("Supabase Error: " + error.message);
+  } else {
+    // Navigate to success screen
+    document.getElementById('step3').classList.remove('active');
+    document.getElementById('successScreen').classList.add('active');
+    document.getElementById('successMsg').textContent = `Report saved for ${leader} on ${formatDate(date)}`;
+  }
+}
+
+// --- UTILITIES ---
+
+function onAttChange(i, val) {
+  const row = document.getElementById('row_' + i);
+  const reason = document.getElementById('reason_' + i);
+  const reasonInput = document.getElementById(`reasonText_${i}`);
+  
+  if (val === 'absent') {
+    // Show the reason field when Absent is selected
+    reason?.classList.add('show');
+    // Auto-focus on the reason field
+    reasonInput?.focus();
+    // Clear any previous error styling
+    reasonInput?.classList.remove('error');
+  } else if (val === 'present') {
+    // Hide the reason field when Present is selected
+    reason?.classList.remove('show');
+    // Clear any error styling and reset the field
+    if (reasonInput) {
+      reasonInput.classList.remove('error');
+      reasonInput.value = ''; // Clear any previous reason text
+    }
+  }
+  
+  // Always clear the general error message when user changes attendance
+  hideErr('errAtt');
+}
+
+function clearReasonError(i) {
+  const reasonInput = document.getElementById(`reasonText_${i}`);
+  reasonInput?.classList.remove('error');
+}
+
+function restart() {
+  // Reset all steps and screens
+  document.getElementById('adminDashboard').classList.remove('active');
+  document.getElementById('successScreen').classList.remove('active');
+  document.getElementById('progressWrap').style.display = 'flex';
+
+  // FIX: Explicitly hide all error messages
+  const errorMessages = document.querySelectorAll('.error-msg');
+  errorMessages.forEach(msg => msg.classList.remove('show'));
+
+  // Reset global variables and UI elements
+  selectedCategory = ''; 
+  selectedService = ''; 
+  currentMembers = [];
+  currentStep = 1;
+  document.getElementById('leaderSelect').value = '';
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('selected'));
+  document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
+
+  updateProgress();
+  document.getElementById('step1').classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function formatDate(d) {
+  return new Date(d).toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
+}
+
+function showErr(id) { document.getElementById(id).classList.add('show'); }
+function hideErr(id) { document.getElementById(id).classList.remove('show'); }
+
+document.getElementById('serviceDate').valueAsDate = new Date();
+
+const d = new Date();
+const liveDateEl = document.getElementById('live-date');
+if(liveDateEl) {
+    liveDateEl.textContent = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
+}
+
+// Keyboard navigation: Press Enter on Step 1 to move to Step 2
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Enter') {
+    if (currentStep === 1) {
+      event.preventDefault();
+      goStep(2);
+    }
+  }
+});
+</script>
+</body>
+</html>

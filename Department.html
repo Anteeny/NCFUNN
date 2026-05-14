@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NCF Departmental Accountability</title>
+  <link rel="icon" type="image/png" href="../images.png?v=3">
+<link rel="shortcut icon" type="image/x-icon" href="../images.png?v=3">
+<link rel="apple-touch-icon" href="../images.png?v=3">
+ <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    // Keeping your existing credentials
+    const supabaseUrl = "https://cjbedftdexzcsydwayig.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmVkZnRkZXh6Y3N5ZHdheWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTUwMjgsImV4cCI6MjA5MzYzMTAyOH0.xsvtG5NmI_9TDZQ5-MhcjtX4UIIAiH2kyOlpIPDkCdg";
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+  </script>
+
+  <style>
+    :root {
+      --gold: #C9A84C;
+      --gold-light: #E8C97A;
+      --emerald-deep: #09062c; /* New Theme Color */
+      --emerald-surface: #0a3d32;
+      --ink: #051a14;
+      --accent: #E94560;
+      --text: #E8EDF2;
+      --muted: #A8B2D8;
+      --success: #4c6aaf;
+      --danger: #E05A5A;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: url('FYF.jpg') center center / cover no-repeat fixed;
+      background-position: center;
+      background-attachment: fixed;
+      backdrop-filter: blur(8px);
+      min-height: 100vh;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0 0 40px;
+    }
+
+    /* --- UNIFIED HEADER --- */
+    header {
+      width: 100%;
+      padding: 1.4rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 1.1rem;
+      border-bottom: 2px solid rgba(201, 168, 76, 0.35);
+      background: rgba(8, 20, 60, 0.45);
+      backdrop-filter: blur(8px);
+      margin-bottom: 4vh;
+    }
+    .logo-wrap {
+      width: 58px; height: 58px; border-radius: 50%;
+      background: #FFFFFF; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; border: 2.5px solid var(--gold); overflow: hidden;
+      animation: pulse-ring 3s ease-in-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%, 100% { box-shadow: 0 0 0 0px rgba(201,168,76,0.5); }
+      50%       { box-shadow: 0 0 0 8px rgba(201,168,76,0); }
+    }
+    .logo-wrap img { width: 50px; height: 50px; object-fit: contain; }
+    .header-text { text-align: left; }
+    .header-text h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.1rem, 3vw, 1.55rem);
+      font-weight: 900; color: #FFFFFF; line-height: 1.15; margin: 0;
+    }
+    .header-text p {
+      font-size: 0.75rem; color: var(--gold-light, var(--gold));
+      font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+      margin-top: 0.2rem; margin-bottom: 0;
+    }
+    .header-date {
+      margin-left: auto; font-size: 0.78rem; color: rgba(255,255,255,0.5);
+    }
+    @media (max-width: 480px) { .header-date { display: none; } }
+
+    .container { max-width: 640px; width: 100%; margin: 0 auto; padding: 0; }
+
+    /* --- PROGRESS --- */
+    .progress-wrap { display:flex; gap:8px; margin-bottom:28px; width: min(100% - 32px, 640px); }
+    .progress-dot { width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.1); border:2px solid var(--gold); }
+    .progress-dot.done { background:var(--gold); box-shadow: 0 0 8px var(--gold); }
+    .progress-line { flex:1; height:2px; background:rgba(201,168,76,0.2); align-self: center; }
+
+    /* --- CARDS & STEPS --- */
+    .card {
+      background: rgba(10, 25, 70, 0.65);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: 1.5rem;
+      padding: 35px 30px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      width: min(100% - 32px, 640px);
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .step { display: none; width: 100%; }
+    .step.active { display: block; animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+
+    .step-title { font-family: 'Playfair Display', serif; color: var(--gold-light); margin-bottom: 20px; font-size: clamp(18px, 4vw, 24px); white-space: nowrap; }
+
+    /* --- INPUTS --- */
+    label { display: block; font-size: 12px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; letter-spacing: 1px; }
+    select, input {
+      width: 100%; padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.2); 
+      border: 1px solid rgba(201,168,76,0.3); color: white; margin-bottom: 20px; outline: none;
+    }
+
+    /* --- ATTENDANCE ROWS --- */
+    .member-wrap { margin-bottom: 12px; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 15px; }
+    .member-row { display: grid; grid-template-columns: 1fr auto auto; gap: 15px; align-items: center; }
+    .btn-action { padding: 8px 15px; border-radius: 5px; border: 1px solid var(--gold); cursor: pointer; background: transparent; color: white; transition: all 0.2s; }
+    .btn-action.active-present { background: var(--success); border-color: var(--success); }
+    .btn-action.active-absent { background: var(--danger); border-color: var(--danger); }
+    .absence-reason { display: none; padding-top: 12px; animation: fadeIn 0.3s ease; }
+    .absence-reason.show { display: block; }
+    .absence-reason input { margin-bottom: 0; padding: 10px; border-color: rgba(201,168,76,0.3); transition: all 0.2s; }
+    .absence-reason input.error { border-color: var(--danger); box-shadow: 0 0 8px rgba(224,90,90,0.3); background: rgba(224,90,90,0.1); }
+
+    /* --- BUTTONS --- */
+    .btn-primary {
+      width: 100%; padding: 15px; background: var(--gold); color: var(--ink);
+      border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px;
+    }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--muted); margin-top: 10px; width: 100%; padding: 10px; cursor: pointer; border-radius: 8px; }
+
+    @media (max-width: 480px) {
+      .card { padding: 25px 20px; }
+      .member-wrap { padding: 12px; }
+      .member-row { gap: 10px; }
+      .btn-action { padding: 8px 12px; }
+    }
+
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-wrap">
+    <img src="images.png?v=3" alt="NCF UNN Logo" />
+  </div>
+  <div class="header-text">
+    <h1>NCF Departments</h1>
+    <p>Service & Unit Accountability</p>
+  </div>
+  <div class="header-date" id="live-date"></div>
+</header>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-dot done" id="dot1"></div>
+    <div class="progress-line"></div>
+    <div class="progress-dot" id="dot2"></div>
+  </div>
+
+  <!-- Step 1: Select Department & Service Date -->
+  <div class="step active" id="step1">
+    <div class="card">
+      <h2 class="step-title">Departmental Report</h2>
+      <label>Choose your department</label>
+      <select id="deptSelect">
+        <option value="">-- Select --</option>
+        <option value="Music">Music Department</option>
+        <option value="Media">Media & Tech</option>
+        <option value="Ushering">Ushering/Greeters</option>
+        <option value="Sanctuary">Sanctuary Keepers</option>
+      </select>
+
+      <label>Service Date</label>
+      <input type="date" id="reportDate">
+
+      <button class="btn-primary" onclick="goStep(2)">Next</button>
+    </div>
+  </div>
+
+  <!-- Step 2: Reporting -->
+  <div class="step" id="step2">
+    <div class="card">
+      <h2 class="step-title">Unit Personnel</h2>
+      <div id="personnelList"></div>
+      <button class="btn-primary" style="margin-top:20px" onclick="submitDeptReport()">Submit Departmental Report</button>
+      <button class="btn-ghost" onclick="goStep(1)">Back</button>
+    </div>
+  </div>
+
+  <!-- Success -->
+  <div class="step" id="successStep">
+    <div class="card" style="text-align:center">
+      <h2 class="step-title">Report Filed</h2>
+      <p>Your departmental report has been submitted.</p>
+      <button class="btn-primary" style="margin-top:20px" onclick="location.reload()">New Entry</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentStep = 1;
+  let reportData = [];
+
+  const d = new Date();
+  const liveDateEl = document.getElementById('live-date');
+  if(liveDateEl) {
+      liveDateEl.textContent = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
+  }
+
+  function goStep(n) {
+    if (n === 2 && !document.getElementById('deptSelect').value) return alert("Select a department");
+    if (n === 2 && !document.getElementById('reportDate').value) return alert("Select a service date");
+    if (n === 2) {
+        renderPersonnel();
+    }
+    document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+    document.getElementById('step' + n)?.classList.add('active');
+    if(n === 'success') document.getElementById('successStep').classList.add('active');
+    
+    // Update dots
+    document.getElementById('dot1').classList.toggle('done', n >= 1);
+    document.getElementById('dot2').classList.toggle('done', n >= 2);
+    currentStep = n;
+  }
+
+  // Load departments dynamically on page load
+  document.addEventListener('DOMContentLoaded', loadDepartments);
+
+  async function loadDepartments() {
+    const deptSelect = document.getElementById('deptSelect');
+    deptSelect.innerHTML = '<option value="">Loading...</option>';
+
+    const { data, error } = await supabaseClient
+      .from('members')
+      .select('department')
+      .neq('department', null)
+      .neq('department', '');
+
+    if (error) {
+      console.error('Error fetching departments:', error.message);
+      deptSelect.innerHTML = '<option value="">Error loading</option>';
+      return;
+    }
+
+    // Extract unique department names
+    const uniqueDepts = [...new Set(data.map(item => item.department))].sort();
+
+    deptSelect.innerHTML = '<option value="">-- Select --</option>';
+    uniqueDepts.forEach(dept => {
+      const opt = document.createElement('option');
+      opt.value = dept;
+      opt.textContent = dept;
+      deptSelect.appendChild(opt);
+    });
+  }
+
+  async function renderPersonnel() {
+    const dept = document.getElementById('deptSelect').value;
+    const listDiv = document.getElementById('personnelList');
+    listDiv.innerHTML = 'Loading...';
+
+    const { data, error } = await supabaseClient
+        .from('members')
+        .select('member_name')
+        .eq('department', dept);
+
+    if (error) {
+        console.error('Error fetching personnel:', error.message);
+        listDiv.innerHTML = 'Error loading members.';
+        return;
+    }
+
+    reportData = data.map(d => ({ name: d.member_name, status: null, reason: "" }));
+    
+    listDiv.innerHTML = '';
+    if (reportData.length === 0) {
+        listDiv.innerHTML = '<p style="color: var(--muted); font-size: 14px;">No members found in this department.</p>';
+        return;
+    }
+
+    reportData.forEach((person, i) => {
+        const div = document.createElement('div');
+        div.className = 'member-wrap';
+        div.innerHTML = `
+            <div class="member-row">
+                <span>${person.name}</span>
+                <button class="btn-action" id="p${i}" onclick="mark(${i}, 'Present')">P</button>
+                <button class="btn-action" id="a${i}" onclick="mark(${i}, 'Absent')">A</button>
+            </div>
+            <div class="absence-reason" id="reason_${i}">
+                <input type="text" placeholder="Why were they absent? *" id="reasonText_${i}" oninput="clearReasonError(${i})"/>
+            </div>
+        `;
+        listDiv.appendChild(div);
+    });
+  }
+
+  function clearReasonError(index) {
+    document.getElementById(`reasonText_${index}`).classList.remove('error');
+  }
+
+  function mark(index, status) {
+    reportData[index].status = status;
+    document.getElementById(`p${index}`).className = status === 'Present' ? 'btn-action active-present' : 'btn-action';
+    document.getElementById(`a${index}`).className = status === 'Absent' ? 'btn-action active-absent' : 'btn-action';
+    
+    const reasonDiv = document.getElementById(`reason_${index}`);
+    if (status === 'Absent') {
+        reasonDiv.classList.add('show');
+        document.getElementById(`reasonText_${index}`).focus();
+    } else {
+        reasonDiv.classList.remove('show');
+        document.getElementById(`reasonText_${index}`).value = "";
+        clearReasonError(index);
+    }
+  }
+
+  async function submitDeptReport() {
+    const dept = document.getElementById('deptSelect').value;
+    const date = document.getElementById('reportDate').value;
+
+    if (reportData.some(r => r.status === null)) return alert("Mark everyone first!");
+
+    let missingReason = false;
+    reportData.forEach((r, i) => {
+        if (r.status === 'Absent') {
+            const reasonInput = document.getElementById(`reasonText_${i}`);
+            r.reason = reasonInput.value.trim();
+            if (!r.reason) {
+                missingReason = true;
+                reasonInput.classList.add('error');
+            }
+        } else {
+            r.reason = "";
+        }
+    });
+
+    if (missingReason) {
+        return alert("Please provide a reason for all absent members.");
+    }
+
+    const finalSubmission = reportData.map(r => ({
+        dept_name: dept,
+        report_date: date,
+        member_name: r.name,
+        status: r.status,
+        reason_for_absence: r.reason
+    }));
+
+    // Provide loading state
+    const btn = document.querySelector('#step2 .btn-primary');
+    const originalText = btn.textContent;
+    btn.textContent = 'Submitting...';
+    btn.disabled = true;
+
+    const { error } = await supabaseClient.from('dept_reports').insert(finalSubmission);
+
+    btn.textContent = originalText;
+    btn.disabled = false;
+
+    if (error) alert(error.message);
+    else goStep('success');
+  }
+
+  document.getElementById('reportDate').valueAsDate = new Date();
+  
+</script>
+
+</body>
+</html>

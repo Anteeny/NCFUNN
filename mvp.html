@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NCF Member Registration</title>
+  <link rel="icon" type="image/png" href="images.png?v=3">
+<link rel="shortcut icon" type="image/x-icon" href="images.png?v=3">
+<link rel="apple-touch-icon" href="images.png?v=3">
+ 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    // Initialize Supabase exactly like your main site
+    const supabaseUrl = "https://cjbedftdexzcsydwayig.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmVkZnRkZXh6Y3N5ZHdheWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTUwMjgsImV4cCI6MjA5MzYzMTAyOH0.xsvtG5NmI_9TDZQ5-MhcjtX4UIIAiH2kyOlpIPDkCdg";
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+  </script>
+
+  <style>
+    :root {
+      --gold: #C9A84C; --gold-light: #E8C97A;
+      --deep: #1A1A2E; --ink: #16213E; --card: rgba(10, 25, 70, 0.55);
+      --text: #E8EDF2; --muted: #A8B2D8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: url('FYF.jpg') center center / cover no-repeat fixed;
+      background-position: center;
+      background-attachment: fixed;
+      backdrop-filter: blur(8px);
+      min-height: 100vh;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0 0 40px;
+    }
+
+    /* --- UNIFIED HEADER --- */
+    header {
+      width: 100%;
+      padding: 1.4rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 1.1rem;
+      border-bottom: 2px solid rgba(201, 168, 76, 0.35);
+      background: rgba(8, 20, 60, 0.45);
+      backdrop-filter: blur(8px);
+      margin-bottom: 4vh;
+    }
+    .logo-wrap {
+      width: 58px; height: 58px; border-radius: 50%;
+      background: #FFFFFF; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; border: 2.5px solid var(--gold); overflow: hidden;
+      animation: pulse-ring 3s ease-in-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%, 100% { box-shadow: 0 0 0 0px rgba(201,168,76,0.5); }
+      50%       { box-shadow: 0 0 0 8px rgba(201,168,76,0); }
+    }
+    .logo-wrap img { width: 50px; height: 50px; object-fit: contain; }
+    .header-text { text-align: left; }
+    .header-text h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.1rem, 3vw, 1.55rem);
+      font-weight: 900; color: #FFFFFF; line-height: 1.15; margin: 0;
+    }
+    .header-text p {
+      font-size: 0.75rem; color: var(--gold-light, var(--gold));
+      font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+      margin-top: 0.2rem; margin-bottom: 0;
+    }
+    .header-date {
+      margin-left: auto; font-size: 0.78rem; color: rgba(255,255,255,0.5);
+    }
+    @media (max-width: 480px) { .header-date { display: none; } }
+    
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(201,168,76,0.35);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 1.25rem;
+      padding: 30px;
+      width: min(100% - 40px, 500px);
+      max-width: 500px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    }
+    
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-light); margin-bottom: 8px; font-weight: 600; }
+    input, select, textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(201,168,76,0.25);
+      border-radius: 0.625rem;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    input::placeholder, textarea::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.15); background: rgba(255,255,255,0.09); }
+    select option { background: var(--deep); color: white; }
+    textarea { resize: vertical; min-height: 80px; }
+
+    .btn-submit {
+      width: 100%; padding: 14px; border-radius: 0.75rem; border: none;
+      background: linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%);
+      background-size: 200% 100%; color: #1A1A2E; font-family: 'DM Sans', sans-serif;
+      font-weight: 700; font-size: 1rem; cursor: pointer; margin-top: 10px;
+      transition: all 0.4s ease; box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+    }
+    .btn-submit:hover { background-position: 100% 0; transform: translateY(-2px); box-shadow: 0 6px 28px rgba(201,168,76,0.45); }
+    .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+    .success-msg { display: none; text-align: center; padding: 20px; }
+    .success-msg h2 { color: var(--gold-light); font-size: 24px; margin-bottom: 10px; }
+    .success-msg p { color: var(--muted); font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-wrap">
+      <img src="images.png?v=3" alt="NCF UNN Logo" />
+    </div>
+    <div class="header-text">
+      <h1>New Covenant Family</h1>
+      <p>MEMBER DETAILS FORM</p>
+    </div>
+    <div class="header-date" id="live-date"></div>
+  </header>
+
+  <div class="card" id="registration-form">
+    <div class="form-group">
+      <label>Full Name *</label>
+      <input type="text" id="member_name" placeholder="E.g. John Doe" required>
+    </div>
+    
+    <div class="form-group">
+      <label>Phone Number *</label>
+      <input type="tel" id="member_phone" placeholder="08012345678" required>
+    </div>
+
+    <div class="form-group">
+      <label>Course of Study & Level</label>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="course_of_study" placeholder="E.g. Computer Science" style="flex: 1;">
+        <select id="level" style="width: 120px; flex-shrink: 0;">
+          <option value="">Level</option>
+          <option value="100">100 lvl</option>
+          <option value="200">200 lvl</option>
+          <option value="300">300 lvl</option>
+          <option value="400">400 lvl</option>
+          <option value="500">500 lvl</option>
+          <option value="600">600 lvl</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>School Address</label>
+      <textarea id="school_address" placeholder="Hostel or Lodge name, room number, etc."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Home Address</label>
+      <textarea id="home_address" placeholder="Permanent home address"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Unit in Church</label>
+      <select id="department">
+        <option value="">-- Select (Optional) --</option>
+        <option value="NCF Angels">NCF Angels</option>
+        <option value="Media Unit">Media Unit</option>
+        <option value="Technical Unit">Technical Unit</option>
+        <option value="Ushers">Ushers</option>
+        <option value="Temple tenders">Temple tenders</option>
+        <option value="Administration">Administration</option>
+        <option value="MVP">MVP</option>
+        <option value="Intercessory">Intercessory</option>
+        <option value="Greeters">Greeters</option>
+        <option value="Evangelism">Evangelism</option>
+        <option value="Deep Oasis">Deep Oasis</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Who is your G12 Leader?</label>
+      <input type="text" id="g12_leader" placeholder="Name of your cell leader (if any)">
+    </div>
+
+    <div class="form-group">
+      <label>G12 Leader's Phone No.</label>
+      <input type="tel" id="g12_phone" placeholder="Leader's phone number">
+    </div>
+
+    <button class="btn-submit" id="submit-btn" onclick="submitRegistration()">Submit Details</button>
+  </div>
+
+  <div class="card success-msg" id="success-message">
+    <h2>Thank You! 🎉</h2>
+    <p>Your details have been successfully submitted and synced with the NCF database.</p>
+    <button class="btn-submit" onclick="location.reload()" style="max-width: 200px; margin: 0 auto;">Submit Another</button>
+  </div>
+
+  <script>
+    const d = new Date();
+    const liveDateEl = document.getElementById('live-date');
+    if(liveDateEl) {
+        liveDateEl.textContent = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
+    }
+
+    async function submitRegistration() {
+      // Gather input values
+      const member_name = document.getElementById('member_name').value.trim();
+      const member_phone = document.getElementById('member_phone').value.trim();
+      const course_of_study = document.getElementById('course_of_study').value.trim();
+      const level = document.getElementById('level').value;
+      const school_address = document.getElementById('school_address').value.trim();
+      const home_address = document.getElementById('home_address').value.trim();
+      const department = document.getElementById('department').value;
+      const g12_leader = document.getElementById('g12_leader').value.trim();
+      const g12_phone = document.getElementById('g12_phone').value.trim();
+
+      // Basic validation
+      if (!member_name || !member_phone) {
+        alert("Please provide at least your Full Name and Phone Number.");
+        return;
+      }
+
+      const btn = document.getElementById('submit-btn');
+      btn.textContent = "Submitting...";
+      btn.disabled = true;
+
+      // 1. Check if member already exists (case-insensitive search by name)
+      const { data: existingData, error: searchError } = await supabaseClient
+        .from('members')
+        .select('*')
+        .ilike('member_name', member_name);
+
+      if (searchError) {
+        console.error("Search Error:", searchError.message);
+        alert("Error checking database: " + searchError.message);
+        btn.textContent = "Submit Details";
+        btn.disabled = false;
+        return;
+      }
+
+      let dbError = null;
+
+      if (existingData && existingData.length > 0) {
+        // 2. Member exists! Update their record instead of creating a new one.
+        const existingMember = existingData[0];
+        const updatePayload = {};
+        
+        // Only update fields that the user actually filled in on the form
+        if (member_phone) updatePayload.member_phone = member_phone;
+        if (course_of_study) updatePayload.course_of_study = course_of_study;
+        if (level) updatePayload.level = level;
+        if (school_address) updatePayload.School_Address = school_address;
+        if (home_address) updatePayload.Home_Address = home_address;
+        if (department) updatePayload.department = department;
+        if (g12_leader) updatePayload.g12_leader = g12_leader;
+        if (g12_phone) updatePayload.g12_phone = g12_phone;
+
+        // We don't touch leader_type, preserving 'DH' or 'G12' if they are already a leader
+        const { error } = await supabaseClient.from('members').update(updatePayload).eq('id', existingMember.id);
+        dbError = error;
+      } else {
+        // 3. New Member! Insert them into the database.
+        const insertPayload = {
+          member_name: member_name, member_phone: member_phone, course_of_study: course_of_study || null,
+          level: level || null, School_Address: school_address || null, Home_Address: home_address || null,
+          department: department || null, g12_leader: g12_leader || null, g12_phone: g12_phone || null, leader_type: 'DH'
+        };
+        const { error } = await supabaseClient.from('members').insert([insertPayload]);
+        dbError = error;
+      }
+
+      if (dbError) {
+        console.error("Database Error:", dbError.message);
+        alert("Something went wrong. Please try again. Error: " + dbError.message);
+        btn.textContent = "Submit Details";
+        btn.disabled = false;
+      } else {
+        // Hide form and show success
+        document.getElementById('registration-form').style.display = 'none';
+        document.getElementById('success-message').style.display = 'block';
+      }
+    }
+  </script>
+</body>
+</html>
