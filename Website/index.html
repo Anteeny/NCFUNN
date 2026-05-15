@@ -1305,35 +1305,7 @@ function openDeptAddModal(dept) {
 }
 
 // Helper function to calculate attendance stats for today's service
-async function getTodayAttendanceStats() {
-  try {
-    const today = new Date();
-    const serviceDate = getServiceDate(today.toISOString().split('T')[0]);
-    
-    const { data: reports, error } = await supabaseClient
-      .from('g12_reports')
-      .select('*')
-      .eq('zone', 'G12');
-    
-    if (error) throw error;
-    if (!reports || reports.length === 0) return { present: 0, absent: 0, total: 0 };
-    
-    // Filter reports for today's service date
-    const todayReports = reports.filter(r => {
-      const reportServiceDate = getServiceDate(r.report_date || r.meeting_date);
-      return reportServiceDate === serviceDate;
-    });
-    
-    const present = todayReports.filter(r => r.status === 'Present').length;
-    const absent = todayReports.filter(r => r.status === 'Absent').length;
-    const total = new Set(todayReports.map(r => r.member_name)).size;
-    
-    return { present, absent, total };
-  } catch (err) {
-    console.error('Error fetching attendance stats:', err);
-    return { present: 0, absent: 0, total: 0 };
-  }
-}
+
 
 // Helper function to create WhatsApp link
 function getWhatsAppLink(memberName, isAbsent = false) {
@@ -1360,53 +1332,145 @@ function initials(name) {
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
-function renderDashboard(){
-  const totalMembers = state.members.length;
-  const leaders = state.members.filter(m=>m.leader_type).length;
-  const g12Members = state.members.filter(m=>m.leader_type==='G12').length;
-  const lastAtt = state.attendance[0] ? state.attendance[0].count : 0;
-  
-  // Fetch today's attendance stats and update dashboard
-  getTodayAttendanceStats().then(stats => {
-    const presentPercentage = stats.total > 0 ? Math.round((stats.present / stats.total) * 100) : 0;
+// Upgraded function to calculate accurate, de-duplicated stats from the last available service date
+// Upgraded metrics engine optimized for line-item folder report rows
+async function getLatestServiceStats() {
+  try {
+    // 1. Get the true total members directly from the database to guarantee accuracy
+    const { count: dbTotalMembers, error: countError } = await supabaseClient
+      .from('members')
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) throw countError;
+    const totalMembers = dbTotalMembers || 0;
+
+    // 2. Fetch all report lines from g12_reports
+    const { data: g12Reports, error: g12Error } = await supabaseClient
+      .from('g12_reports')
+      .select('*');
+
+    if (g12Error) throw g12Error;
+    const reports = g12Reports || [];
+
+    // If no data exists yet, return default fallback layout values safely
+    if (reports.length === 0) {
+      return { presentCount: 0, absentCount: 0, reportsSubmitted: 0, totalDH: 20, dateLabel: 'No services logged', totalMembers };
+    }
+
+    // 3. Find the newest active service date window across your entries
+    const allServiceDates = reports
+      .map(r => getServiceDate(r.report_date || r.meeting_date))
+      .filter(d => d !== 'Unknown Date');
+
+    if (allServiceDates.length === 0) {
+      return { presentCount: 0, absentCount: 0, reportsSubmitted: 0, totalDH: 20, dateLabel: 'No services logged', totalMembers };
+    }
+
+    // Sort chronologically descending to isolate the latest date at index 0
+    allServiceDates.sort((a, b) => new Date(b) - new Date(a));
+    const targetServiceDate = allServiceDates[0];
+
+    // 4. Calculate presence headcounts and track folder submissions for this date window
+    let presentCount = 0;
+    const foldersSubmittedSet = new Set();
+
+    reports.forEach(r => {
+      const sDate = getServiceDate(r.report_date || r.meeting_date);
+      if (sDate === targetServiceDate) {
+        // Count each member row marked Present inside the folders
+        if (r.status === 'Present') {
+          presentCount++;
+        }
+        // Collect the unique leader folder names submitted on this date
+        if (r.leader_name) {
+          foldersSubmittedSet.add(r.leader_name.trim().toLowerCase());
+        }
+      }
+    });
+
+    // 5. Build compliance metrics against your ground truth baseline of 20 DH leaders
+    const totalDHCount = 20; 
+    const submittedDHCount = foldersSubmittedSet.size;
+
+    // Absolute Absences = Verified database size minus the active presents counted inside folders
+    const absentCount = Math.max(0, totalMembers - presentCount);
+
+    return {
+      presentCount,
+      absentCount,
+      reportsSubmitted: submittedDHCount,
+      totalDH: totalDHCount,
+      dateLabel: formatServiceDate(targetServiceDate),
+      totalMembers
+    };
+  } catch (err) {
+    console.error('Error computing dashboard economics:', err.message);
+    return { presentCount: 0, absentCount: 0, reportsSubmitted: 0, totalDH: 20, dateLabel: 'Error loading data', totalMembers: state.members.length };
+  }
+}
+
+// Rewritten dashboard UI render engine
+function renderDashboard() {
+  // Trigger async background database calculation
+  getLatestServiceStats().then(stats => {
+    const presentPercentage = stats.totalMembers > 0 ? Math.round((stats.presentCount / stats.totalMembers) * 100) : 0;
     
     document.getElementById('dash-stats').innerHTML = `
-      <div class="stat-card"><div class="stat-icon gold"><i class="ti ti-users"></i></div><div class="stat-num">${totalMembers}</div><div class="stat-label">Total Members</div><div class="stat-change up"><i class="ti ti-arrow-up"></i> +2 this month</div></div>
-      <div class="stat-card"><div class="stat-icon green"><i class="ti ti-check-circle"></i></div><div class="stat-num">${stats.present}</div><div class="stat-label">Present Today</div><div class="stat-change up"><i class="ti ti-arrow-up"></i> ${presentPercentage}% attendance</div></div>
-      <div class="stat-card"><div class="stat-icon red"><i class="ti ti-x-circle"></i></div><div class="stat-num">${stats.absent}</div><div class="stat-label">Absent Today</div><div class="stat-change down"><i class="ti ti-arrow-down"></i> Follow-up needed</div></div>
-      <div class="stat-card"><div class="stat-icon navy"><i class="ti ti-users-group"></i></div><div class="stat-num">${stats.total}</div><div class="stat-label">Today's G12 Reports</div><div class="stat-change up"><i class="ti ti-arrow-up"></i> ${stats.total > 0 ? 'Reports submitted' : 'No reports yet'}</div></div>
+      <div class="stat-card">
+        <div class="stat-icon gold"><i class="ti ti-users"></i></div>
+        <div class="stat-num">${stats.totalMembers}</div>
+        <div class="stat-label">Total Members</div>
+        <div class="stat-change up"><i class="ti ti-calendar"></i> Database Size</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green"><i class="ti ti-check-circle"></i></div>
+        <div class="stat-num">${stats.presentCount}</div>
+        <div class="stat-label">Present (Last Service)</div>
+        <div class="stat-change up"><i class="ti ti-arrow-up"></i> ${presentPercentage}% attendance</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon red"><i class="ti ti-x-circle"></i></div>
+        <div class="stat-num">${stats.absentCount}</div>
+        <div class="stat-label">Absent (Last Service)</div>
+        <div class="stat-change down"><i class="ti ti-arrow-down"></i> Follow-up group</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon navy"><i class="ti ti-users-group"></i></div>
+        <div class="stat-num">${stats.reportsSubmitted}<span style="font-size:14px;color:var(--text-muted)"> / ${stats.totalDH}</span></div>
+        <div class="stat-label">DH Folders Submitted</div>
+        <div class="stat-change up">
+          <i class="ti ti-clock"></i> Window: ${stats.dateLabel}
+        </div>
+      </div>
     `;
   });
   
+  // Render layout trend paths safely using your baseline definitions
   const attHTML = state.attendance.slice(0,5).map((a,i) => {
-    const max = Math.max(...state.attendance.map(x=>x.count));
+    const max = Math.max(...state.attendance.map(x=>x.count), 1);
     const pct = Math.round((a.count/max)*100);
     return `<div class="bar-row"><div class="bar-label">${new Date(a.date).toLocaleDateString('en-GB',{month:'short',day:'numeric'})}</div><div class="bar-track"><div class="bar-fill ${i===0?'gold':''}" style="width:${pct}%"></div></div><div class="bar-val">${a.count}</div></div>`;
   }).join('');
-  document.getElementById('att-trend').innerHTML = attHTML;
+  document.getElementById('att-trend').innerHTML = attHTML || '<div class="empty-state"><p>No trend data available</p></div>';
   
   const fuHTML = state.followups.slice(0,4).map(f => `
     <div class="timeline-item">
       <div class="timeline-dot ${f.outcome.includes('Saved')?'green':f.outcome.includes('Positive')?'gold':'navy'}"><i class="ti ti-phone" style="font-size:13px"></i></div>
       <div class="timeline-text"><div class="timeline-title">${f.member}</div><div class="timeline-sub">${f.type} · ${f.outcome} · ${f.assignedTo}</div></div>
     </div>`).join('');
-  document.getElementById('recent-followups').innerHTML = fuHTML || '<div class="empty-state"><i class="ti ti-phone-off"></i><p>No follow-ups yet</p></div>';
+  document.getElementById('recent-followups').innerHTML = fuHTML || '<div class="empty-state"><i class="ti ti-phone-off"></i><p>No follow-ups logged yet</p></div>';
   
   const unitCounts = {};
-  // Note: Unit membership is no longer part of members table
-  // For now, we can show department breakdown instead
   state.members.forEach(m => { if(m.department) unitCounts[m.department] = (unitCounts[m.department]||0)+1; });
-  const maxUnit = Math.max(...Object.values(unitCounts),1);
+  const maxUnit = Math.max(...Object.values(unitCounts), 1);
   const perfHTML = Object.entries(unitCounts).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([u,c]) => 
     `<div class="bar-row"><div class="bar-label" style="font-size:10px">${u}</div><div class="bar-track"><div class="bar-fill green" style="width:${Math.round((c/maxUnit)*100)}%"></div></div><div class="bar-val">${c}</div></div>`
   ).join('');
-  document.getElementById('unit-performance').innerHTML = perfHTML || '<div class="empty-state"><p>No departments yet</p></div>';
+  document.getElementById('unit-performance').innerHTML = perfHTML || '<div class="empty-state"><p>No data recorded</p></div>';
   
   const actHTML = [
-    {icon:'ti-user-plus',color:'gold',text:'New member added: Amara Igwe',time:'2h ago'},
-    {icon:'ti-calendar-check',color:'navy',text:'Sunday attendance recorded: 187',time:'3 days ago'},
-    {icon:'ti-phone-call',color:'green',text:'Follow-up: Faith Okeke rededicated',time:'4 days ago'},
-    {icon:'ti-users',color:'navy',text:'Choir unit meeting logged',time:'5 days ago'},
+    {icon:'ti-user-plus',color:'gold',text:'System calculated live folder statistics',time:'Just now'},
+    {icon:'ti-calendar-check',color:'navy',text:'Database query interface active',time:'Synchronized'},
   ].map(a => `
     <div class="timeline-item">
       <div class="timeline-dot ${a.color}"><i class="ti ${a.icon}" style="font-size:13px"></i></div>
