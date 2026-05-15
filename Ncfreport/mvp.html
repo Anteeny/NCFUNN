@@ -19,17 +19,13 @@
   <style>
     :root {
       --gold: #C9A84C; --gold-light: #E8C97A;
-      --deep: #1A1A2E; --ink: #16213E; --card: rgba(10, 25, 70, 0.55);
+      --deep: #1A1A2E; --ink: #16213E; --card: #101D42;
       --text: #E8EDF2; --muted: #A8B2D8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     
     body {
       font-family: 'DM Sans', sans-serif;
-      background: url('FYF.jpg') center center / cover no-repeat fixed;
-      background-position: center;
-      background-attachment: fixed;
-      backdrop-filter: blur(8px);
       min-height: 100vh;
       color: var(--text);
       display: flex;
@@ -37,6 +33,15 @@
       align-items: center;
       justify-content: flex-start;
       padding: 0 0 40px;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: -15px; left: -15px; right: -15px; bottom: -15px;
+      background: url('FYF.jpg') center center / cover no-repeat fixed;
+      filter: blur(6px);
+      z-index: -1;
     }
 
     /* --- UNIFIED HEADER --- */
@@ -48,8 +53,7 @@
       justify-content: flex-start;
       gap: 1.1rem;
       border-bottom: 2px solid rgba(201, 168, 76, 0.35);
-      background: rgba(8, 20, 60, 0.45);
-      backdrop-filter: blur(8px);
+      background: #0D1B2A;
       margin-bottom: 4vh;
     }
     .logo-wrap {
@@ -82,8 +86,6 @@
     .card {
       background: var(--card);
       border: 1px solid rgba(201,168,76,0.35);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
       border-radius: 1.25rem;
       padding: 30px;
       width: min(100% - 40px, 500px);

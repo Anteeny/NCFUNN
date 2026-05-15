@@ -9,6 +9,22 @@
   <link rel="apple-touch-icon" href="images.png?v=3">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body::before {
+      content: "";
+      position: fixed;
+      top: -15px; left: -15px; right: -15px; bottom: -15px;
+      background: url('DC wallpaper.jpg') center center / cover no-repeat fixed;
+      filter: blur(6px);
+      z-index: -1;
+    }
+    body, .bg { background: none !important; backdrop-filter: none !important; }
+    header { background: #0D1B2A !important; backdrop-filter: none !important; border-bottom: 2px solid rgba(201, 168, 76, 0.35); }
+    .card { background: #101D42 !important; backdrop-filter: none !important; border: 1px solid rgba(201,168,76,0.35); box-shadow: 0 8px 40px rgba(0,0,0,0.4); }
+    .hero { background: transparent !important; backdrop-filter: none !important; }
+    h1, h2, h3, p, .section-label { color: #E8EDF2 !important; }
+    .card-icon { background: rgba(201,168,76,0.15) !important; color: #E8C97A !important; border: none !important; }
+  </style>
 </head>
 <body>
 <div class="bg">
@@ -61,6 +77,13 @@
         <h3>New Member Registration</h3>
         <p>Register a new member joining the family.</p>
         <div class="card-btn">Register Member <span>→</span></div>
+      </a>
+
+      <a class="card card-service" href="servicereport.html">
+        <div class="card-icon">⛪</div>
+        <h3>Service Report</h3>
+        <p>Submit overall service attendance and finance.</p>
+        <div class="card-btn">Submit Report <span>→</span></div>
       </a>
 
     </div>

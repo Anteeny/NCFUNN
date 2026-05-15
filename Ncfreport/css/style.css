@@ -242,6 +242,7 @@ header {
 .card-cg     { --card-accent: #34D399; }
 .card-dept   { --card-accent: #A78BFA; }
 .card-member { --card-accent: #FCD34D; }
+.card-service { --card-accent: #F43F5E; }
 
 footer {
   text-align: center;

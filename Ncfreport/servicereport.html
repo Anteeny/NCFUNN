@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NCF UNN — Service Report</title>
+  <link rel="icon" type="image/png" href="images.png?v=3">
+  <link rel="shortcut icon" type="image/x-icon" href="images.png?v=3">
+  <link rel="apple-touch-icon" href="images.png?v=3">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    const supabaseUrl = "https://cjbedftdexzcsydwayig.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmVkZnRkZXh6Y3N5ZHdheWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTUwMjgsImV4cCI6MjA5MzYzMTAyOH0.xsvtG5NmI_9TDZQ5-MhcjtX4UIIAiH2kyOlpIPDkCdg";
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #edbf3e;
+      --gold-light: #E8C97A;
+      --dark: #0D1B2A;
+      --darker: #050a15;
+      --mid: #1B2F45;
+      --accent: #101D42;
+      --text: #E8EDF2;
+      --muted: #ffffff;
+      --card-bg: rgba(255,255,255,0.04);
+      --border: rgba(201,168,76,0.18);
+      --input-bg: rgba(255,255,255,0.06);
+      --input-border: rgba(201,168,76,0.3);
+      --input-focus: rgba(201,168,76,0.7);
+      --radius: 14px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: -15px; left: -15px; right: -15px; bottom: -15px;
+      background: url('FYF.jpg') center center / cover no-repeat fixed;
+      filter: blur(6px);
+      z-index: -1;
+    }
+
+    .bg {
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 22px 40px;
+      border-bottom: 2px solid rgba(201, 168, 76, 0.35);
+      background: #0D1B2A;
+      margin-bottom: 4vh;
+    }
+
+    .logo-wrap img {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      border: 2px solid var(--gold);
+      object-fit: cover;
+    }
+
+    .header-text h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      letter-spacing: 0.01em;
+    }
+
+    .header-text p {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 2px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .header-date {
+      margin-left: auto;
+      font-size: 0.8rem;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      text-align: right;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      text-align: center;
+      padding: 52px 24px 36px;
+    }
+
+    .hero h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--gold-light) 30%, #fff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 14px;
+    }
+
+    .hero > p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-style: italic;
+      max-width: 500px;
+      margin: 0 auto 18px;
+    }
+
+    .gold-line {
+      width: 60px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      margin: 18px auto;
+      border-radius: 2px;
+    }
+
+    .hero .sub {
+      color: var(--muted);
+      font-size: 0.88rem;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── FORM CARD ── */
+    .form-wrap {
+      max-width: 780px;
+      margin: 0 auto 60px;
+      padding: 0 24px;
+    }
+
+    .form-card {
+      background: #101D42;
+      border: 1px solid rgba(201,168,76,0.35);
+      border-radius: 20px;
+      padding: 40px 44px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    }
+
+    @media(max-width:600px) {
+      .form-card { padding: 28px 20px; }
+      header { padding: 16px 20px; }
+    }
+
+    /* ── SECTIONS ── */
+    .form-section {
+      margin-bottom: 36px;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .section-number {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold), var(--gold-light));
+      color: var(--darker);
+      font-weight: 700;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .section-heading h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--gold-light);
+      letter-spacing: 0.02em;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 28px 0;
+    }
+
+    /* ── FIELDS ── */
+    .field-grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .field-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+    .field-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+    @media(max-width:560px) {
+      .field-grid.cols-2,
+      .field-grid.cols-3 { grid-template-columns: 1fr; }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    label .req { color: var(--gold); margin-left: 3px; }
+
+    input, select, textarea {
+      background: rgba(0,0,0,0.2);
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: 9px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.92rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+      width: 100%;
+    }
+
+    input::placeholder, textarea::placeholder { color: rgba(168,178,216,0.5); }
+
+    select option { background: #0D1B2A; color: #fff; }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+    }
+
+    textarea { resize: vertical; min-height: 90px; }
+
+    /* Total row */
+    .total-row input {
+      border-color: rgba(201,168,76,0.5);
+      background: rgba(201,168,76,0.07);
+      font-weight: 600;
+      color: var(--gold-light);
+    }
+
+    /* ── RADIO GROUP ── */
+    .radio-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .radio-group label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-transform: none;
+      letter-spacing: 0;
+      font-size: 0.88rem;
+      color: var(--text);
+      cursor: pointer;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid rgba(201,168,76,0.3);
+      border-radius: 8px;
+      padding: 8px 14px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+   /* WITH THIS NEW VISUALLY HIDDEN BLOCK */
+.radio-group input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+} 
+
+    .radio-group input[type="radio"]:checked + span {
+      /* handled via JS class toggle */
+    }
+
+    .radio-group label.active {
+      border-color: var(--gold);
+      background: rgba(201,168,76,0.12);
+      color: var(--gold-light);
+    }
+
+    /* ── SUBMIT ── */
+    .submit-wrap {
+      margin-top: 36px;
+      text-align: center;
+    }
+
+    .btn-submit {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);
+      color: var(--darker);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 15px 48px;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+      box-shadow: 0 4px 24px rgba(201,168,76,0.25);
+    }
+
+    .btn-submit:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(201,168,76,0.4);
+    }
+
+    .btn-submit:active { transform: scale(0.98); }
+
+    /* ── SUCCESS ── */
+    .success-banner {
+      display: none;
+      background: rgba(201,168,76,0.12);
+      border: 1px solid var(--gold);
+      border-radius: 12px;
+      padding: 18px 24px;
+      text-align: center;
+      color: var(--gold-light);
+      font-weight: 600;
+      margin-top: 24px;
+      font-size: 0.95rem;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      padding: 28px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+      letter-spacing: 0.04em;
+    }
+
+    footer span { color: var(--gold); }
+  </style>
+</head>
+<body>
+<div class="bg">
+
+  <header>
+    <div class="logo-wrap">
+      <img src="images.png" alt="NCF UNN Logo" />
+    </div>
+    <div class="header-text">
+      <h1>New Covenant Family, UNN</h1>
+      <p>Report Submission Portal</p>
+    </div>
+    <div class="header-date" id="live-date"></div>
+  </header>
+
+  <div class="hero">
+    <h2>Service Report</h2>
+    <p>"Be diligent to know the state of your flocks, And attend to your herds;"</p>
+    <div class="gold-line"></div>
+    <p class="sub">Fill in the fields below to submit your service report.</p>
+  </div>
+
+  <div class="form-wrap">
+    <div class="form-card">
+      <form id="serviceForm" autocomplete="off">
+
+        <!-- SECTION 1 — Date & Service Info -->
+        <div class="form-section">
+          <div class="section-heading">
+            <div class="section-number">1</div>
+            <h3>Service Information</h3>
+          </div>
+          <div class="field-grid cols-2">
+            <div class="field">
+              <label for="date">Date <span class="req">*</span></label>
+              <input type="date" id="date" name="date" required />
+            </div>
+            <div class="field">
+              <label for="serviceType">Type of Service <span class="req">*</span></label>
+              <select id="serviceType" name="serviceType" required>
+                <option value="" disabled selected>Select service type</option>
+                <option>Sunday Service</option>
+                <option>Wednesday Service</option>
+                <option>Equip</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field-grid" style="margin-top:16px;">
+            <div class="field">
+              <label>Zone <span class="req">*</span></label>
+              <div class="radio-group" id="zoneGroup">
+                <label><input type="radio" name="zone" value="HQ" required /><span>HQ</span></label>
+                <label><input type="radio" name="zone" value="Franco" /><span>Franco</span></label>
+                <label><input type="radio" name="zone" value="Hilltop" /><span>Hilltop</span></label>
+                <label><input type="radio" name="zone" value="JSQ" /><span>JSQ</span></label>
+                <label><input type="radio" name="zone" value="Odim" /><span>Odim</span></label>
+                <label><input type="radio" name="zone" value="Odenigwe" /><span>Odenigwe</span></label>
+                <label><input type="radio" name="zone" value="Greenhouse" /><span>Greenhouse</span></label>
+              </div>
+            </div>
+         </div>
+          
+          <div class="field-grid" style="margin-top:16px;">
+            <div class="field">
+              <label for="zonalPastor">Zonal Pastor <span class="req">*</span></label>
+              <input type="text" id="zonalPastor" name="zonalPastor" placeholder="Pastor's name" required />
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- SECTION 2 — Message Details -->
+        <div class="form-section">
+          <div class="section-heading">
+            <div class="section-number">2</div>
+            <h3>Message Details</h3>
+          </div>
+          <div class="field-grid cols-2">
+            <div class="field">
+              <label for="topic">Topic / Title <span class="req">*</span></label>
+              <input type="text" id="topic" name="topic" placeholder="e.g. Paternal Honor" required />
+            </div>
+            <div class="field">
+              <label for="preacher">Preacher <span class="req">*</span></label>
+              <input type="text" id="preacher" name="preacher" placeholder="Full name" required />
+            </div>
+          </div>
+
+        </div>
+
+        <div class="divider"></div>
+
+
+
+      <!-- SECTION 3 — Head Count -->
+        <div class="form-section">
+          <div class="section-heading">
+            <div class="section-number">3</div>
+            <h3>Head Count</h3>
+          </div>
+          <div class="field-grid cols-3">
+            <div class="field">
+              <label for="male">Male</label>
+              <input type="number" id="male" name="male" placeholder="0" min="0" />
+            </div>
+            <div class="field">
+              <label for="female">Female</label>
+              <input type="number" id="female" name="female" placeholder="0" min="0" />
+            </div>
+            <div class="field">
+              <label for="children">Children</label>
+              <input type="number" id="children" name="children" placeholder="0" min="0" />
+            </div>
+          </div>
+          <div class="field-grid" style="margin-top:16px; max-width:240px;">
+            <div class="field total-row">
+              <label for="totalAttendance">Total Attendance</label>
+              <input type="number" id="totalAttendance" name="totalAttendance" placeholder="Auto-calculated" readonly />
+            </div>
+          </div>
+        </div>
+
+
+       <!-- SECTION 4 — MVP & Follow-up -->
+        <div class="form-section">
+          <div class="section-heading">
+            <div class="section-number">4</div>
+            <h3>MVP &amp; Follow-up</h3>
+          </div>
+          <div class="field-grid cols-2">
+            <div class="field">
+              <label for="mvp">MVP (Most Valuable People / First Timers)</label>
+              <input type="number" id="mvp" name="mvp" placeholder="0" min="0" />
+            </div>
+            <div class="field">
+              <label for="secondTimers">Second Timers</label>
+              <input type="number" id="secondTimers" name="secondTimers" placeholder="0" min="0" />
+            </div>
+            <div class="field">
+              <label for="newConvert">New Converts</label>
+              <input type="number" id="newConvert" name="newConvert" placeholder="0" min="0" />
+            </div>
+            <div class="field">
+              <label for="holyGhostBaptism">Holy Ghost Baptism</label>
+              <input type="number" id="holyGhostBaptism" name="holyGhostBaptism" placeholder="0" min="0" />
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- SECTION 5 — Finance -->
+        <div class="form-section">
+          <div class="section-heading">
+            <div class="section-number">5</div>
+            <h3>Finance</h3>
+          </div>
+          <div class="field-grid cols-2">
+            <div class="field">
+              <label for="offeringTransferred">Transferred Offering (₦)</label>
+              <input type="number" id="offeringTransferred" name="offeringTransferred" placeholder="0.00" min="0" step="0.01" />
+            </div>
+            <div class="field">
+              <label for="offering">Offering (₦)</label>
+              <input type="number" id="offering" name="offering" placeholder="0.00" min="0" step="0.01" />
+            </div>
+            <div class="field">
+              <label for="titheTransferred">Transferred Tithe (₦)</label>
+              <input type="number" id="titheTransferred" name="titheTransferred" placeholder="0.00" min="0" step="0.01" />
+            </div>
+            <div class="field">
+              <label for="tithe">Tithe (₦)</label>
+              <input type="number" id="tithe" name="tithe" placeholder="0.00" min="0" step="0.01" />
+            </div>
+          </div>
+          <div class="field-grid" style="margin-top:16px; max-width:240px;">
+            <div class="field total-row">
+              <label for="financeTotal">Total (₦)</label>
+              <input type="number" id="financeTotal" name="financeTotal" placeholder="Auto-calculated" readonly />
+            </div>
+          </div>
+        </div>
+
+        <!-- SUBMIT -->
+        <div class="submit-wrap">
+          <button type="submit" class="btn-submit">Submit Report <span>→</span></button>
+          <div class="success-banner" id="successBanner">
+            ✅ Report submitted successfully! God bless your diligence.
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <footer>
+    &copy; <span>New Covenant Family, UNN</span> — All rights reserved.
+  </footer>
+
+</div>
+<script>
+  // Live date
+  const dateEl = document.getElementById('live-date');
+  const now = new Date();
+  dateEl.textContent = now.toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  // Set today's date as default
+  const dateInput = document.getElementById('date');
+  dateInput.value = now.toISOString().split('T')[0];
+
+  // Radio zone pill active state
+  document.querySelectorAll('#zoneGroup label').forEach(label => {
+    label.querySelector('input').addEventListener('change', () => {
+      document.querySelectorAll('#zoneGroup label').forEach(l => l.classList.remove('active'));
+      label.classList.add('active');
+    });
+  });
+
+// Auto-calculate total attendance (Removed teenagers)
+  ['male', 'female', 'children'].forEach(id => {
+    document.getElementById(id).addEventListener('input', calcAttendance);
+  });
+
+  function calcAttendance() {
+    const vals = ['male', 'female', 'children'].map(id => parseInt(document.getElementById(id).value) || 0);
+    document.getElementById('totalAttendance').value = vals.reduce((a, b) => a + b, 0) || '';
+  }
+
+  // Auto-calculate finance total (Updated structural IDs)
+  ['offeringTransferred', 'offering', 'titheTransferred', 'tithe'].forEach(id => {
+    document.getElementById(id).addEventListener('input', calcFinance);
+  });
+
+  function calcFinance() {
+    const vals = ['offeringTransferred', 'offering', 'titheTransferred', 'tithe'].map(id => parseFloat(document.getElementById(id).value) || 0);
+    const total = vals.reduce((a, b) => a + b, 0);
+    document.getElementById('financeTotal').value = total > 0 ? total.toFixed(2) : '';
+  }
+
+  // Form submit
+  document.getElementById('serviceForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const date = document.getElementById('date').value;
+    const serviceType = document.getElementById('serviceType').value;
+    const zoneInput = document.querySelector('input[name="zone"]:checked');
+    const zonal_pastor = document.getElementById('zonalPastor').value.trim();
+    const zone = zoneInput ? zoneInput.value : '';
+    const topic = document.getElementById('topic').value.trim();
+    const preacher = document.getElementById('preacher').value.trim();
+
+    const male = parseInt(document.getElementById('male').value) || 0;
+    const female = parseInt(document.getElementById('female').value) || 0;
+    const children = parseInt(document.getElementById('children').value) || 0;
+    const totalAttendance = parseInt(document.getElementById('totalAttendance').value) || 0;
+
+    const offeringTransferred = parseFloat(document.getElementById('offeringTransferred').value) || 0;
+    const offering = parseFloat(document.getElementById('offering').value) || 0;
+    const titheTransferred = parseFloat(document.getElementById('titheTransferred').value) || 0;
+    const tithe = parseFloat(document.getElementById('tithe').value) || 0;
+    const financeTotal = parseFloat(document.getElementById('financeTotal').value) || 0;
+
+    const mvp = parseInt(document.getElementById('mvp').value) || 0;
+    const secondTimers = parseInt(document.getElementById('secondTimers').value) || 0;
+    const newConvert = parseInt(document.getElementById('newConvert').value) || 0;
+    const holyGhostBaptism = parseInt(document.getElementById('holyGhostBaptism').value) || 0;
+
+    if(!zone) {
+      alert('Please select a Zone');
+      return;
+    }
+
+    const btn = document.querySelector('.btn-submit');
+    const origText = btn.innerHTML;
+    btn.innerHTML = 'Submitting...';
+    btn.disabled = true;
+
+    try {
+      const { error } = await supabaseClient.from('service_reports').insert([{
+        date, 
+        service_type: serviceType, 
+        zone, 
+        zonal_pastor,
+        topic, 
+        preacher,
+        male, 
+        female, 
+        children, 
+        total_attendance: totalAttendance,
+        offering_transferred: offeringTransferred, 
+        offering, 
+        tithe_transferred: titheTransferred, 
+        tithe, 
+        finance_total: financeTotal,
+        mvp, 
+        second_timers: secondTimers, 
+        new_converts: newConvert, 
+        holy_ghost_baptism: holyGhostBaptism
+      }]);
+
+      if (error) throw error;
+
+      const banner = document.getElementById('successBanner');
+      banner.style.display = 'block';
+      document.getElementById('serviceForm').reset();
+      document.getElementById('date').value = date; // preserve date
+      document.getElementById('zonalPastor').value = ''; // Clear zonal pastor
+      document.querySelectorAll('#zoneGroup label').forEach(l => l.classList.remove('active'));
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      setTimeout(() => banner.style.display = 'none', 5000);
+    } catch(err) {
+      console.error(err);
+      alert("Failed to submit: " + err.message);
+    } finally {
+      btn.innerHTML = origText;
+      btn.disabled = false;
+    }
+  });
+
+  
+</script>
+</body>
+</html>

@@ -28,10 +28,6 @@
 
      body {
       font-family: 'DM Sans', sans-serif;
-      background: url('FYF.jpg') center center / cover no-repeat fixed;
-      background-position: center;
-      background-attachment: fixed;
-      backdrop-filter: blur(8px);
       min-height: 100vh;
       color: var(--text);
       display: flex;
@@ -39,6 +35,15 @@
       align-items: center;
       justify-content: flex-start;
       padding: 0 0 40px;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: -15px; left: -15px; right: -15px; bottom: -15px;
+      background: url('FYF.jpg') center center / cover no-repeat fixed;
+      filter: blur(6px);
+      z-index: -1;
     }
 
     /* --- UNIFIED HEADER --- */
@@ -50,8 +55,7 @@
       justify-content: flex-start;
       gap: 1.1rem;
       border-bottom: 2px solid rgba(201, 168, 76, 0.35);
-      background: rgba(8, 20, 60, 0.45);
-      backdrop-filter: blur(8px);
+      background: #0D1B2A;
       margin-bottom: 4vh;
     }
     .logo-wrap {
@@ -84,10 +88,8 @@
     h2 { font-family: 'Playfair Display', serif; }
 
     .glass-card {
-      background: rgba(10, 25, 70, 0.55);
+      background: #101D42;
       border: 1px solid rgba(201,168,76,0.35);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
       border-radius: 1.25rem;
       box-shadow: 0 8px 40px rgba(0,0,0,0.4);
     }
@@ -333,7 +335,7 @@
     #summary-modal.open { display: flex; }
 
     .summary-card {
-      background: rgba(10,20,60,0.92);
+      background: #101D42;
       border: 1px solid rgba(201,168,76,0.35);
       border-radius: 1.25rem;
       padding: 2rem;
