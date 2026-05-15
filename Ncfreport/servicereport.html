@@ -63,6 +63,7 @@
       padding: 22px 40px;
       border-bottom: 2px solid rgba(201, 168, 76, 0.35);
       background: #0D1B2A;
+      background: url('eagle2026.png') center center / cover no-repeat, #0D1B2A; /* Image with a dark overlay */
       margin-bottom: 4vh;
     }
 
@@ -251,6 +252,35 @@
 
     textarea { resize: vertical; min-height: 90px; }
 
+    /* ── MULTI-STEP LOGIC ── */
+    .form-step { display: none; }
+    .form-step.active { display: block; animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .steps-progress {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 35px;
+    }
+    .step-indicator {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--muted);
+      transition: all 0.3s;
+    }
+    .step-indicator.active { background: var(--gold); border-color: var(--gold); color: var(--darker); box-shadow: 0 0 15px rgba(201,168,76,0.3); }
+    .step-line { width: 50px; height: 2px; background: var(--border); }
+    .step-line.active { background: var(--gold); }
+
     /* Total row */
     .total-row input {
       border-color: rgba(201,168,76,0.5);
@@ -382,9 +412,20 @@
 
   <div class="form-wrap">
     <div class="form-card">
+      
+      <!-- Progress Indicator -->
+      <div class="steps-progress">
+        <div class="step-indicator active" id="ind1">1</div>
+        <div class="step-line" id="line1"></div>
+        <div class="step-indicator" id="ind2">2</div>
+      </div>
+
       <form id="serviceForm" autocomplete="off">
 
-        <!-- SECTION 1 — Date & Service Info -->
+        <!-- STEP 1: Basic Info & Attendance -->
+        <div class="form-step active" id="step1">
+          
+          <!-- SECTION 1 — Date & Service Info -->
         <div class="form-section">
           <div class="section-heading">
             <div class="section-number">1</div>
@@ -429,9 +470,9 @@
           </div>
         </div>
 
-        <div class="divider"></div>
+          <div class="divider"></div>
 
-        <!-- SECTION 2 — Message Details -->
+          <!-- SECTION 2 — Message Details -->
         <div class="form-section">
           <div class="section-heading">
             <div class="section-number">2</div>
@@ -449,12 +490,10 @@
           </div>
 
         </div>
+          
+          <div class="divider"></div>
 
-        <div class="divider"></div>
-
-
-
-      <!-- SECTION 3 — Head Count -->
+          <!-- SECTION 3 — Head Count -->
         <div class="form-section">
           <div class="section-heading">
             <div class="section-number">3</div>
@@ -481,9 +520,16 @@
             </div>
           </div>
         </div>
+          
+          <div class="submit-wrap">
+            <button type="button" class="btn-submit" onclick="nextStep()">Next: Growth & Finance <span>→</span></button>
+          </div>
+        </div>
 
+        <!-- STEP 2: MVP & Finance -->
+        <div class="form-step" id="step2">
 
-       <!-- SECTION 4 — MVP & Follow-up -->
+          <!-- SECTION 4 — MVP & Follow-up -->
         <div class="form-section">
           <div class="section-heading">
             <div class="section-number">4</div>
@@ -543,15 +589,19 @@
           </div>
         </div>
 
-        <!-- SUBMIT -->
-        <div class="submit-wrap">
-          <button type="submit" class="btn-submit">Submit Report <span>→</span></button>
-          <div class="success-banner" id="successBanner">
-            ✅ Report submitted successfully! God bless your diligence.
+          <div class="submit-wrap" style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <button type="button" class="btn-submit" onclick="prevStep()" style="background: rgba(255,255,255,0.1); color: var(--text); border: 1px solid var(--border); box-shadow: none;">← Back</button>
+            <button type="submit" class="btn-submit">Submit Report <span>→</span></button>
           </div>
+
         </div>
 
       </form>
+
+      <div class="success-banner" id="successBanner">
+        ✅ Report submitted successfully! God bless your diligence.
+      </div>
+
     </div>
   </div>
 
@@ -569,6 +619,36 @@
   // Set today's date as default
   const dateInput = document.getElementById('date');
   dateInput.value = now.toISOString().split('T')[0];
+
+  // Multi-step navigation logic
+  function nextStep() {
+    const step1 = document.getElementById('step1');
+    const inputs = step1.querySelectorAll('input[required], select[required]');
+    let valid = true;
+    
+    inputs.forEach(input => {
+      if (!input.checkValidity()) {
+        input.reportValidity();
+        valid = false;
+      }
+    });
+
+    if (valid) {
+      document.getElementById('step1').classList.remove('active');
+      document.getElementById('step2').classList.add('active');
+      document.getElementById('ind2').classList.add('active');
+      document.getElementById('line1').classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  function prevStep() {
+    document.getElementById('step2').classList.remove('active');
+    document.getElementById('step1').classList.add('active');
+    document.getElementById('ind2').classList.remove('active');
+    document.getElementById('line1').classList.remove('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   // Radio zone pill active state
   document.querySelectorAll('#zoneGroup label').forEach(label => {
@@ -668,6 +748,7 @@
       document.getElementById('date').value = date; // preserve date
       document.getElementById('zonalPastor').value = ''; // Clear zonal pastor
       document.querySelectorAll('#zoneGroup label').forEach(l => l.classList.remove('active'));
+      prevStep(); // Return to Step 1 for next entry
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
       setTimeout(() => banner.style.display = 'none', 5000);
     } catch(err) {
@@ -680,6 +761,3 @@
   });
 
   
-</script>
-</body>
-</html>
