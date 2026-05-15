@@ -13,7 +13,7 @@ html, body {
 
 .bg {
   min-height: 100vh;
-  background: url('FYF.jpg') center center / cover no-repeat fixed;
+  background: url('fyf.jpg') center center / cover no-repeat fixed;
   position: relative;
   display: flex;
   flex-direction: column;
