@@ -735,6 +735,75 @@
   
   const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
+  // Leader name normalization - converts aliases to canonical names
+  const LEADER_DICTIONARY = [
+    { name: "Ukamaka Augustine", keywords: ["ukamaka", "ukay", "p.ukay", "pa ukay", "pst ukay", "pastor ukay", "ma ukay", "augusta", "augustine", "brother ukamaka", "sister ukamaka"] },
+    { name: "Royal Eroh", keywords: ["royal", "eroh", "brother royal", "pastor royal", "pa royal", "pst royal", "mr royal", "mr eroh", "pastor eroh"] },
+    { name: "Promise Okeke", keywords: ["promise", "okeke", "promise okeke", "pa promise", "pst promise", "pastor promise", "pastor promise okeke", "brother promise"] },
+    { name: "Francis Ogbozor", keywords: ["francis", "ogbozor", "brother francis", "pastor francis", "pa francis", "pst francis", "fr francis", "frank", "frankline", "fancis"] },
+    { name: "Ebuka Aziekwe", keywords: ["ebuka", "aziekwe", "pa ebuka", "pst ebuka", "pastor ebuka", "brother ebuka", "aziek"] },
+    { name: "Winner Richards", keywords: ["winner", "richards", "pa winner", "pst winner", "pastor winner", "brother winner", "mr winner", "mr richards"] },
+    { name: "Kene Offiah", keywords: ["kene", "offiah", "pa kene", "pst kene", "pastor kene", "brother kene", "kenny", "kenneth"] },
+    { name: "Noble Onwuka", keywords: ["noble", "onwuka", "pa noble", "pst noble", "pastor noble", "brother noble", "mr noble", "mr onwuka"] },
+    { name: "Mmesoma Ozor", keywords: ["mmesoma", "ozor", "mmesoma ozor", "pa mmesoma", "pst mmesoma", "pastor mmesoma", "brother mmesoma", "mama mmesoma", "sis mmesoma"] },
+    { name: "Ogbamba Onyinye", keywords: ["ogbamba", "onyinye", "onyinye ogbambwa", "pa onyinye", "pst onyinye", "pastor onyinye", "brother onyinye", "sister onyinye", "mama onyinye"] },
+    { name: "Nkechi Ohazulike", keywords: ["nkechi", "ohazulike", "pa nkechi", "pst nkechi", "pastor nkechi", "pastor mkechi", "mkechi", "sister nkechi", "mama nkechi", "nkechikwu"] },
+    { name: "Precious Ubani", keywords: ["precious", "ubani", "precious ubani", "pastor precious", "pa precious", "pst precious", "pastor precious ubani", "brother precious", "sister precious", "mama precious", "priceless"] },
+    { name: "Nuel Azubuike", keywords: ["nuel", "azubuike", "pa nuel", "pst nuel", "pastor nuel", "brother nuel", "muel", "mr nuel"] },
+    { name: "Emmanuella Okonkwo", keywords: ["emmanuella", "okonkwo", "pa emmanuella", "pst emmanuella", "pastor emmanuella", "sister emmanuella", "mama emmanuella", "sis emma", "emma"] },
+    { name: "Kosi Mbamalu", keywords: ["kosi", "mbamalu", "pa kosi", "pst kosi", "pastor kosi", "brother kosi", "mr kosi", "mr mbamalu"] },
+    { name: "Faithfulness Onuh", keywords: ["faithfulness", "onuh", "faith", "faithful", "pa faithfulness", "pst faithfulness", "pastor faithfulness", "brother faithfulness", "mr onuh"] },
+    { name: "Vivian Nwolisa", keywords: ["vivian", "nwolisa", "vivian nwolisa", "pa vivian", "pst vivian", "pastor vivian", "sister vivian", "mama vivian", "viv", "vivienne"] },
+    { name: "Odinaka Onugha", keywords: ["odinaka", "onugha", "pa odinaka", "pst odinaka", "pastor odinaka", "brother odinaka", "mr odinaka", "dinaka", "mr onugha"] },
+    { name: "Udochukwu Aneke", keywords: ["udochukwu", "aneke", "pa udochukwu", "pst udochukwu", "pastor udochukwu", "brother udochukwu", "udu", "mr aneke", "mr udochukwu", "udo"] },
+    { name: "Janefrancis Igwilo", keywords: ["janefrancis", "igwilo", "jane francis", "jane-francis", "pa janefrancis", "pst janefrancis", "pastor janefrancis", "sister janefrancis", "mama janefrancis", "jane"] },
+    { name: "Nsoke Favour", keywords: ["nsoke", "favour", "nsoke favour", "pa nsoke", "pst nsoke", "pastor nsoke", "brother nsoke", "mr favour", "mr nsoke"] },
+    { name: "Kosi Onyibor", keywords: ["kosi onyibor", "onyibor", "pa kosi onyibor", "pst kosi onyibor", "pastor kosi onyibor", "brother kosi onyibor", "mr onyibor"] },
+    { name: "Ifeyinwa Umeadi", keywords: ["ifeyinwa", "umeadi", "ifeyinwa umeadi", "pa ifeyinwa", "pst ifeyinwa", "pastor ifeyinwa", "sister ifeyinwa", "mama ifeyinwa", "ify"] },
+    { name: "Lovina Wilfred", keywords: ["lovina", "wilfred", "lovina wilfred", "pa lovina", "pst lovina", "pastor lovina", "sister lovina", "mama lovina", "mrs wilfred"] },
+    { name: "Wilfred Ebube", keywords: ["wilfred", "ebube", "wilfred ebube", "pa wilfred", "pst wilfred", "pastor wilfred", "brother wilfred", "mr ebube", "mr wilfred", "willy"] },
+    { name: "Chioma meniru", keywords: ["chioma", "meniru", "chioma meniru", "pa chioma", "pst chioma", "pastor chioma", "sister chioma", "mama chioma", "chi", "mrs meniru"] },
+    { name: "Joshua ohanugo", keywords: ["joshua", "ohanugo", "joshua ohanugo", "pa joshua", "pst joshua", "pastor joshua", "brother joshua", "mr joshua", "mr ohanugo", "josh"] }
+  ];
+
+  /**
+   * Normalize leader name by converting aliases to canonical names
+   */
+  function normalizeLeaderName(name) {
+    if (!name || name.trim() === "") return "Unassigned";
+    
+    const normalized = name.trim().toLowerCase();
+    
+    // Try exact match first
+    for (let entry of LEADER_DICTIONARY) {
+      if (entry.name.toLowerCase() === normalized) return entry.name;
+    }
+    
+    // Try keyword matching
+    for (let entry of LEADER_DICTIONARY) {
+      if (entry.keywords.some(kw => kw.toLowerCase() === normalized)) return entry.name;
+    }
+    
+    // Try partial keyword matching
+    for (let entry of LEADER_DICTIONARY) {
+      for (let kw of entry.keywords) {
+        if (normalized.includes(kw.toLowerCase()) || kw.toLowerCase().includes(normalized)) {
+          return entry.name;
+        }
+      }
+    }
+    
+    // Remove common titles and return
+    let clean = name.trim();
+    const titles = ["pastor", "pa", "pst", "mr", "mrs", "ms", "miss", "dr", "prof", "brother", "sister", "mama", "sis", "fr"];
+    for (let title of titles) {
+      const regex = new RegExp(`^${title}\\s+`, "i");
+      clean = clean.replace(regex, "");
+    }
+    
+    return clean.trim();
+  }
+
   const state = {
   members: [],
   attendance: [
@@ -1932,7 +2001,7 @@ async function saveMember() {
   const course_of_study = document.getElementById('new-course').value.trim();
   const level = document.getElementById('new-level').value;
   const department = document.getElementById('new-department').value.trim();
-  const g12_leader = document.getElementById('new-g12-leader').value.trim();
+  let g12_leader = document.getElementById('new-g12-leader').value.trim();
   const leader_type = document.getElementById('new-leader-type').value;
   const School_Address = document.getElementById('new-school-address').value.trim();
   const Home_Address = document.getElementById('new-home-address').value.trim();
@@ -1942,6 +2011,9 @@ async function saveMember() {
     alert('Please enter member name'); 
     return; 
   }
+
+  // Normalize g12_leader to canonical name
+  g12_leader = normalizeLeaderName(g12_leader);
 
   // Logic: Insert data into the 'members' table in Supabase
   const { data, error } = await supabaseClient
@@ -1984,7 +2056,12 @@ async function saveMember() {
 }
 
 async function updateMember(element, id, field, value) {
-  const newValue = value.trim();
+  let newValue = value.trim();
+
+  // Normalize g12_leader field
+  if (field === 'g12_leader') {
+    newValue = normalizeLeaderName(newValue);
+  }
 
   const member = state.members.find(m => m.id === id);
   // Use a loose comparison for the old value in case of null/undefined vs empty string
@@ -2085,13 +2162,16 @@ async function submitEditMember() {
     const course_of_study = document.getElementById('edit-course').value.trim();
     const level = document.getElementById('edit-level').value;
     const department = document.getElementById('edit-department').value.trim();
-    const g12_leader = document.getElementById('edit-g12-leader').value.trim();
+    let g12_leader = document.getElementById('edit-g12-leader').value.trim();
     let leader_type = document.getElementById('edit-leader-type').value;
     const School_Address = document.getElementById('edit-school-address').value.trim();
     const Home_Address = document.getElementById('edit-home-address').value.trim();
     const g12_phone = document.getElementById('edit-g12-phone').value.trim();
 
     if (leader_type === "") leader_type = null;
+    
+    // Normalize g12_leader to canonical name
+    g12_leader = normalizeLeaderName(g12_leader);
 
     if (!member_name) { 
       alert('Please enter member name'); 

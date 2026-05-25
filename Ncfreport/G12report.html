@@ -6,6 +6,74 @@
   const supabaseUrl = "https://cjbedftdexzcsydwayig.supabase.co";
   const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmVkZnRkZXh6Y3N5ZHdheWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTUwMjgsImV4cCI6MjA5MzYzMTAyOH0.xsvtG5NmI_9TDZQ5-MhcjtX4UIIAiH2kyOlpIPDkCdg";
   const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+  // Leader name normalization - converts aliases to canonical names
+  const LEADER_DICTIONARY = [
+    { name: "Ukamaka Augustine", keywords: ["ukamaka", "ukay", "p.ukay", "pa ukay", "pst ukay", "pastor ukay", "ma ukay", "augusta", "augustine", "brother ukamaka", "sister ukamaka"] },
+    { name: "Royal Eroh", keywords: ["royal", "eroh", "brother royal", "pastor royal", "pa royal", "pst royal", "mr royal", "mr eroh", "pastor eroh"] },
+    { name: "Promise Okeke", keywords: ["promise", "okeke", "promise okeke", "pa promise", "pst promise", "pastor promise", "pastor promise okeke", "brother promise"] },
+    { name: "Francis Ogbozor", keywords: ["francis", "ogbozor", "brother francis", "pastor francis", "pa francis", "pst francis", "fr francis", "frank", "frankline", "fancis"] },
+    { name: "Ebuka Aziekwe", keywords: ["ebuka", "aziekwe", "pa ebuka", "pst ebuka", "pastor ebuka", "brother ebuka", "aziek"] },
+    { name: "Winner Richards", keywords: ["winner", "richards", "pa winner", "pst winner", "pastor winner", "brother winner", "mr winner", "mr richards"] },
+    { name: "Kene Offiah", keywords: ["kene", "offiah", "pa kene", "pst kene", "pastor kene", "brother kene", "kenny", "kenneth"] },
+    { name: "Mmesoma Ozor", keywords: ["mmesoma", "ozor", "mmesoma ozor", "pa mmesoma", "pst mmesoma", "pastor mmesoma", "brother mmesoma", "mama mmesoma", "sis mmesoma"] },
+    { name: "Onyinye Ogbamba", keywords: ["ogbamba", "onyinye", "onyinye ogbambwa", "pa onyinye", "pst onyinye", "pastor onyinye", "brother onyinye", "sister onyinye", "mama onyinye"] },
+    { name: "Nkechi Ohazulike", keywords: ["nkechi", "ohazulike", "pa nkechi", "pst nkechi", "pastor nkechi", "pastor mkechi", "mkechi", "sister nkechi", "mama nkechi", "nkechikwu"] },
+    { name: "Precious Ubani", keywords: ["precious", "ubani", "precious ubani", "pastor precious", "pa precious", "pst precious", "pastor precious ubani", "brother precious", "sister precious", "mama precious", "priceless"] },
+    { name: "Nuel Azubuike", keywords: ["nuel", "azubuike", "pa nuel", "pst nuel", "pastor nuel", "brother nuel", "muel", "mr nuel"] },
+    { name: "Emmanuella Okonkwo", keywords: ["emmanuella", "okonkwo", "pa emmanuella", "pst emmanuella", "pastor emmanuella", "sister emmanuella", "mama emmanuella", "sis emma", "emma"] },
+    { name: "Kosi Mbamalu", keywords: ["kosi", "mbamalu", "pa kosi", "pst kosi", "pastor kosi", "brother kosi", "mr kosi", "mr mbamalu"] },
+    { name: "Faithfulness Onuh", keywords: ["faithfulness", "onuh", "faith", "faithful", "pa faithfulness", "pst faithfulness", "pastor faithfulness", "brother faithfulness", "mr onuh"] },
+    { name: "Vivian Nwolisa", keywords: ["vivian", "nwolisa", "vivian nwolisa", "pa vivian", "pst vivian", "pastor vivian", "sister vivian", "mama vivian", "viv", "vivienne"] },
+    { name: "Odinaka Onugha", keywords: ["odinaka", "onugha", "pa odinaka", "pst odinaka", "pastor odinaka", "brother odinaka", "mr odinaka", "dinaka", "mr onugha"] },
+    { name: "Udochukwu Aneke", keywords: ["udochukwu", "aneke", "pa udochukwu", "pst udochukwu", "pastor udochukwu", "brother udochukwu", "udu", "mr aneke", "mr udochukwu", "udo"] },
+    { name: "Janefrancis Igwilo", keywords: ["janefrancis", "igwilo", "jane francis", "jane-francis", "pa janefrancis", "pst janefrancis", "pastor janefrancis", "sister janefrancis", "mama janefrancis", "jane"] },
+    { name: "Favour Nsoke", keywords: ["nsoke", "favour", "nsoke favour", "pa nsoke", "pst nsoke", "pastor nsoke", "brother nsoke", "mr favour", "mr nsoke"] },
+    { name: "Kosi Onyibor", keywords: ["kosi onyibor", "onyibor", "pa kosi onyibor", "pst kosi onyibor", "pastor kosi onyibor", "brother kosi onyibor", "mr onyibor"] },
+    { name: "Ifeyinwa Umeadi", keywords: ["ifeyinwa", "umeadi", "ifeyinwa umeadi", "pa ifeyinwa", "pst ifeyinwa", "pastor ifeyinwa", "sister ifeyinwa", "mama ifeyinwa", "ify"] },
+    { name: "Lovina Wilfred", keywords: ["lovina", "wilfred", "lovina wilfred", "pa lovina", "pst lovina", "pastor lovina", "sister lovina", "mama lovina", "mrs wilfred"] },
+    { name: "Ebube wilfred", keywords: ["wilfred", "ebube", "wilfred ebube", "pa wilfred", "pst wilfred", "pastor wilfred", "brother wilfred", "mr ebube", "mr wilfred", "willy"] },
+    { name: "Chioma meniru", keywords: ["chioma", "meniru", "chioma meniru", "pa chioma", "pst chioma", "pastor chioma", "sister chioma", "mama chioma", "chi", "mrs meniru"] },
+    { name: "Joshua ohanugo", keywords: ["joshua", "ohanugo", "joshua ohanugo", "pa joshua", "pst joshua", "pastor joshua", "brother joshua", "mr joshua", "mr ohanugo", "josh"] }
+  ];
+
+  /**
+   * Normalize leader name by converting aliases to canonical names
+   */
+  function normalizeLeaderName(name) {
+    if (!name || name.trim() === "") return "Unassigned";
+    
+    const normalized = name.trim().toLowerCase();
+    
+    // Try exact match first
+    for (let entry of LEADER_DICTIONARY) {
+      if (entry.name.toLowerCase() === normalized) return entry.name;
+    }
+    
+    // Try keyword matching
+    for (let entry of LEADER_DICTIONARY) {
+      if (entry.keywords.some(kw => kw.toLowerCase() === normalized)) return entry.name;
+    }
+    
+    // Try partial keyword matching
+    for (let entry of LEADER_DICTIONARY) {
+      for (let kw of entry.keywords) {
+        if (normalized.includes(kw.toLowerCase()) || kw.toLowerCase().includes(normalized)) {
+          return entry.name;
+        }
+      }
+    }
+    
+    // Remove common titles and return
+    let clean = name.trim();
+    const titles = ["pastor", "pa", "pst", "mr", "mrs", "ms", "miss", "dr", "prof", "brother", "sister", "mama", "sis", "fr"];
+    for (let title of titles) {
+      const regex = new RegExp(`^${title}\\s+`, "i");
+      clean = clean.replace(regex, "");
+    }
+    
+    return clean.trim();
+  }
 </script>
 
 <head>
@@ -440,6 +508,7 @@
     </div>
 
     <div class="btn-row">
+      <button class="btn" style="padding: 12px 24px; background: rgba(76, 175, 124, 0.2); border: 1.5px solid rgba(76, 175, 124, 0.5); color: #4CAF7C;" onclick="cleanupLeaderNames()">🔄 Cleanup Leader Names</button>
       <button class="btn btn-ghost" onclick="restart()">Logout</button>
     </div>
   </div>
@@ -595,7 +664,7 @@ async function loadAdminData() {
   // Group data by Type ('DH' or 'G12') and then by Leader Name
   const grouped = data.reduce((acc, current) => {
     const type = current.leader_type || "G12";
-    const leader = current.g12_leader ? current.g12_leader.trim() : "Unassigned";
+    const leader = normalizeLeaderName(current.g12_leader || "Unassigned");
     if (!acc[type]) acc[type] = {};
     if (!acc[type][leader]) acc[type][leader] = [];
     acc[type][leader].push(current);
@@ -703,7 +772,7 @@ function toggleLeaderGroup(index) {
 
 
 async function quickAddMember(leaderName, type) {
-  const name = prompt(`Add new member under ${leaderName} (${type}):`);
+   const name = await promptSmartModal('Add Member', `Add new member under ${leaderName} (${type}):`, false);
   if (!name || name.trim() === "") return;
   
   const cleanName = name.trim();
@@ -738,7 +807,7 @@ async function quickAddMember(leaderName, type) {
 }
 
 async function showAddModal(type, leaderType) {
-    const name = prompt(`Enter the name of the new ${type}:`);
+    const name = await promptSmartModal(`Add ${type}`, `Enter the name of the new ${type}:`, type === 'leader');
     if (!name || name.trim() === "") return;
 
     const cleanName = name.trim();
@@ -746,7 +815,7 @@ async function showAddModal(type, leaderType) {
 
     // If adding a member, we need to know who their leader is
     if (type === 'member') {
-        leaderName = prompt(`Enter the exact name of the ${leaderType} Leader:`);
+        leaderName = await promptSmartModal('Select Leader', `Enter the exact name of the ${leaderType} Leader:`, true);
         if (!leaderName) return;
         leaderName = leaderName.trim();
     }
@@ -783,7 +852,7 @@ async function showAddModal(type, leaderType) {
 }
 
 async function editMember(id, oldName) {
-  const newName = prompt("Enter new name:", oldName);
+  const newName = await promptSmartModal('Rename Member', "Enter new name:", false, oldName);
   if (!newName || newName === oldName) return;
 
   const { error } = await supabaseClient
@@ -838,7 +907,7 @@ async function deleteMember(id, name) {
 }
 
 async function editLeader(oldName, leaderType) {
-  const newName = prompt(`Rename ${leaderType} Leader "${oldName}" to:`, oldName);
+   const newName = await promptSmartModal('Rename Leader', `Rename ${leaderType} Leader "${oldName}" to:`, true, oldName);
   if (!newName || newName.trim() === "" || newName.trim() === oldName) return;
 
   const cleanNewName = newName.trim();
@@ -901,9 +970,9 @@ async function populateLeaders() {
       return;
     }
 
-    // Extract unique, trimmed leader names to prevent duplicate folders
+    // Extract unique, normalized, trimmed leader names to prevent duplicate folders
     const uniqueLeaders = [...new Set(data.map(item => 
-        item.g12_leader ? item.g12_leader.trim() : ""
+        normalizeLeaderName(item.g12_leader || "")
     ))].filter(name => name !== "").sort();
 
     sel.innerHTML = '<option value="">— Choose your name —</option>';
@@ -917,6 +986,142 @@ async function populateLeaders() {
   } catch (err) {
     console.error("Database Error:", err.message);
     sel.innerHTML = '<option value="">Error loading list</option>';
+  }
+}
+
+/**
+ * Admin Utility: Normalize all existing leader names in the database
+ * Converts all aliases to canonical names in the members table
+ */
+async function cleanupLeaderNames() {
+  if (!confirm("⚠️ This will normalize ALL leader names in your database.\n\nThis will:\n• Convert aliases to canonical names\n• Remove title prefixes (Pastor, Pa, etc.)\n• Merge duplicate entries\n\nContinue?")) return;
+  
+  const statusEl = document.createElement('div');
+  statusEl.style.cssText = "position:fixed;top:20px;right:20px;background:#101D42;border:2px solid var(--gold);padding:20px;border-radius:10px;max-width:350px;z-index:9999;font-size:13px;line-height:1.6;";
+  statusEl.innerHTML = "🔄 Phase 1: Fetching all members...";
+  document.body.appendChild(statusEl);
+  
+  try {
+    // 1. Fetch all members
+    const { data: allMembers, error: fetchError } = await supabaseClient
+      .from('members')
+      .select('id, member_name, g12_leader, leader_type');
+    
+    if (fetchError) throw new Error(`Fetch failed: ${fetchError.message}`);
+    if (!allMembers || allMembers.length === 0) {
+      statusEl.innerHTML = "ℹ️ No members found in database.";
+      setTimeout(() => statusEl.remove(), 2000);
+      return;
+    }
+    
+    statusEl.innerHTML = `🔄 Phase 1: Analyzing ${allMembers.length} members...`;
+    
+    // 2. Identify leaders with different spellings
+    const leaderVariations = {};
+    allMembers.forEach(member => {
+      if (member.g12_leader) {
+        const canonical = normalizeLeaderName(member.g12_leader);
+        if (!leaderVariations[canonical]) {
+          leaderVariations[canonical] = new Set();
+        }
+        leaderVariations[canonical].add(member.g12_leader);
+      }
+    });
+    
+    // 3. Find records that need normalization
+    const updates = [];
+    let duplicateCount = 0;
+    
+    allMembers.forEach(member => {
+      if (member.g12_leader) {
+        const normalizedName = normalizeLeaderName(member.g12_leader);
+        if (normalizedName !== member.g12_leader) {
+          updates.push({
+            id: member.id,
+            from: member.g12_leader,
+            to: normalizedName
+          });
+          duplicateCount++;
+        }
+      }
+    });
+    
+    if (updates.length === 0) {
+      statusEl.innerHTML = "✅ No duplicates found!\nDatabase is clean.";
+      statusEl.style.background = 'rgba(76, 175, 124, 0.2)';
+      statusEl.style.borderColor = '#4CAF7C';
+      setTimeout(() => statusEl.remove(), 3000);
+      return;
+    }
+    
+    statusEl.innerHTML = `🔄 Phase 2: Updating ${updates.length} records...<br><span style="font-size:11px;opacity:0.8;">This may take a moment...</span>`;
+    
+    // 4. Perform batch updates
+    let successCount = 0;
+    let errorCount = 0;
+    let failedUpdates = [];
+    
+    for (let i = 0; i < updates.length; i++) {
+      const update = updates[i];
+      const { error } = await supabaseClient
+        .from('members')
+        .update({ g12_leader: update.to })
+        .eq('id', update.id);
+      
+      if (error) {
+        errorCount++;
+        failedUpdates.push(`${update.from} → ${update.to}`);
+      } else {
+        successCount++;
+      }
+      
+      // Show progress every 10 records
+      if ((i + 1) % 10 === 0) {
+        statusEl.innerHTML = `🔄 Phase 2: Updated ${i + 1}/${updates.length} records...`;
+      }
+    }
+    
+    // 5. Generate summary
+    const uniqueLeaders = Object.keys(leaderVariations).length;
+    let summary = `✅ Cleanup Complete!\n\n`;
+    summary += `📊 Summary:\n`;
+    summary += `• Unique canonical leaders: ${uniqueLeaders}\n`;
+    summary += `• Records updated: ${successCount}\n`;
+    
+    if (errorCount > 0) {
+      summary += `• Errors: ${errorCount}\n`;
+    }
+    
+    // Show variations
+    let variationCount = 0;
+    for (let [canonical, variations] of Object.entries(leaderVariations)) {
+      if (variations.size > 1) {
+        variationCount++;
+      }
+    }
+    
+    if (variationCount > 0) {
+      summary += `• Duplicate variations fixed: ${variationCount}`;
+    }
+    
+    statusEl.innerHTML = summary;
+    statusEl.style.background = successCount > 0 ? 'rgba(76, 175, 124, 0.15)' : 'rgba(224, 90, 90, 0.15)';
+    statusEl.style.borderColor = successCount > 0 ? '#4CAF7C' : 'var(--danger)';
+    
+    console.log("Cleanup Details:", { successCount, errorCount, uniqueLeaders, failedUpdates });
+    
+    // Refresh the admin data display
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    loadAdminData();
+    
+    setTimeout(() => statusEl.remove(), 6000);
+    
+  } catch (err) {
+    console.error("Cleanup Error:", err);
+    statusEl.innerHTML = `❌ Error: ${err.message}`;
+    statusEl.style.background = 'rgba(224, 90, 90, 0.15)';
+    statusEl.style.borderColor = 'var(--danger)';
+    setTimeout(() => statusEl.remove(), 5000);
   }
 }
 

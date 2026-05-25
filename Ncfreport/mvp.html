@@ -127,6 +127,18 @@
     .success-msg h2 { color: var(--gold-light); font-size: 24px; margin-bottom: 10px; }
     .success-msg p { color: var(--muted); font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
   </style>
+  <style>
+    /* Smart Modal Styles */
+      .modal-backdrop { display:none; position:fixed; inset:0; background:rgba(13,27,42,0.85); z-index:999; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+    .modal-box { background:var(--card); border:1px solid var(--gold); border-radius:1.25rem; padding:28px; width:90%; max-width:400px; box-shadow:0 10px 40px rgba(0,0,0,0.5); animation:fadeUp 0.3s ease; }
+    .modal-box .field-label { display:block; font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--gold-light); margin-bottom:8px; font-weight:600; }
+    .smart-suggestions { display:none; position:absolute; top:100%; left:0; right:0; background:var(--card); border:1px solid var(--gold); border-radius:8px; max-height:160px; overflow-y:auto; z-index:10; box-shadow:0 8px 24px rgba(0,0,0,0.4); margin-top:4px; }
+    .smart-suggestion-item { padding:10px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); font-size:14px; transition:background 0.2s; color:var(--text); }
+    .smart-suggestion-item:hover { background:rgba(201,168,76,0.15); color:var(--gold-light); }
+    .smart-suggestion-item:last-child { border-bottom:none; }
+
+
+</style>
 </head>
 <body>
 
@@ -198,7 +210,8 @@
 
     <div class="form-group">
       <label>Who is your G12 Leader?</label>
-      <input type="text" id="g12_leader" placeholder="Name of your cell leader (if any)">
+      <p style="font-size: 0.65rem; color: rgba(232, 205, 122, 0.7); margin-bottom: 6px; margin-top: -4px;">Enter leader name (titles like Pastor, Pa will be removed)</p>
+      <input type="text" id="g12_leader" placeholder="Click to select your g12 leader" readonly onclick="selectG12Leader()">
     </div>
 
     <div class="form-group">
@@ -215,12 +228,165 @@
     <button class="btn-submit" onclick="location.reload()" style="max-width: 200px; margin: 0 auto;">Submit Another</button>
   </div>
 
+  <!-- Smart Autocomplete Modal -->
+  <div class="modal-backdrop" id="smartModal">
+    <div class="modal-box">
+      <h2 id="smartModalTitle" style="font-family:'Playfair Display',serif; font-size:20px; margin-bottom:15px; color: var(--gold-light);">Enter Details</h2>
+      <label class="field-label" id="smartModalLabel">Name</label>
+      <div style="position:relative; margin-bottom:20px;">
+        <input type="text" id="smartModalInput" placeholder="Start typing..." autocomplete="off">
+        <div id="smartSuggestions" class="smart-suggestions"></div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:24px; justify-content:flex-end;">
+        <button class="btn-submit" id="smartModalCancel" style="background:transparent; border:1.5px solid rgba(168,178,216,0.25); color:var(--muted); box-shadow:none; flex:1;">Cancel</button>
+        <button class="btn-submit" id="smartModalSubmit" style="flex:1;">Save</button>
+      </div>
+    </div>
+
+
+  </div>
+
   <script>
     const d = new Date();
     const liveDateEl = document.getElementById('live-date');
     if(liveDateEl) {
         liveDateEl.textContent = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
     }
+
+    // --- SMART AUTOCOMPLETE LOGIC ---
+    window.allLeaders = [];
+
+    const LEADER_DICTIONARY = [
+      { name: "Ukamaka Augustine", keywords: ["ukamaka", "ukay", "p.ukay", "pa ukay", "pst ukay", "pastor ukay", "ma ukay", "augusta", "augustine", "brother ukamaka", "sister ukamaka"] },
+      { name: "Royal Eroh", keywords: ["royal", "eroh", "brother royal", "pastor royal", "pa royal", "pst royal", "mr royal", "mr eroh", "pastor eroh"] },
+      { name: "Promise Okeke", keywords: ["promise", "okeke", "promise okeke", "pa promise", "pst promise", "pastor promise", "pastor promise okeke", "brother promise"] },
+      { name: "Francis Ogbozor", keywords: ["francis", "ogbozor", "brother francis", "pastor francis", "pa francis", "pst francis", "fr francis", "frank", "frankline", "fancis"] },
+      { name: "Ebuka Aziekwe", keywords: ["ebuka", "aziekwe", "pa ebuka", "pst ebuka", "pastor ebuka", "brother ebuka", "aziek"] },
+      { name: "Winner Richards", keywords: ["winner", "richards", "pa winner", "pst winner", "pastor winner", "brother winner", "mr winner", "mr richards"] },
+      { name: "Kene Offiah", keywords: ["kene", "offiah", "pa kene", "pst kene", "pastor kene", "brother kene", "kenny", "kenneth"] },
+      { name: "Noble Onwuka", keywords: ["noble", "onwuka", "pa noble", "pst noble", "pastor noble", "brother noble", "mr noble", "mr onwuka"] },
+      { name: "Mmesoma Ozor", keywords: ["mmesoma", "ozor", "mmesoma ozor", "pa mmesoma", "pst mmesoma", "pastor mmesoma", "brother mmesoma", "mama mmesoma", "sis mmesoma"] },
+      { name: "Ogbamba Onyinye", keywords: ["ogbamba", "onyinye", "onyinye ogbambwa", "pa onyinye", "pst onyinye", "pastor onyinye", "brother onyinye", "sister onyinye", "mama onyinye"] },
+      { name: "Nkechi Ohazulike", keywords: ["nkechi", "ohazulike", "pa nkechi", "pst nkechi", "pastor nkechi", "pastor mkechi", "mkechi", "sister nkechi", "mama nkechi", "nkechikwu"] },
+      { name: "Precious Ubani", keywords: ["precious", "ubani", "precious ubani", "pastor precious", "pa precious", "pst precious", "pastor precious ubani", "brother precious", "sister precious", "mama precious", "priceless"] },
+      { name: "Nuel Azubuike", keywords: ["nuel", "azubuike", "pa nuel", "pst nuel", "pastor nuel", "brother nuel", "muel", "mr nuel"] },
+      { name: "Emmanuella Okonkwo", keywords: ["emmanuella", "okonkwo", "pa emmanuella", "pst emmanuella", "pastor emmanuella", "sister emmanuella", "mama emmanuella", "sis emma", "emma"] },
+      { name: "Kosi Mbamalu", keywords: ["kosi", "mbamalu", "pa kosi", "pst kosi", "pastor kosi", "brother kosi", "mr kosi", "mr mbamalu"] },
+      { name: "Faithfulness Onuh", keywords: ["faithfulness", "onuh", "faith", "faithful", "pa faithfulness", "pst faithfulness", "pastor faithfulness", "brother faithfulness", "mr onuh"] },
+      { name: "Vivian Nwolisa", keywords: ["vivian", "nwolisa", "vivian nwolisa", "pa vivian", "pst vivian", "pastor vivian", "sister vivian", "mama vivian", "viv", "vivienne"] },
+      { name: "Odinaka Onugha", keywords: ["odinaka", "onugha", "pa odinaka", "pst odinaka", "pastor odinaka", "brother odinaka", "mr odinaka", "dinaka", "mr onugha"] },
+      { name: "Udochukwu Aneke", keywords: ["udochukwu", "aneke", "pa udochukwu", "pst udochukwu", "pastor udochukwu", "brother udochukwu", "udu", "mr aneke", "mr udochukwu", "udo"] },
+      { name: "Janefrancis Igwilo", keywords: ["janefrancis", "igwilo", "jane francis", "jane-francis", "pa janefrancis", "pst janefrancis", "pastor janefrancis", "sister janefrancis", "mama janefrancis", "jane"] },
+      { name: "Nsoke Favour", keywords: ["nsoke", "favour", "nsoke favour", "pa nsoke", "pst nsoke", "pastor nsoke", "brother nsoke", "mr favour", "mr nsoke"] },
+      { name: "Kosi Onyibor", keywords: ["kosi onyibor", "onyibor", "pa kosi onyibor", "pst kosi onyibor", "pastor kosi onyibor", "brother kosi onyibor", "mr onyibor"] },
+      { name: "Ifeyinwa Umeadi", keywords: ["ifeyinwa", "umeadi", "ifeyinwa umeadi", "pa ifeyinwa", "pst ifeyinwa", "pastor ifeyinwa", "sister ifeyinwa", "mama ifeyinwa", "ify"] },
+      { name: "Lovina Wilfred", keywords: ["lovina", "wilfred", "lovina wilfred", "pa lovina", "pst lovina", "pastor lovina", "sister lovina", "mama lovina", "mrs wilfred"] },
+      { name: "Wilfred Ebube", keywords: ["wilfred", "ebube", "wilfred ebube", "pa wilfred", "pst wilfred", "pastor wilfred", "brother wilfred", "mr ebube", "mr wilfred", "willy"] },
+      { name: "Chioma meniru", keywords: ["chioma", "meniru", "chioma meniru", "pa chioma", "pst chioma", "pastor chioma", "sister chioma", "mama chioma", "chi", "mrs meniru"] },
+      { name: "Joshua ohanugo", keywords: ["joshua", "ohanugo", "joshua ohanugo", "pa joshua", "pst joshua", "pastor joshua", "brother joshua", "mr joshua", "mr ohanugo", "josh"] }
+    ];
+
+    /**
+     * Normalize leader name by converting aliases to canonical names
+     */
+    function normalizeLeaderName(name) {
+      if (!name || name.trim() === "") return "Unassigned";
+      
+      const normalized = name.trim().toLowerCase();
+      
+      // Try exact match first
+      for (let entry of LEADER_DICTIONARY) {
+        if (entry.name.toLowerCase() === normalized) return entry.name;
+      }
+      
+      // Try keyword matching
+      for (let entry of LEADER_DICTIONARY) {
+        if (entry.keywords.some(kw => kw.toLowerCase() === normalized)) return entry.name;
+      }
+      
+      // Try partial keyword matching
+      for (let entry of LEADER_DICTIONARY) {
+        for (let kw of entry.keywords) {
+          if (normalized.includes(kw.toLowerCase()) || kw.toLowerCase().includes(normalized)) {
+            return entry.name;
+          }
+        }
+      }
+      
+      // Remove common titles and return
+      let clean = name.trim();
+      const titles = ["pastor", "pa", "pst", "mr", "mrs", "ms", "miss", "dr", "prof", "brother", "sister", "mama", "sis", "fr"];
+      for (let title of titles) {
+        const regex = new RegExp(`^${title}\\s+`, "i");
+        clean = clean.replace(regex, "");
+      }
+      
+      return clean.trim();
+    }
+
+    async function fetchAllLeaders() {
+      const { data, error } = await supabaseClient
+          .from('members')
+          .select('g12_leader')
+          .in('leader_type', ['DH', 'G12']);
+
+      if (error) { console.error("Error fetching leaders:", error); return; }
+      if (data) {
+          window.allLeaders = [...new Set(data.map(item => item.g12_leader).filter(Boolean).sort())];
+      }
+    }
+
+    function promptSmartModal(title, label, useLeaderSuggestions = false, defaultValue = '') {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('smartModal');
+        document.getElementById('smartModalTitle').textContent = title;
+        document.getElementById('smartModalLabel').textContent = label;
+        const input = document.getElementById('smartModalInput');
+        const sugBox = document.getElementById('smartSuggestions');
+        
+        input.value = defaultValue;
+        sugBox.style.display = 'none';
+        modal.style.display = 'flex';
+        input.focus();
+
+        const submitBtn = document.getElementById('smartModalSubmit');
+        const cancelBtn = document.getElementById('smartModalCancel');
+
+        const cleanup = () => { submitBtn.onclick = null; cancelBtn.onclick = null; input.oninput = null; modal.style.display = 'none'; };
+        submitBtn.onclick = () => { const val = input.value.trim(); if (val) { cleanup(); resolve(val); } };
+        cancelBtn.onclick = () => { cleanup(); resolve(null); };
+
+        input.oninput = (e) => {
+          const val = e.target.value.toLowerCase().trim();
+          sugBox.innerHTML = '';
+          if (!val) { sugBox.style.display = 'none'; return; }
+
+          let matches = new Set();
+          LEADER_DICTIONARY.forEach(item => { if (item.name.toLowerCase().includes(val) || item.keywords.some(k => k.toLowerCase().includes(val))) matches.add(item.name); });
+          window.allLeaders.forEach(leader => { if (leader.toLowerCase().includes(val)) matches.add(leader); });
+
+          if (matches.size > 0) {
+            sugBox.style.display = 'block';
+            matches.forEach(match => {
+              const div = document.createElement('div');
+              div.className = 'smart-suggestion-item'; div.textContent = match;
+              div.onclick = () => { input.value = match; sugBox.style.display = 'none'; };
+              sugBox.appendChild(div);
+            });
+          } else { sugBox.style.display = 'none'; }
+        };
+      });
+    }
+
+    async function selectG12Leader() {
+        const leaderInput = document.getElementById('g12_leader');
+        const selectedLeader = await promptSmartModal('Select G12 Leader', 'Start typing leader name...', true, leaderInput.value);
+        if (selectedLeader) {
+            leaderInput.value = selectedLeader;
+        }
+
+
+      }
 
     async function submitRegistration() {
       // Gather input values
@@ -231,8 +397,11 @@
       const school_address = document.getElementById('school_address').value.trim();
       const home_address = document.getElementById('home_address').value.trim();
       const department = document.getElementById('department').value;
-      const g12_leader = document.getElementById('g12_leader').value.trim();
+      let g12_leader = document.getElementById('g12_leader').value.trim();
       const g12_phone = document.getElementById('g12_phone').value.trim();
+
+      // NORMALIZE G12 LEADER NAME - Convert aliases to canonical names
+      g12_leader = normalizeLeaderName(g12_leader);
 
       // Basic validation
       if (!member_name || !member_phone) {
@@ -300,6 +469,11 @@
         document.getElementById('success-message').style.display = 'block';
       }
     }
+
+    // Fetch leaders when the page loads
+
+
+    document.addEventListener('DOMContentLoaded', fetchAllLeaders);
   </script>
 </body>
 </html>
