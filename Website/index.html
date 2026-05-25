@@ -322,11 +322,23 @@
           </select>
           <button class="btn btn-gold" onclick="openModal('add-member')"><i class="ti ti-plus"></i> Add Member</button>
         </div>
+        <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+          <button class="btn btn-outline" onclick="clearAllFilters()" style="border-color: var(--gold); color: var(--gold);">
+            <i class="ti ti-eye"></i> All Members
+          </button>
+          <button class="btn btn-outline" onclick="filterByDepartment()" style="border-color: var(--gold); color: var(--gold);">
+            <i class="ti ti-building"></i> By Department
+          </button>
+          <button class="btn btn-outline" onclick="filterByG12Leader()" style="border-color: var(--gold); color: var(--gold);">
+            <i class="ti ti-users"></i> By G12 Leader
+          </button>
+        </div>
         <div class="card" style="padding:0">
           <div class="table-wrap">
             <table>
               <thead>
                 <tr>
+                  <th>#</th>
                   <th>Name</th>
                   <th>Phone</th>
                   <th>Department</th>
@@ -1480,49 +1492,156 @@ function renderDashboard() {
 }
 
 function renderMembers() {
-    const q = (document.getElementById('member-search') || {}).value || '';
-    const deptFilter = (document.getElementById('member-filter-department') || {}).value || '';
-    const typeFilter = (document.getElementById('member-filter-leader-type') || {}).value || '';
+  const tbody = document.getElementById('members-tbody');
+  if (!tbody) return;
 
-    const list = state.members.filter(m => {
-        const matchesSearch = !q || (m.member_name && m.member_name.toLowerCase().includes(q.toLowerCase()));
-        const matchesDept = !deptFilter || m.department === deptFilter;
-        const matchesType = !typeFilter || m.leader_type === typeFilter;
-        return matchesSearch && matchesDept && matchesType;
+  const searchVal = document.getElementById('member-search').value.toLowerCase();
+  const deptVal = document.getElementById('member-filter-department').value;
+  const typeVal = document.getElementById('member-filter-leader-type').value;
+
+  let filtered = state.members || [];
+
+  if (searchVal) {
+    filtered = filtered.filter(m => 
+      (m.member_name && m.member_name.toLowerCase().includes(searchVal)) ||
+      (m.phone && m.phone.toLowerCase().includes(searchVal)) ||
+      (m.g12_leader && m.g12_leader.toLowerCase().includes(searchVal))
+    );
+  }
+
+  if (deptVal) {
+    filtered = filtered.filter(m => m.department === deptVal);
+  }
+
+  if (typeVal) {
+    filtered = filtered.filter(m => m.leader_type === typeVal);
+  }
+
+  tbody.innerHTML = '';
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-muted);">No members found</td></tr>';
+  } else if (memberViewMode === 'by-department') {
+    // Group by department
+    const grouped = {};
+    filtered.forEach(m => {
+      const dept = m.department || 'No Department';
+      if (!grouped[dept]) grouped[dept] = [];
+      grouped[dept].push(m);
     });
 
-    const tbody = document.getElementById('members-tbody');
-    if (!tbody) return;
+    let rowNum = 1;
+    Object.keys(grouped).sort().forEach(dept => {
+      tbody.innerHTML += `<tr style="background: rgba(201,168,76,0.1); font-weight: 600;"><td colspan="10" style="padding: 12px; color: var(--gold);">📁 ${dept} (${grouped[dept].length})</td></tr>`;
+      grouped[dept].forEach(m => {
+        const realIndex = state.members.indexOf(m);
+        const safeName = m.member_name || 'Unnamed';
+        tbody.innerHTML += `
+          <tr>
+            <td style="font-weight: 600; color: var(--gold);">${rowNum++}</td>
+            <td><div style="cursor: pointer; color: var(--gold);" onclick="openEditMemberModal(${realIndex})" title="Click to edit">${safeName}</div></td>
+            <td>${m.phone || '—'}</td>
+            <td>${m.department || '—'}</td>
+            <td>${m.g12_leader || '—'}</td>
+            <td><span class="badge ${m.leader_type === 'G12' ? 'badge-blue' : 'badge-gold'}">${m.leader_type || '—'}</span></td>
+            <td>${m.school_address || '—'}</td>
+            <td>${m.home_address || '—'}</td>
+            <td>${m.g12_phone || '—'}</td>
+            <td><button class="btn btn-sm" onclick="openEditMemberModal(${realIndex})"><i class="ti ti-edit"></i></button><button class="btn btn-sm btn-danger" onclick="deleteMember(${realIndex})"><i class="ti ti-trash"></i></button></td>
+          </tr>
+        `;
+      });
+    });
+  } else if (memberViewMode === 'by-leader') {
+    // Group by G12 Leader
+    const grouped = {};
+    filtered.forEach(m => {
+      const leader = m.g12_leader || 'Unassigned';
+      if (!grouped[leader]) grouped[leader] = [];
+      grouped[leader].push(m);
+    });
 
-    tbody.innerHTML = list.map(m => {
+    let rowNum = 1;
+    Object.keys(grouped).sort().forEach(leader => {
+      tbody.innerHTML += `<tr style="background: rgba(201,168,76,0.1); font-weight: 600;"><td colspan="10" style="padding: 12px; color: var(--gold);">👤 ${leader} (${grouped[leader].length})</td></tr>`;
+      grouped[leader].forEach(m => {
+        const realIndex = state.members.indexOf(m);
+        const safeName = m.member_name || 'Unnamed';
+        tbody.innerHTML += `
+          <tr>
+            <td style="font-weight: 600; color: var(--gold);">${rowNum++}</td>
+            <td><div style="cursor: pointer; color: var(--gold);" onclick="openEditMemberModal(${realIndex})" title="Click to edit">${safeName}</div></td>
+            <td>${m.phone || '—'}</td>
+            <td>${m.department || '—'}</td>
+            <td>${m.g12_leader || '—'}</td>
+            <td><span class="badge ${m.leader_type === 'G12' ? 'badge-blue' : 'badge-gold'}">${m.leader_type || '—'}</span></td>
+            <td>${m.school_address || '—'}</td>
+            <td>${m.home_address || '—'}</td>
+            <td>${m.g12_phone || '—'}</td>
+            <td><button class="btn btn-sm" onclick="openEditMemberModal(${realIndex})"><i class="ti ti-edit"></i></button><button class="btn btn-sm btn-danger" onclick="deleteMember(${realIndex})"><i class="ti ti-trash"></i></button></td>
+          </tr>
+        `;
+      });
+    });
+  } else {
+    // Regular list view (all members)
+    filtered.forEach((m, idx) => {
       const realIndex = state.members.indexOf(m);
-      return `
-    <tr data-index="${realIndex}">
-      <td>
-        <div class="member-row" onclick="openEditMemberModal(${realIndex})" style="cursor: pointer;" title="Click to edit member details">
-          <div class="member-avatar" style="background:${getAvatarColor(m.member_name || 'U')}">
-            ${initials(m.member_name || 'U')}
-          </div>
-          <span style="color: var(--navy); font-weight: 500;">${m.member_name || ''}</span>
-        </div>
-      </td>
-      <td>${m.member_phone || ''}</td>
-      <td>${m.department || '—'}</td>
-      <td>${m.g12_leader || ''}</td>
-      <td>${m.leader_type || '—'}</td>
-      <td style="font-size:11px;max-width:150px;">${m.School_Address || ''}</td>
-      <td style="font-size:11px;max-width:150px;">${m.Home_Address || ''}</td>
-      <td>${m.g12_phone || ''}</td>
-      <td>
-        <button class="btn btn-sm btn-danger" onclick="deleteMember(${realIndex})">
-          <i class="ti ti-trash"></i>
-        </button>
-      </td>
-    </tr>`;
-    }).join('');
+      const safeName = m.member_name || 'Unnamed';
+      tbody.innerHTML += `
+        <tr>
+          <td style="font-weight: 600; color: var(--gold);">${idx + 1}</td>
+          <td>
+            <div style="cursor: pointer; color: var(--gold);" onclick="openEditMemberModal(${realIndex})" title="Click to edit">
+              ${safeName}
+            </div>
+          </td>
+          <td>${m.phone || '—'}</td>
+          <td>${m.department || '—'}</td>
+          <td>${m.g12_leader || '—'}</td>
+          <td><span class="badge ${m.leader_type === 'G12' ? 'badge-blue' : 'badge-gold'}">${m.leader_type || '—'}</span></td>
+          <td>${m.school_address || '—'}</td>
+          <td>${m.home_address || '—'}</td>
+          <td>${m.g12_phone || '—'}</td>
+          <td>
+            <button class="btn btn-sm" onclick="openEditMemberModal(${realIndex})"><i class="ti ti-edit"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="deleteMember(${realIndex})"><i class="ti ti-trash"></i></button>
+          </td>
+        </tr>
+      `;
+    });
+  }
 }
 
-function filterMembers(){renderMembers();}
+function filterMembers() {
+  renderMembers();
+}
+
+let memberViewMode = 'all'; // 'all', 'by-department', 'by-leader'
+
+function clearAllFilters() {
+  document.getElementById('member-search').value = '';
+  document.getElementById('member-filter-department').value = '';
+  document.getElementById('member-filter-leader-type').value = '';
+  memberViewMode = 'all';
+  renderMembers();
+}
+
+function filterByDepartment() {
+  memberViewMode = memberViewMode === 'by-department' ? 'all' : 'by-department';
+  document.getElementById('member-search').value = '';
+  document.getElementById('member-filter-department').value = '';
+  document.getElementById('member-filter-leader-type').value = '';
+  renderMembers();
+}
+
+function filterByG12Leader() {
+  memberViewMode = memberViewMode === 'by-leader' ? 'all' : 'by-leader';
+  document.getElementById('member-search').value = '';
+  document.getElementById('member-filter-department').value = '';
+  document.getElementById('member-filter-leader-type').value = '';
+  renderMembers();
+}
 
 async function deleteMember(id) {
   if (!confirm('Are you sure you want to remove this member?')) return;
