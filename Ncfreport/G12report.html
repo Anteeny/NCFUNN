@@ -37,22 +37,94 @@
     { name: "Joshua ohanugo", keywords: ["joshua", "ohanugo", "joshua ohanugo", "pa joshua", "pst joshua", "pastor joshua", "brother joshua", "mr joshua", "mr ohanugo", "josh"] }
   ];
 
-  /**
-   * Normalize leader name by converting aliases to canonical names
-   */
+  // Fetch active leaders from DB on load to prevent 0-member dynamic leaders from disappearing
+  window.allLeaders = [];
+  window.leaderTypes = {};
+
+  async function fetchAllLeaders() {
+    try {
+      const { data, error } = await supabaseClient
+          .from('members')
+          .select('member_name, g12_leader, leader_type');
+
+      if (error) throw error;
+      
+      const leaders = new Set();
+      const leaderTypes = {};
+
+      // 1. Add static leaders from LEADER_DICTIONARY
+      LEADER_DICTIONARY.forEach(l => {
+        if (l.name !== 'Unassigned') {
+          leaders.add(l.name);
+          leaderTypes[l.name] = 'G12'; // default
+        }
+      });
+
+      // 2. Add dynamic leaders from database
+      if (data) {
+        data.forEach(m => {
+          if (m.leader_type === 'G12' || m.leader_type === 'DH') {
+            if (m.member_name) {
+              const canonical = m.member_name.trim();
+              const cleaned = canonical.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+              leaders.add(cleaned);
+              leaderTypes[cleaned] = m.leader_type;
+            }
+          }
+          if (m.g12_leader) {
+            const canonical = m.g12_leader.trim();
+            if (canonical.toLowerCase() !== 'unassigned') {
+              const cleaned = canonical.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+              leaders.add(cleaned);
+              if (m.leader_type === 'G12' || m.leader_type === 'DH') {
+                leaderTypes[cleaned] = m.leader_type;
+              }
+            }
+          }
+        });
+      }
+
+      window.allLeaders = [...leaders].sort();
+      window.leaderTypes = leaderTypes;
+    } catch (err) {
+      console.error("Error fetching leaders:", err.message);
+      // Fallback: just use LEADER_DICTIONARY
+      const leaders = new Set();
+      const leaderTypes = {};
+      LEADER_DICTIONARY.forEach(l => {
+        if (l.name !== 'Unassigned') {
+          leaders.add(l.name);
+          leaderTypes[l.name] = 'G12';
+        }
+      });
+      window.allLeaders = [...leaders].sort();
+      window.leaderTypes = leaderTypes;
+    }
+  }
+
   function normalizeLeaderName(name) {
     if (!name || name.trim() === "") return "Unassigned";
-    
     const normalized = name.trim().toLowerCase();
     
-    // Try exact match first
+    // Try exact match in active leaders first
+    const leadersList = window.allLeaders;
+    if (leadersList && leadersList.length > 0) {
+      const activeMatch = leadersList.find(l => l.toLowerCase() === normalized);
+      if (activeMatch) return activeMatch;
+    }
+
+    // Try exact match first in dictionary
     for (let entry of LEADER_DICTIONARY) {
-      if (entry.name.toLowerCase() === normalized) return entry.name;
+      if (entry.name.toLowerCase() === normalized) {
+        return entry.name;
+      }
     }
     
     // Try keyword matching
     for (let entry of LEADER_DICTIONARY) {
-      if (entry.keywords.some(kw => kw.toLowerCase() === normalized)) return entry.name;
+      if (entry.keywords.some(kw => kw.toLowerCase() === normalized)) {
+        return entry.name;
+      }
     }
     
     // Try partial keyword matching
@@ -64,7 +136,7 @@
       }
     }
     
-    // Remove common titles and return
+    // Remove common titles and return proper Title Case
     let clean = name.trim();
     const titles = ["pastor", "pa", "pst", "mr", "mrs", "ms", "miss", "dr", "prof", "brother", "sister", "mama", "sis", "fr"];
     for (let title of titles) {
@@ -72,7 +144,14 @@
       clean = clean.replace(regex, "");
     }
     
-    return clean.trim();
+    const cleanedName = clean.trim().replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+    
+    if (leadersList && leadersList.length > 0) {
+      const activeCleanMatch = leadersList.find(l => l.toLowerCase() === cleanedName.toLowerCase());
+      if (activeCleanMatch) return activeCleanMatch;
+    }
+    
+    return cleanedName;
   }
 </script>
 
@@ -299,6 +378,152 @@
     }
     .info-box strong { color:var(--gold); }
 
+    /* Admin Dashboard Grid Styles */
+    #g12-leaders-grid,
+    #dh-leaders-grid {
+      display: grid !important;
+      grid-template-columns: repeat(3, 1fr) !important;
+      gap: 1.5rem !important;
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+
+    .leader-square {
+      background: linear-gradient(135deg, rgba(201,168,76,0.15) 0%, rgba(233,69,96,0.08) 100%);
+      border: 1.5px solid rgba(201,168,76,0.35);
+      border-radius: 10px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: flex !important;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 160px;
+      position: relative;
+      overflow: hidden;
+      width: 100% !important;
+    }
+
+    .leader-square::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle at 30% 30%, rgba(201,168,76,0.2), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .leader-square:hover {
+      border-color: #C9A84C;
+      box-shadow: 0 8px 24px rgba(201,168,76,0.25), inset 0 0 20px rgba(201,168,76,0.1);
+      transform: translateY(-4px) scale(1.02);
+    }
+
+    .leader-square:hover::before {
+      opacity: 1;
+    }
+
+    .leader-square-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .leader-square-name {
+      color: #E8EDF2;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 6px;
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    .leader-square-count {
+      color: #C9A84C;
+      font-size: 11px;
+      font-weight: 500;
+      opacity: 0.9;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    #members-modal {
+      animation: modalFadeIn 0.3s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-member-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      margin-bottom: 8px;
+      background: rgba(201,168,76,0.08);
+      border: 0.5px solid rgba(201,168,76,0.2);
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .modal-member-item:hover {
+      background: rgba(201,168,76,0.12);
+      border-color: rgba(201,168,76,0.35);
+    }
+
+    .modal-member-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #C9A84C, #E8C97A);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #101D42;
+      font-weight: 600;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .modal-member-info {
+      flex: 1;
+    }
+
+    .modal-member-name {
+      color: #E8EDF2;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .modal-member-phone {
+      color: #A8B2D8;
+      font-size: 11px;
+    }
+
+    @media (max-width: 1200px) {
+      #g12-leaders-grid,
+      #dh-leaders-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+      }
+    }
+
+    @media (max-width: 768px) {
+      #g12-leaders-grid,
+      #dh-leaders-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+    }
+  
+
     /* ── GOLD DIVIDER ── */
     .gold-divider {
       border:none; height:1px;
@@ -502,10 +727,38 @@
     <div class="step-label">Admin Control Panel</div>
     <h2 class="step-title">Database Management</h2>
     
-    <div id="adminDataList">
-        <!-- Data from Supabase will be injected here -->
-        <p style="text-align:center; color:var(--muted);">Loading database...</p>
+    <!-- G12 Leaders Section -->
+    <div style="margin-bottom: 2rem;">
+      <h3 style="color: #E8C97A; font-size: 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.3rem;">🌿</span> G12 Leaders
+      </h3>
+      <div id="g12-leaders-grid"></div>
     </div>
+
+    <!-- DH Leaders Section -->
+    <div style="margin-bottom: 2rem;">
+      <h3 style="color: #E8C97A; font-size: 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.3rem;">🏠</span> DH Leaders
+      </h3>
+      <div id="dh-leaders-grid"></div>
+    </div>
+
+    <!-- Members Modal Popup -->
+    <div id="members-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:1000; backdrop-filter:blur(4px); justify-content:center; align-items:center;">
+      <div style="background:#101D42; border:1px solid rgba(201,168,76,0.35); border-radius:12px; padding:0; max-width:500px; width:90%; max-height:80vh; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.6); display:flex; flex-direction:column;">
+        <!-- Modal Header -->
+        <div style="background:linear-gradient(135deg, rgba(201,168,76,0.15) 0%, rgba(233,69,96,0.1) 100%); padding:20px; border-bottom:1px solid rgba(201,168,76,0.25); display:flex; justify-content:space-between; align-items:center;">
+          <h3 id="modal-leader-name" style="color:#E8EDF2; margin:0; font-size:1.1rem;">Leader Name</h3>
+          <button onclick="closeLeaderModal()" style="background:none; border:none; color:#A8B2D8; font-size:24px; cursor:pointer; padding:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">✕</button>
+        </div>
+        <!-- Modal Body -->
+        <div id="modal-members-list" style="flex:1; overflow-y:auto; padding:20px;">
+          <!-- Members will be inserted here -->
+        </div>
+      </div>
+    </div>
+
+    <div id="adminDataList" style="display:none;"></div>
 
     <div class="btn-row">
       <button class="btn" style="padding: 12px 24px; background: rgba(76, 175, 124, 0.2); border: 1.5px solid rgba(76, 175, 124, 0.5); color: #4CAF7C;" onclick="cleanupLeaderNames()">🔄 Cleanup Leader Names</button>
@@ -639,27 +892,19 @@ function updateProgress() {
 
 // --- DATABASE: ADMIN CRUD OPERATIONS ---
 
-/**
- * Admin Dashboard: Cleaned Accordion View
- * This version fixes duplicate folders and duplicate members by
- * trimming whitespace and checking for existing entries.
- */
-/**
- * Admin Dashboard: Numbered List View with Collapsible Members
- * Displays leaders as numbered lists with expandable member sections.
- */
 async function loadAdminData() {
-  const listDiv = document.getElementById('adminDataList');
-  listDiv.innerHTML = '<p style="text-align:center; color:var(--muted);">Syncing database...</p>';
-  
+  console.log('loadAdminData called');
   const { data, error } = await supabaseClient
     .from('members')
-    .select('*');
+    .select('id, member_name, g12_leader, leader_type');
 
   if (error) {
-    listDiv.innerHTML = `<p style="color:var(--danger)">Error: ${error.message}</p>`;
+    console.error('Error loading admin data:', error);
+    alert('Error loading data: ' + error.message);
     return;
   }
+
+  console.log('Data loaded, count:', data ? data.length : 0, 'Data:', data);
 
   // Group data by Type ('DH' or 'G12') and then by Leader Name
   const grouped = data.reduce((acc, current) => {
@@ -671,96 +916,153 @@ async function loadAdminData() {
     return acc;
   }, {});
 
-  // Cache data globally
-  window.cachedDHData = grouped['DH'] || {};
-  window.cachedG12Data = grouped['G12'] || {};
+  window.cachedG12Data = grouped.G12 || {};
+  window.cachedDHData = grouped.DH || {};
 
+  console.log('G12 Leaders:', Object.keys(window.cachedG12Data));
+  console.log('DH Leaders:', Object.keys(window.cachedDHData));
+
+  // Display grids
+  displayLeaderGrid(window.cachedG12Data, 'g12-leaders-grid');
+  displayLeaderGrid(window.cachedDHData, 'dh-leaders-grid');
+}
+
+function displayLeaderGrid(leaderMap, containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) {
+    console.error('Container not found:', containerId);
+    return;
+  }
+  
+  console.log('Rendering grid for:', containerId, 'Leaders:', Object.keys(leaderMap));
+  
+  container.innerHTML = '';
+  
+  // Store leader data globally
+  window.leaderGridData = window.leaderGridData || {};
+  window.leaderGridData[containerId] = leaderMap;
+  
+  const leaderNames = Object.keys(leaderMap).sort();
   let html = '';
-
-  // --- DH SECTION ---
-  html += `
-    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--gold); color:black; padding:8px 12px; margin-top:20px; border-radius:5px;">
-      <span style="font-weight:bold;">🏠 DH SECTION</span>
-      <button class="btn" style="padding:2px 8px; font-size:10px; background:white;" onclick="showAddModal('leader', 'DH')">+ New DH Leader</button>
-    </div>
-    <div style="margin-top:15px;">
-  `;
   
-  const dhLeaders = Object.keys(window.cachedDHData).sort();
-  dhLeaders.forEach((leader, index) => {
-    const members = window.cachedDHData[leader].filter(m => m.member_name !== leader);
+  leaderNames.forEach((leaderName, idx) => {
+    const members = leaderMap[leaderName];
+    const isFemale = leaderName.includes('Mmesoma') || leaderName.includes('Emmanuella') || 
+                    leaderName.includes('Onyinye') || leaderName.includes('Nkechi') || 
+                    leaderName.includes('Precious') || leaderName.includes('Ifeyinwa') || 
+                    leaderName.includes('Lovina') || leaderName.includes('Chioma');
+    
+    const handlerId = containerId + '_' + idx;
+    window[handlerId] = () => {
+      console.log('Handler called for', leaderName);
+      const mems = window.leaderGridData[containerId][leaderName];
+      showLeaderMembers(leaderName, mems);
+    };
+    
+    const editLeaderId = 'editLeader_' + idx;
+    window[editLeaderId] = (e) => {
+      e.stopPropagation();
+      console.log('Edit leader:', leaderName);
+      promptSmartModal('Edit Leader', `Edit leader name:`, leaderName).then(newName => {
+        if (newName && newName.trim() !== leaderName) {
+          console.log('Renaming', leaderName, 'to', newName);
+        }
+      });
+    };
+    
+    const deleteLeaderId = 'deleteLeader_' + idx;
+    window[deleteLeaderId] = (e) => {
+      e.stopPropagation();
+      if (confirm(`Delete leader "${leaderName}" and all ${members.length} members?`)) {
+        console.log('Delete leader:', leaderName);
+      }
+    };
+    
     html += `
-      <div style="margin-bottom: 15px; border-left: 3px solid var(--gold); padding-left: 10px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; padding: 8px; background: rgba(201,168,76,0.1); border-radius: 5px;" onclick="toggleLeaderMembers('dh_${index}')">
-          <span style="font-weight:600; color:var(--text);">${index + 1}. ${leader}</span>
-          <div>
-            <button class="btn" style="padding: 2px 8px; font-size: 11px; margin-right: 5px;" onclick="event.stopPropagation(); editLeader('${leader}', 'DH')">🖋️</button>
-            <button class="btn" style="padding: 2px 8px; font-size: 11px;" onclick="event.stopPropagation(); quickAddMember('${leader}', 'DH')">+</button>
-          </div>
+      <div class="leader-square" onclick="window['${handlerId}']()" style="cursor: pointer; position: relative;">
+        <span class="leader-square-icon">${isFemale ? '👩' : '👨'}</span>
+        <div class="leader-square-name">${leaderName}</div>
+        <div class="leader-square-count">
+          <span>👥</span> ${members.length}
         </div>
-        <div id="dh_${index}" style="display:none; margin-top: 10px; margin-left: 10px;">
-          ${members.map(m => `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding: 6px; background: rgba(255,255,255,0.03); border-radius: 3px; margin-bottom: 5px;">
-              <span style="font-size:13px; color:var(--muted);">• ${m.member_name}</span>
-              <div>
-                <button class="btn" style="padding: 2px 8px; font-size: 11px; margin-right: 3px;" onclick="editMember('${m.id}', '${m.member_name}')">🖋️</button>
-                <button class="btn btn-ghost" style="padding: 2px 8px; font-size: 10px; border-color: var(--danger); color: var(--danger);" onclick="deleteMember('${m.id}', '${m.member_name}')">Delete</button>
-              </div>
-            </div>
-          `).join('')}
+        <div style="position: absolute; top: 8px; right: 8px; display: flex; gap: 4px;">
+          <button onclick="window['${editLeaderId}'](event)" style="background: rgba(201,168,76,0.3); border: none; border-radius: 4px; color: #E8C97A; cursor: pointer; padding: 4px 8px; font-size: 12px; transition: all 0.2s;" title="Edit leader">✏️</button>
+          <button onclick="window['${deleteLeaderId}'](event)" style="background: rgba(233,69,96,0.3); border: none; border-radius: 4px; color: #E94560; cursor: pointer; padding: 4px 8px; font-size: 12px; transition: all 0.2s;" title="Delete leader">🗑️</button>
         </div>
       </div>
     `;
   });
   
-  html += `</div>`;
+  container.innerHTML = html;
+  console.log('Grid rendered with', leaderNames.length, 'leaders');
+}
 
-  // --- G12 SECTION ---
-  html += `
-    <div style="display:flex; justify-content:space-between; align-items:center; background:var(--gold); color:black; padding:8px 12px; margin-top:30px; border-radius:5px;">
-      <span style="font-weight:bold;">🌿 G12 SECTION</span>
-      <button class="btn" style="padding:2px 8px; font-size:10px; background:white;" onclick="showAddModal('leader', 'G12')">+ New G12 Leader</button>
-    </div>
-    <div style="margin-top:15px;">
-  `;
+function showLeaderMembers(leaderName, members) {
+  document.getElementById('modal-leader-name').textContent = leaderName;
   
-  const g12Leaders = Object.keys(window.cachedG12Data).sort();
-  g12Leaders.forEach((leader, index) => {
-    const members = window.cachedG12Data[leader].filter(m => m.member_name !== leader);
-    html += `
-      <div style="margin-bottom: 15px; border-left: 3px solid var(--gold); padding-left: 10px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; padding: 8px; background: rgba(201,168,76,0.1); border-radius: 5px;" onclick="toggleLeaderMembers('g12_${index}')">
-          <span style="font-weight:600; color:var(--text);">${index + 1}. ${leader}</span>
-          <div>
-            <button class="btn" style="padding: 2px 8px; font-size: 11px; margin-right: 5px;" onclick="event.stopPropagation(); editLeader('${leader}', 'G12')">🖋️</button>
-            <button class="btn" style="padding: 2px 8px; font-size: 11px;" onclick="event.stopPropagation(); quickAddMember('${leader}', 'G12')">+</button>
-          </div>
-        </div>
-        <div id="g12_${index}" style="display:none; margin-top: 10px; margin-left: 10px;">
-          ${members.map(m => `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding: 6px; background: rgba(255,255,255,0.03); border-radius: 3px; margin-bottom: 5px;">
-              <span style="font-size:13px; color:var(--muted);">• ${m.member_name}</span>
-              <div>
-                <button class="btn" style="padding: 2px 8px; font-size: 11px; margin-right: 3px;" onclick="editMember('${m.id}', '${m.member_name}')">🖋️</button>
-                <button class="btn btn-ghost" style="padding: 2px 8px; font-size: 10px; border-color: var(--danger); color: var(--danger);" onclick="deleteMember('${m.id}', '${m.member_name}')">Delete</button>
-              </div>
-            </div>
-          `).join('')}
-        </div>
+  const membersList = document.getElementById('modal-members-list');
+  membersList.innerHTML = '';
+  
+  const fragment = document.createDocumentFragment();
+  
+  members.forEach((member, mIdx) => {
+    const memberDiv = document.createElement('div');
+    memberDiv.className = 'modal-member-item';
+    
+    const firstLetter = (member.member_name || 'M').charAt(0).toUpperCase();
+    
+    const editMemberId = 'editMember_' + mIdx;
+    window[editMemberId] = (e) => {
+      e.stopPropagation();
+      console.log('Edit member:', member.member_name);
+      promptSmartModal('Edit Member', `Edit member name:`, member.member_name).then(newName => {
+        if (newName && newName.trim() !== member.member_name) {
+          console.log('Renaming', member.member_name, 'to', newName);
+        }
+      });
+    };
+    
+    const deleteMemberId = 'deleteMember_' + mIdx;
+    window[deleteMemberId] = (e) => {
+      e.stopPropagation();
+      if (confirm(`Delete member "${member.member_name}"?`)) {
+        console.log('Delete member:', member.member_name);
+      }
+    };
+    
+    memberDiv.innerHTML = `
+      <div class="modal-member-avatar">${firstLetter}</div>
+      <div class="modal-member-info">
+        <div class="modal-member-name">${member.member_name || 'Unknown'}</div>
+      </div>
+      <div style="display: flex; gap: 4px;">
+        <button onclick="window['${editMemberId}'](event)" style="background: rgba(201,168,76,0.3); border: none; border-radius: 4px; color: #E8C97A; cursor: pointer; padding: 4px 6px; font-size: 11px; transition: all 0.2s;" title="Edit member">✏️</button>
+        <button onclick="window['${deleteMemberId}'](event)" style="background: rgba(233,69,96,0.3); border: none; border-radius: 4px; color: #E94560; cursor: pointer; padding: 4px 6px; font-size: 11px; transition: all 0.2s;" title="Delete member">🗑️</button>
       </div>
     `;
+    
+    fragment.appendChild(memberDiv);
   });
   
-  html += `</div>`;
-
-  listDiv.innerHTML = html;
+  membersList.appendChild(fragment);
+  document.getElementById('members-modal').style.display = 'flex';
 }
 
-// Toggle member list visibility
-function toggleLeaderMembers(id) {
-  const element = document.getElementById(id);
-  element.style.display = element.style.display === 'none' ? 'block' : 'none';
+function closeLeaderModal() {
+  document.getElementById('members-modal').style.display = 'none';
 }
+
+// Close modal when clicking outside
+document.addEventListener('DOMContentLoaded', () => {
+  const modal = document.getElementById('members-modal');
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target.id === 'members-modal') {
+        closeLeaderModal();
+      }
+    });
+  }
+});
 
 /**
  * Toggles the visibility of a leader's member list.
@@ -956,27 +1258,23 @@ async function populateLeaders() {
   badge.className = 'cat-badge ' + (selectedCategory === 'DH' ? 'dh' : 'g12');
 
   try {
-    // We now filter the query based on the selectedCategory
-    // We select g12_leader and member_name to ensure we have data
-    const { data, error } = await supabaseClient
-      .from('members')
-      .select('g12_leader')
-      .eq('leader_type', selectedCategory); // FILTER: Match DH or G12
+    if (!window.allLeaders || window.allLeaders.length === 0) {
+      await fetchAllLeaders();
+    }
 
-    if (error) throw error;
+    // Filter leaders by the selectedCategory (using window.leaderTypes)
+    const filteredLeaders = window.allLeaders.filter(name => {
+      const type = window.leaderTypes[name] || 'G12';
+      return type === selectedCategory;
+    });
 
-    if (!data || data.length === 0) {
+    if (filteredLeaders.length === 0) {
       sel.innerHTML = `<option value="">No ${selectedCategory} leaders found</option>`;
       return;
     }
 
-    // Extract unique, normalized, trimmed leader names to prevent duplicate folders
-    const uniqueLeaders = [...new Set(data.map(item => 
-        normalizeLeaderName(item.g12_leader || "")
-    ))].filter(name => name !== "").sort();
-
     sel.innerHTML = '<option value="">— Choose your name —</option>';
-    uniqueLeaders.forEach(name => {
+    filteredLeaders.forEach(name => {
       const opt = document.createElement('option');
       opt.value = name;
       opt.textContent = name;
@@ -984,7 +1282,7 @@ async function populateLeaders() {
     });
 
   } catch (err) {
-    console.error("Database Error:", err.message);
+    console.error("Error populating leaders:", err.message);
     sel.innerHTML = '<option value="">Error loading list</option>';
   }
 }
@@ -1300,6 +1598,52 @@ document.addEventListener('keydown', function(event) {
     if (currentStep === 1) {
       event.preventDefault();
       goStep(2);
+    }
+  }
+});
+
+// URL parameters handler to pre-fill the form
+window.addEventListener('DOMContentLoaded', async () => {
+  await fetchAllLeaders();
+  const urlParams = new URLSearchParams(window.location.search);
+  const paramLeader = urlParams.get('leader');
+  const paramType = urlParams.get('type'); // 'G12' or 'DH'
+  
+  if (paramType && (paramType === 'G12' || paramType === 'DH')) {
+    // 1. Select category
+    selectedCategory = paramType;
+    
+    // Find the corresponding element
+    const tabs = document.querySelectorAll('.cat-tab');
+    let tabEl = null;
+    tabs.forEach(t => {
+      if (t.textContent.toUpperCase().includes(paramType)) {
+        tabEl = t;
+      }
+    });
+    
+    if (tabEl) {
+      selectCategory(paramType, tabEl);
+    }
+    
+    // 2. Go to Step 2 (populates leaders list)
+    await populateLeaders();
+    goStep(2);
+    
+    // 3. Pre-select leader
+    if (paramLeader) {
+      const sel = document.getElementById('leaderSelect');
+      const normalizedParamLeader = normalizeLeaderName(paramLeader);
+      
+      // Wait slightly to make sure the options are populated
+      setTimeout(() => {
+        for (let i = 0; i < sel.options.length; i++) {
+          if (normalizeLeaderName(sel.options[i].value) === normalizedParamLeader) {
+            sel.selectedIndex = i;
+            break;
+          }
+        }
+      }, 200);
     }
   }
 });

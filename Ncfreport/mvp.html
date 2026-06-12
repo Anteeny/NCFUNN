@@ -289,50 +289,138 @@
     /**
      * Normalize leader name by converting aliases to canonical names
      */
+    function findClosestActiveLeader(dictName) {
+      const leadersList = window.allLeaders;
+      if (!leadersList || leadersList.length === 0) return dictName;
+      if (leadersList.includes(dictName)) return dictName;
+      
+      const lowerDict = dictName.toLowerCase();
+      const exactMatch = leadersList.find(l => l.toLowerCase() === lowerDict);
+      if (exactMatch) return exactMatch;
+      
+      const partialMatch = leadersList.find(l => {
+        const lowerL = l.toLowerCase();
+        return lowerL.includes(lowerDict) || lowerDict.includes(lowerL);
+      });
+      if (partialMatch) return partialMatch;
+      
+      return dictName;
+    }
+
     function normalizeLeaderName(name) {
       if (!name || name.trim() === "") return "Unassigned";
       
       const normalized = name.trim().toLowerCase();
       
-      // Try exact match first
+      // Try exact match in active leaders first
+      const leadersList = window.allLeaders;
+      if (leadersList) {
+        const activeMatch = leadersList.find(l => l.toLowerCase() === normalized);
+        if (activeMatch) return activeMatch;
+      }
+
+      // Try exact match first in dictionary
       for (let entry of LEADER_DICTIONARY) {
-        if (entry.name.toLowerCase() === normalized) return entry.name;
+        if (entry.name.toLowerCase() === normalized) {
+          return findClosestActiveLeader(entry.name);
+        }
       }
       
       // Try keyword matching
       for (let entry of LEADER_DICTIONARY) {
-        if (entry.keywords.some(kw => kw.toLowerCase() === normalized)) return entry.name;
+        if (entry.keywords.some(kw => kw.toLowerCase() === normalized)) {
+          return findClosestActiveLeader(entry.name);
+        }
       }
       
-      // Try partial keyword matching
+      // Try partial keyword matching (for multi-word variations)
       for (let entry of LEADER_DICTIONARY) {
         for (let kw of entry.keywords) {
           if (normalized.includes(kw.toLowerCase()) || kw.toLowerCase().includes(normalized)) {
-            return entry.name;
+            return findClosestActiveLeader(entry.name);
           }
         }
       }
       
-      // Remove common titles and return
+      // If not found in dictionary, return original name with proper trim and title removal
       let clean = name.trim();
+      
+      // Remove common titles
       const titles = ["pastor", "pa", "pst", "mr", "mrs", "ms", "miss", "dr", "prof", "brother", "sister", "mama", "sis", "fr"];
       for (let title of titles) {
         const regex = new RegExp(`^${title}\\s+`, "i");
         clean = clean.replace(regex, "");
       }
       
-      return clean.trim();
+      const cleanedName = clean.trim().replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+      
+      // Try to find if this cleaned name matches any active leader
+      if (leadersList) {
+        const activeCleanMatch = leadersList.find(l => l.toLowerCase() === cleanedName.toLowerCase());
+        if (activeCleanMatch) return activeCleanMatch;
+      }
+      
+      return cleanedName;
     }
 
     async function fetchAllLeaders() {
-      const { data, error } = await supabaseClient
-          .from('members')
-          .select('g12_leader')
-          .in('leader_type', ['DH', 'G12']);
+      try {
+        const { data, error } = await supabaseClient
+            .from('members')
+            .select('member_name, g12_leader, leader_type');
 
-      if (error) { console.error("Error fetching leaders:", error); return; }
-      if (data) {
-          window.allLeaders = [...new Set(data.map(item => item.g12_leader).filter(Boolean).sort())];
+        if (error) throw error;
+        
+        const leaders = new Set();
+        const leaderTypes = {};
+
+        // 1. Add static leaders from LEADER_DICTIONARY
+        LEADER_DICTIONARY.forEach(l => {
+          if (l.name !== 'Unassigned') {
+            leaders.add(l.name);
+            leaderTypes[l.name] = 'G12'; // default
+          }
+        });
+
+        // 2. Add dynamic leaders from database
+        if (data) {
+          data.forEach(m => {
+            if (m.leader_type === 'G12' || m.leader_type === 'DH') {
+              if (m.member_name) {
+                const canonical = m.member_name.trim();
+                const cleaned = canonical.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+                leaders.add(cleaned);
+                leaderTypes[cleaned] = m.leader_type;
+              }
+            }
+            if (m.g12_leader) {
+              const canonical = m.g12_leader.trim();
+              if (canonical.toLowerCase() !== 'unassigned') {
+                const cleaned = canonical.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+                leaders.add(cleaned);
+                if (m.leader_type === 'G12' || m.leader_type === 'DH') {
+                  leaderTypes[cleaned] = m.leader_type;
+                }
+              }
+            }
+          });
+        }
+
+        window.allLeaders = [...leaders].sort();
+        window.leaderTypes = leaderTypes;
+      } catch (err) {
+        console.error("Error fetching leaders:", err.message);
+        // Fallback: just use LEADER_DICTIONARY
+        const leaders = new Set();
+        const leaderTypes = {};
+        LEADER_DICTIONARY.forEach(l => {
+          if (l.name !== 'Unassigned') {
+            leaders.add(l.name);
+            leaderTypes[l.name] = 'G12';
+          }
+        });
+        window.allLeaders = [...leaders].sort();
+        window.leaderTypes = leaderTypes;
       }
     }
 
@@ -403,6 +491,15 @@
       // NORMALIZE G12 LEADER NAME - Convert aliases to canonical names
       g12_leader = normalizeLeaderName(g12_leader);
 
+      // Determine leader type dynamically based on leader name
+      let leader_type = 'G12'; // Default fallback
+      if (g12_leader && g12_leader !== 'Unassigned') {
+        const canonical = normalizeLeaderName(g12_leader);
+        if (window.leaderTypes && window.leaderTypes[canonical]) {
+          leader_type = window.leaderTypes[canonical];
+        }
+      }
+
       // Basic validation
       if (!member_name || !member_phone) {
         alert("Please provide at least your Full Name and Phone Number.");
@@ -441,10 +538,15 @@
         if (school_address) updatePayload.School_Address = school_address;
         if (home_address) updatePayload.Home_Address = home_address;
         if (department) updatePayload.department = department;
-        if (g12_leader) updatePayload.g12_leader = g12_leader;
+        if (g12_leader) {
+          updatePayload.g12_leader = g12_leader;
+          const isSelfLeader = normalizeLeaderName(existingMember.member_name) === normalizeLeaderName(existingMember.g12_leader);
+          if (!isSelfLeader) {
+            updatePayload.leader_type = leader_type;
+          }
+        }
         if (g12_phone) updatePayload.g12_phone = g12_phone;
 
-        // We don't touch leader_type, preserving 'DH' or 'G12' if they are already a leader
         const { error } = await supabaseClient.from('members').update(updatePayload).eq('id', existingMember.id);
         dbError = error;
       } else {
@@ -452,7 +554,7 @@
         const insertPayload = {
           member_name: member_name, member_phone: member_phone, course_of_study: course_of_study || null,
           level: level || null, School_Address: school_address || null, Home_Address: home_address || null,
-          department: department || null, g12_leader: g12_leader || null, g12_phone: g12_phone || null, leader_type: 'DH'
+          department: department || null, g12_leader: g12_leader || null, g12_phone: g12_phone || null, leader_type: leader_type
         };
         const { error } = await supabaseClient.from('members').insert([insertPayload]);
         dbError = error;

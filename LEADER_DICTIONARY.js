@@ -90,6 +90,24 @@ const LEADER_DICTIONARY = [
   { name: "Unassigned", keywords: ["unassigned", "unknown", "none", "n/a", ""] }
 ];
 
+function findClosestActiveLeader(dictName) {
+  const leadersList = window.allLeaders || (window.state && window.state.members ? [...new Set(window.state.members.filter(m => m.leader_type === 'G12' || m.leader_type === 'DH').map(m => m.member_name))] : null);
+  if (!leadersList || leadersList.length === 0) return dictName;
+  if (leadersList.includes(dictName)) return dictName;
+  
+  const lowerDict = dictName.toLowerCase();
+  const exactMatch = leadersList.find(l => l.toLowerCase() === lowerDict);
+  if (exactMatch) return exactMatch;
+  
+  const partialMatch = leadersList.find(l => {
+    const lowerL = l.toLowerCase();
+    return lowerL.includes(lowerDict) || lowerDict.includes(lowerL);
+  });
+  if (partialMatch) return partialMatch;
+  
+  return dictName;
+}
+
 /**
  * Normalize leader name by converting aliases to canonical names
  */
@@ -98,17 +116,24 @@ function normalizeLeaderName(name) {
   
   const normalized = name.trim().toLowerCase();
   
-  // Try exact match first
+  // Try exact match in active leaders first
+  const leadersList = window.allLeaders || (window.state && window.state.members ? [...new Set(window.state.members.filter(m => m.leader_type === 'G12' || m.leader_type === 'DH').map(m => m.member_name))] : null);
+  if (leadersList) {
+    const activeMatch = leadersList.find(l => l.toLowerCase() === normalized);
+    if (activeMatch) return activeMatch;
+  }
+
+  // Try exact match first in dictionary
   for (let entry of LEADER_DICTIONARY) {
     if (entry.name.toLowerCase() === normalized) {
-      return entry.name;
+      return findClosestActiveLeader(entry.name);
     }
   }
   
   // Try keyword matching
   for (let entry of LEADER_DICTIONARY) {
     if (entry.keywords.some(kw => kw.toLowerCase() === normalized)) {
-      return entry.name;
+      return findClosestActiveLeader(entry.name);
     }
   }
   
@@ -116,7 +141,7 @@ function normalizeLeaderName(name) {
   for (let entry of LEADER_DICTIONARY) {
     for (let kw of entry.keywords) {
       if (normalized.includes(kw.toLowerCase()) || kw.toLowerCase().includes(normalized)) {
-        return entry.name;
+        return findClosestActiveLeader(entry.name);
       }
     }
   }
@@ -131,7 +156,15 @@ function normalizeLeaderName(name) {
     clean = clean.replace(regex, "");
   }
   
-  return clean.trim();
+  const cleanedName = clean.trim().replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+  
+  // Try to find if this cleaned name matches any active leader
+  if (leadersList) {
+    const activeCleanMatch = leadersList.find(l => l.toLowerCase() === cleanedName.toLowerCase());
+    if (activeCleanMatch) return activeCleanMatch;
+  }
+  
+  return cleanedName;
 }
 
 // Export for use in Node.js/CommonJS environments

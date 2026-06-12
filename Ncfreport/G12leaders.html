@@ -38,18 +38,97 @@
     { name: "Joshua Ohanugo", keywords: ["joshua", "ohanugo", "joshua ohanugo", "pa joshua", "pst joshua", "pastor joshua", "brother joshua", "mr joshua", "mr ohanugo", "josh"] }
   ];
 
+  // Fetch active leaders from DB on load to prevent 0-member dynamic leaders from disappearing
+  window.allLeaders = [];
+  window.leaderTypes = {};
+
+  async function fetchAllLeaders() {
+    try {
+      const { data, error } = await supabaseClient
+          .from('members')
+          .select('member_name, g12_leader, leader_type');
+
+      if (error) throw error;
+      
+      const leaders = new Set();
+      const leaderTypes = {};
+
+      // 1. Add static leaders from LEADER_DICTIONARY
+      LEADER_DICTIONARY.forEach(l => {
+        if (l.name !== 'Unassigned') {
+          leaders.add(l.name);
+          leaderTypes[l.name] = 'G12'; // default
+        }
+      });
+
+      // 2. Add dynamic leaders from database
+      if (data) {
+        data.forEach(m => {
+          if (m.leader_type === 'G12' || m.leader_type === 'DH') {
+            if (m.member_name) {
+              const canonical = m.member_name.trim();
+              const cleaned = canonical.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+              leaders.add(cleaned);
+              leaderTypes[cleaned] = m.leader_type;
+            }
+          }
+          if (m.g12_leader) {
+            const canonical = m.g12_leader.trim();
+            if (canonical.toLowerCase() !== 'unassigned') {
+              const cleaned = canonical.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+              leaders.add(cleaned);
+              if (m.leader_type === 'G12' || m.leader_type === 'DH') {
+                leaderTypes[cleaned] = m.leader_type;
+              }
+            }
+          }
+        });
+      }
+
+      window.allLeaders = [...leaders].sort();
+      window.leaderTypes = leaderTypes;
+    } catch (err) {
+      console.error("Error fetching leaders:", err.message);
+      // Fallback: just use LEADER_DICTIONARY
+      const leaders = new Set();
+      const leaderTypes = {};
+      LEADER_DICTIONARY.forEach(l => {
+        if (l.name !== 'Unassigned') {
+          leaders.add(l.name);
+          leaderTypes[l.name] = 'G12';
+        }
+      });
+      window.allLeaders = [...leaders].sort();
+      window.leaderTypes = leaderTypes;
+    }
+  }
+
   function normalizeLeaderName(name) {
     if (!name || name.trim() === "") return "Unassigned";
     const normalized = name.trim().toLowerCase();
     
+    // Try exact match in active leaders first
+    const leadersList = window.allLeaders;
+    if (leadersList && leadersList.length > 0) {
+      const activeMatch = leadersList.find(l => l.toLowerCase() === normalized);
+      if (activeMatch) return activeMatch;
+    }
+
+    // Try exact match first in dictionary
     for (let entry of LEADER_DICTIONARY) {
-      if (entry.name.toLowerCase() === normalized) return entry.name;
+      if (entry.name.toLowerCase() === normalized) {
+        return entry.name;
+      }
     }
     
+    // Try keyword matching
     for (let entry of LEADER_DICTIONARY) {
-      if (entry.keywords.some(kw => kw.toLowerCase() === normalized)) return entry.name;
+      if (entry.keywords.some(kw => kw.toLowerCase() === normalized)) {
+        return entry.name;
+      }
     }
     
+    // Try partial keyword matching
     for (let entry of LEADER_DICTIONARY) {
       for (let kw of entry.keywords) {
         if (normalized.includes(kw.toLowerCase()) || kw.toLowerCase().includes(normalized)) {
@@ -58,6 +137,7 @@
       }
     }
     
+    // Remove common titles and return proper Title Case
     let clean = name.trim();
     const titles = ["pastor", "pa", "pst", "mr", "mrs", "ms", "miss", "dr", "prof", "brother", "sister", "mama", "sis", "fr"];
     for (let title of titles) {
@@ -65,7 +145,14 @@
       clean = clean.replace(regex, "");
     }
     
-    return clean.trim();
+    const cleanedName = clean.trim().replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+    
+    if (leadersList && leadersList.length > 0) {
+      const activeCleanMatch = leadersList.find(l => l.toLowerCase() === cleanedName.toLowerCase());
+      if (activeCleanMatch) return activeCleanMatch;
+    }
+    
+    return cleanedName;
   }
 </script>
 
@@ -546,12 +633,16 @@
     let allLeaders = [];
     let allMembers = [];
     let currentEditMemberId = null;
+    let membersLoadPromise = null; // Track the async load promise
 
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
       updateDate();
-      await loadMembers();
-      await loadLeaders();
+      await fetchAllLeaders();
+      // Start loading members in background, don't wait for it
+      membersLoadPromise = loadMembers();
+      // Load and display leaders immediately with counts while members load
+      await loadLeadersSync();
       populateLeaderDropdowns();
     });
 
@@ -561,8 +652,21 @@
       document.getElementById('headerDate').textContent = now.toLocaleDateString('en-US', options);
     }
 
-    async function loadLeaders() {
+    async function loadLeadersSync() {
       try {
+        // For faster initial display, we'll wait a tiny bit for members to load, but have a timeout
+        try {
+          await Promise.race([
+            membersLoadPromise,
+            new Promise(r => setTimeout(r, 500)) // Max wait 500ms
+          ]);
+        } catch (e) {}
+
+        if (allMembers.length === 0) {
+          // Fallback: quick count query if members still loading
+          await countLeadersQuick();
+        }
+
         // Build leader statistics from allMembers
         const g12Stats = {};
         const dhStats = {};
@@ -593,17 +697,34 @@
       }
     }
 
-    async function loadMembers() {
+    async function countLeadersQuick() {
       try {
+        // Quick fallback: just get count and leader info
         const { data, error } = await supabaseClient
           .from('members')
-          .select('*');
+          .select('g12_leader, leader_type');
+
+        if (!error && data) {
+          allMembers = data;
+        }
+      } catch (error) {
+        console.error('Error in quick count:', error);
+      }
+    }
+
+    async function loadMembers() {
+      try {
+        // Optimized: Only fetch the specific columns we need
+        const { data, error } = await supabaseClient
+          .from('members')
+          .select('id, member_name, g12_leader, leader_type, phone');
 
         if (error) throw error;
 
         allMembers = data || [];
       } catch (error) {
         console.error('Error loading members:', error);
+        allMembers = [];
       }
     }
 
@@ -615,6 +736,10 @@
       loading.style.display = 'none';
       g12Grid.innerHTML = '';
       dhGrid.innerHTML = '';
+
+      // Use DocumentFragment for batch operations (faster DOM insertion)
+      const g12Fragment = document.createDocumentFragment();
+      const dhFragment = document.createDocumentFragment();
 
       // Display G12 Leaders
       if (g12Leaders.length === 0) {
@@ -633,8 +758,9 @@
               View Members →
             </button>
           `;
-          g12Grid.appendChild(card);
+          g12Fragment.appendChild(card);
         });
+        g12Grid.appendChild(g12Fragment);
       }
 
       // Display DH Leaders
@@ -654,25 +780,44 @@
               View Members →
             </button>
           `;
-          dhGrid.appendChild(card);
+          dhFragment.appendChild(card);
         });
+        dhGrid.appendChild(dhFragment);
       }
     }
 
     function populateLeaderDropdowns() {
-      // Only add leaders that actually have G12 members
-      const g12Stats = {};
-      allMembers.forEach(member => {
-        if (member.leader_type === true || member.leader_type === 'true') {
-          const leader = normalizeLeaderName(member.g12_leader);
-          if (!g12Stats[leader]) {
-            g12Stats[leader] = true;
+      const leaders = new Set();
+      
+      // 1. Add static leaders from LEADER_DICTIONARY
+      LEADER_DICTIONARY.forEach(l => {
+        if (l.name !== 'Unassigned') {
+          leaders.add(l.name);
+        }
+      });
+      
+      // 2. Add from window.allLeaders if available
+      if (window.allLeaders && window.allLeaders.length > 0) {
+        window.allLeaders.forEach(l => leaders.add(l));
+      }
+      
+      // 3. Fallback: gather from allMembers dynamically in case they are not in allLeaders
+      allMembers.forEach(m => {
+        if (m.g12_leader) {
+          const canonical = normalizeLeaderName(m.g12_leader);
+          if (canonical !== 'Unassigned') {
+            leaders.add(canonical);
+          }
+        }
+        if (m.leader_type === 'G12' || m.leader_type === 'DH') {
+          if (m.member_name) {
+            leaders.add(normalizeLeaderName(m.member_name));
           }
         }
       });
 
-      const g12Leaders = Object.keys(g12Stats).sort();
-      const options = g12Leaders.map(l => `<option value="${l}">${l}</option>`).join('');
+      const sortedLeaders = [...leaders].sort();
+      const options = sortedLeaders.map(l => `<option value="${l}">${l}</option>`).join('');
       
       document.getElementById('assignedLeader').innerHTML = '<option value="">-- Select a Leader --</option>' + options;
       document.getElementById('leaderFilter').innerHTML = '<option value="">-- All Leaders --</option>' + options;
@@ -699,6 +844,9 @@
       tbody.innerHTML = '';
 
       try {
+        // Ensure members are loaded before displaying
+        await membersLoadPromise;
+
         // Filter by G12 type
         let filteredMembers = allMembers.filter(m => m.leader_type === 'G12');
 
@@ -712,8 +860,11 @@
           noMembers.style.display = 'block';
         } else {
           table.style.display = 'table';
+          
+          // Use DocumentFragment for batch DOM insertion (much faster!)
+          const fragment = document.createDocumentFragment();
           filteredMembers.forEach(member => {
-            const row = tbody.insertRow();
+            const row = document.createElement('tr');
             const normalizedLeader = normalizeLeaderName(member.g12_leader);
             row.innerHTML = `
               <td>${member.member_name || 'N/A'}</td>
@@ -723,7 +874,9 @@
                 <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 12px;" onclick="openEditModal('${member.id}')">Edit</button>
               </td>
             `;
+            fragment.appendChild(row);
           });
+          tbody.appendChild(fragment);
         }
       } catch (error) {
         console.error('Error loading members:', error);
@@ -765,7 +918,7 @@
             phone: phone || null,
             email: email || null,
             notes: notes || null,
-            leader_type: 'G12',
+            leader_type: null,
             created_at: new Date().toISOString()
           }])
           .select();
@@ -775,7 +928,7 @@
         showMessage(formMessage, `✓ Member "${memberName}" added successfully!`, 'success');
         document.getElementById('addMemberForm').reset();
         await loadMembers();
-        await loadLeaders();
+        await loadLeadersSync();
         populateLeaderDropdowns();
 
         setTimeout(() => {

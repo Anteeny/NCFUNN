@@ -590,7 +590,7 @@
 
           <div class="submit-wrap" style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
             <button type="button" class="btn-submit" onclick="prevStep()" style="background: rgba(255,255,255,0.1); color: var(--text); border: 1px solid var(--border); box-shadow: none;">← Back</button>
-            <button type="submit" class="btn-submit">Submit Report <span>→</span></button>
+            <button type="submit" id="submitReportBtn" class="btn-submit">Submit Report <span>→</span></button>
           </div>
 
         </div>
@@ -711,7 +711,7 @@
       return;
     }
 
-    const btn = document.querySelector('.btn-submit');
+    const btn = document.getElementById('submitReportBtn');
     const origText = btn.innerHTML;
     btn.innerHTML = 'Submitting...';
     btn.disabled = true;
