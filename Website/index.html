@@ -4574,12 +4574,108 @@
       // Init interactive Chart.js charts
       initDashboardCharts();
 
-      const fuHTML = state.followups.slice(0, 4).map(f => `
-    <div class="timeline-item">
-      <div class="timeline-dot ${f.outcome.includes('Saved') ? 'green' : f.outcome.includes('Positive') ? 'gold' : 'navy'}"><i class="ti ti-phone" style="font-size:13px"></i></div>
-      <div class="timeline-text"><div class="timeline-title">${f.member}</div><div class="timeline-sub">${f.type} · ${f.outcome} · ${f.assignedTo}</div></div>
-    </div>`).join('');
-      document.getElementById('recent-followups').innerHTML = fuHTML || '<div class="empty-state"><i class="ti ti-phone-off"></i><p>No follow-ups logged yet</p></div>';
+      // Fetch and render real-time follow-ups
+      (async () => {
+        try {
+          const { data: mvpData } = await supabaseClient.from('mvps').select('*');
+          const { data: membersData } = await supabaseClient.from('members').select('*');
+          const { data: reportsData } = await supabaseClient.from('g12_reports').select('report_date, meeting_date, member_name, status');
+
+          const allVisitors = mvpData || [];
+          const members = membersData || [];
+          const reports = reportsData || [];
+
+          // 1. Filter out already followed up visitors
+          const stored = JSON.parse(localStorage.getItem('ncf_followed_up_mvps') || '{}');
+          const pendingVisitors = allVisitors.filter(m => !stored[`visitor|${m['Name'] || ''}|${m['Phone Number'] || ''}`]);
+
+          // 2. Calculate lapsed members
+          const uniqueDates = [...new Set(reports.map(r => {
+            const raw = r.report_date || r.meeting_date;
+            return raw ? raw.split('T')[0] : null;
+          }).filter(Boolean))].sort((a, b) => new Date(b) - new Date(a)).slice(0, 3);
+
+          const lapsedMembers = [];
+          if (uniqueDates.length >= 2) {
+            members.forEach(m => {
+              if (!m.member_name) return;
+              const mName = m.member_name.toLowerCase().trim();
+              let missedConsecutive = 0;
+              for (let i = 0; i < uniqueDates.length; i++) {
+                const date = uniqueDates[i];
+                const wasPresent = reports.some(r => {
+                  const rDate = r.report_date || r.meeting_date;
+                  return rDate && rDate.startsWith(date) && r.member_name && r.member_name.toLowerCase().trim() === mName && r.status === 'Present';
+                });
+                if (!wasPresent) {
+                  missedConsecutive++;
+                } else {
+                  break; // consecutive missed ends
+                }
+              }
+              if (missedConsecutive >= 2) {
+                lapsedMembers.push({
+                  member: m,
+                  missedCount: missedConsecutive
+                });
+              }
+            });
+          }
+
+          const pendingLapsed = lapsedMembers.filter(lm => !stored[`lapsed|${lm.member.member_name || ''}|${lm.member.member_phone || ''}`]);
+
+          // Combine into a list of pending items sorted by date/urgency
+          const items = [];
+          
+          pendingVisitors.forEach(v => {
+            const rawDate = v['Date'] || v['Service Date'] || v['date'] || v['date_added'] || '';
+            const isSecond = v['Second Time'] && v['Second Time'].trim().toLowerCase().startsWith('y');
+            const g12 = v['G12 leader'] || 'Unassigned';
+            items.push({
+              name: v['Name'] || 'Unnamed Visitor',
+              type: isSecond ? '2nd Timer' : '1st Timer',
+              desc: `${rawDate ? rawDate.split('T')[0] + ' · ' : ''}Visitor · G12: ${g12}`,
+              color: isSecond ? 'gold' : 'navy',
+              icon: 'ti-user',
+              dateSort: rawDate ? new Date(rawDate).getTime() : 0
+            });
+          });
+
+          pendingLapsed.forEach(lm => {
+            const g12 = lm.member.g12_leader || 'Unassigned';
+            items.push({
+              name: lm.member.member_name || 'Unnamed Member',
+              type: 'Lapsed',
+              desc: `Missed last ${lm.missedCount} services · G12: ${g12}`,
+              color: 'red',
+              icon: 'ti-alert-triangle',
+              dateSort: Date.now() // Lapsed members get high priority
+            });
+          });
+
+          // Sort descending (newest/most urgent first)
+          items.sort((a, b) => b.dateSort - a.dateSort);
+
+          // Get top 4
+          const topItems = items.slice(0, 4);
+
+          const fuHTML = topItems.map(item => `
+            <div class="timeline-item">
+              <div class="timeline-dot ${item.color}"><i class="ti ${item.icon}" style="font-size:13px"></i></div>
+              <div class="timeline-text">
+                <div class="timeline-title">${item.name} <span class="badge ${item.color === 'gold' ? 'badge-gold' : (item.color === 'red' ? 'badge-red' : 'badge-gray')}" style="font-size: 10px; padding: 1px 6px; margin-left: 4px;">${item.type}</span></div>
+                <div class="timeline-sub">${item.desc}</div>
+              </div>
+            </div>
+          `).join('');
+
+          document.getElementById('recent-followups').innerHTML = fuHTML || '<div class="empty-state"><i class="ti ti-phone-off"></i><p>All clear! No pending follow-ups.</p></div>';
+
+        } catch (e) {
+          console.error("Dashboard follow-up render error:", e);
+          document.getElementById('recent-followups').innerHTML = '<div class="empty-state"><p>Error loading real-time follow-ups.</p></div>';
+        }
+      })();
 
       // Render unit performance from live Supabase data
       renderUnitPerformance();
