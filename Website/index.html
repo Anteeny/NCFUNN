@@ -2880,10 +2880,23 @@
         <!-- Summary stats bar -->
         <div class="stats-grid" id="fu-summary-stats" style="margin-bottom:20px"></div>
 
-        <!-- Three live priority sections from mvps -->
-        <div id="fu-second-timers-section"></div>
-        <div id="fu-prayer-section"></div>
-        <div id="fu-visit-section"></div>
+        <!-- Tabs for Follow-Up -->
+        <div class="search-bar" style="margin-bottom: 20px; display: flex; gap: 10px;">
+          <button class="btn btn-gold" id="btn-fu-visitors" onclick="switchFollowupTab('visitors')">
+            <i class="ti ti-users"></i> Weekly Visitors
+          </button>
+          <button class="btn btn-outline" id="btn-fu-lapsed" onclick="switchFollowupTab('lapsed')" style="border-color:var(--gold);color:var(--gold);background:transparent;">
+            <i class="ti ti-history"></i> Lapsed Members
+          </button>
+        </div>
+
+        <!-- Weekly Visitors Cards -->
+        <div id="fu-visitors-section">
+          <div id="fu-visitors-cards"></div>
+        </div>
+
+        <!-- Lapsed Members Section -->
+        <div id="fu-lapsed-section" style="display: none;"></div>
 
         <!-- Empty state -->
         <div id="fu-empty" style="display:none">
@@ -2891,8 +2904,7 @@
             <div class="empty-state" style="padding:60px 20px">
               <i class="ti ti-phone-off" style="font-size:40px;opacity:0.15"></i>
               <p style="margin-top:16px;font-size:15px">No follow-up items yet.<br>
-                <span style="font-size:13px;opacity:0.6">People who return a second time, submit prayer requests, or
-                  request a visit will appear here automatically.</span>
+                <span style="font-size:13px;opacity:0.6">People who need follow up will appear here automatically.</span>
               </p>
             </div>
           </div>
@@ -2901,7 +2913,7 @@
         <!-- Loading state -->
         <div id="fu-loading" class="card" style="text-align:center;padding:50px">
           <i class="ti ti-loader" style="font-size:28px;opacity:0.25"></i>
-          <p style="margin-top:12px;color:var(--text-muted)">Loading follow-up data from MVPs...</p>
+          <p style="margin-top:12px;color:var(--text-muted)">Loading follow-up data...</p>
         </div>
       </div>
 
@@ -5062,190 +5074,451 @@
       }
     }
 
+    let currentFollowupTab = 'visitors'; // 'visitors' or 'lapsed'
+
+    function switchFollowupTab(tab) {
+      currentFollowupTab = tab;
+      const btnVisitors = document.getElementById('btn-fu-visitors');
+      const btnLapsed = document.getElementById('btn-fu-lapsed');
+      const visitorsSection = document.getElementById('fu-visitors-section');
+      const lapsedSection = document.getElementById('fu-lapsed-section');
+
+      if (tab === 'visitors') {
+        if (btnVisitors) btnVisitors.className = 'btn btn-gold';
+        if (btnVisitors) btnVisitors.style.cssText = '';
+        if (btnLapsed) btnLapsed.className = 'btn btn-outline';
+        if (btnLapsed) btnLapsed.style.cssText = 'border-color:var(--gold);color:var(--gold);background:transparent;';
+        if (visitorsSection) visitorsSection.style.display = 'block';
+        if (lapsedSection) lapsedSection.style.display = 'none';
+      } else {
+        if (btnVisitors) btnVisitors.className = 'btn btn-outline';
+        if (btnVisitors) btnVisitors.style.cssText = 'border-color:var(--gold);color:var(--gold);background:transparent;';
+        if (btnLapsed) btnLapsed.className = 'btn btn-gold';
+        if (btnLapsed) btnLapsed.style.cssText = '';
+        if (visitorsSection) visitorsSection.style.display = 'none';
+        if (lapsedSection) lapsedSection.style.display = 'block';
+      }
+      renderFollowup();
+    }
+
+    function getFollowupStatus(name, phone, isLapsed = false) {
+      const type = isLapsed ? 'lapsed' : 'visitor';
+      const key = `${type}|${name.trim()}|${phone.trim()}`;
+      try {
+        const stored = JSON.parse(localStorage.getItem('ncf_followed_up_mvps') || '{}');
+        return !!stored[key];
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function toggleFollowupStatus(name, phone, isLapsed = false) {
+      const type = isLapsed ? 'lapsed' : 'visitor';
+      const key = `${type}|${name.trim()}|${phone.trim()}`;
+      try {
+        const stored = JSON.parse(localStorage.getItem('ncf_followed_up_mvps') || '{}');
+        stored[key] = !stored[key];
+        localStorage.setItem('ncf_followed_up_mvps', JSON.stringify(stored));
+        
+        const isDone = stored[key];
+        showToast(isDone ? `${name} marked as Followed Up ✓` : `${name} marked as Pending`);
+        logActivity(isDone ? `Follow-up completed: ${name}` : `Follow-up marked pending: ${name}`, isDone ? 'green' : 'navy', isDone ? 'ti-check' : 'ti-phone');
+      } catch (e) {
+        console.error(e);
+      }
+      
+      // Calculate updated count dynamically in background after toggle
+      calculateFollowupsCount();
+      renderFollowup();
+    }
+
+    function getFriendlyDate(dateStr) {
+      if (!dateStr) return 'Undated Records';
+      try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return 'Undated Records';
+        return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      } catch (e) {
+        return 'Undated Records';
+      }
+    }
+
+    async function calculateFollowupsCount() {
+      try {
+        const { data: mvpData } = await supabaseClient.from('mvps').select('Name, Phone Number, Second Time, Requests, Visitation');
+        const { data: membersData } = await supabaseClient.from('members').select('member_name, member_phone, g12_leader, leader_type');
+        const { data: reportsData } = await supabaseClient.from('g12_reports').select('report_date, meeting_date, member_name, status');
+        
+        const allVisitors = mvpData || [];
+        const members = membersData || [];
+        const reports = reportsData || [];
+
+        const uniqueDates = [...new Set(reports.map(r => {
+          const raw = r.report_date || r.meeting_date;
+          return raw ? raw.split('T')[0] : null;
+        }).filter(Boolean))].sort((a, b) => new Date(b) - new Date(a)).slice(0, 3);
+
+        const lapsedMembers = [];
+        if (uniqueDates.length >= 2) {
+          members.forEach(m => {
+            if (!m.member_name) return;
+            const mName = m.member_name.toLowerCase().trim();
+            let missedConsecutive = 0;
+            for (let i = 0; i < uniqueDates.length; i++) {
+              const date = uniqueDates[i];
+              const wasPresent = reports.some(r => {
+                const rDate = r.report_date || r.meeting_date;
+                return rDate && rDate.startsWith(date) && r.member_name && r.member_name.toLowerCase().trim() === mName && r.status === 'Present';
+              });
+              if (!wasPresent) missedConsecutive++;
+              else break;
+            }
+            if (missedConsecutive >= 2) lapsedMembers.push(m);
+          });
+        }
+
+        const stored = JSON.parse(localStorage.getItem('ncf_followed_up_mvps') || '{}');
+        const pendingVisitors = allVisitors.filter(m => !stored[`visitor|${m['Name'] || ''}|${m['Phone Number'] || ''}`]);
+        const pendingLapsed = lapsedMembers.filter(m => !stored[`lapsed|${m.member_name || ''}|${m.member_phone || ''}`]);
+
+        window.pendingFollowupsCount = pendingVisitors.length + pendingLapsed.length;
+        updateBadges();
+      } catch (e) {
+        console.warn("Silent follow-up count failed:", e);
+      }
+    }
+
     async function renderFollowup() {
       const loadingEl = document.getElementById('fu-loading');
       const emptyEl = document.getElementById('fu-empty');
       const statsEl = document.getElementById('fu-summary-stats');
-      const secondEl = document.getElementById('fu-second-timers-section');
-      const prayerEl = document.getElementById('fu-prayer-section');
-      const visitEl = document.getElementById('fu-visit-section');
+      const visitorsCards = document.getElementById('fu-visitors-cards');
+      const lapsedSection = document.getElementById('fu-lapsed-section');
 
-      if (!secondEl) return;
+      if (!visitorsCards) return;
 
-      // Show loading, hide others
+      // Show loading
       if (loadingEl) loadingEl.style.display = 'block';
       if (emptyEl) emptyEl.style.display = 'none';
-      [secondEl, prayerEl, visitEl].forEach(el => { if (el) el.innerHTML = ''; });
+      if (visitorsCards) visitorsCards.innerHTML = '';
+      if (lapsedSection) lapsedSection.innerHTML = '';
       if (statsEl) statsEl.innerHTML = '';
 
       try {
-        const { data, error } = await supabaseClient.from('mvps').select('*');
-        if (error) throw error;
+        // 1. Fetch visitors from mvps table
+        const { data: mvpData, error: mvpError } = await supabaseClient.from('mvps').select('*');
+        if (mvpError) throw mvpError;
+        const allVisitors = mvpData || [];
 
-        const all = data || [];
+        // 2. Fetch members and reports to calculate lapsed members
+        const { data: membersData, error: mErr } = await supabaseClient.from('members').select('*');
+        const { data: reportsData, error: rErr } = await supabaseClient.from('g12_reports').select('report_date, meeting_date, member_name, status');
+        
+        const members = membersData || [];
+        const reports = reportsData || [];
 
-        const secondTimers = all.filter(m => m['Second Time'] && m['Second Time'].trim().toLowerCase().startsWith('y'));
-        const prayerReqs = all.filter(m => m['Requests'] && m['Requests'].trim() !== '');
-        const needsVisit = all.filter(m => m['Visitation'] && m['Visitation'].trim().toLowerCase().startsWith('y'));
+        // --- Calculate lapsed members ---
+        // Find unique service dates in g12_reports (limit to last 3)
+        const uniqueDates = [...new Set(reports.map(r => {
+          const raw = r.report_date || r.meeting_date;
+          return raw ? raw.split('T')[0] : null;
+        }).filter(Boolean))].sort((a, b) => new Date(b) - new Date(a)).slice(0, 3);
 
+        const lapsedMembers = [];
+        if (uniqueDates.length >= 2) {
+          members.forEach(m => {
+            if (!m.member_name) return;
+            const mName = m.member_name.toLowerCase().trim();
+            
+            let missedConsecutive = 0;
+            for (let i = 0; i < uniqueDates.length; i++) {
+              const date = uniqueDates[i];
+              const wasPresent = reports.some(r => {
+                const rDate = r.report_date || r.meeting_date;
+                return rDate && rDate.startsWith(date) && r.member_name && r.member_name.toLowerCase().trim() === mName && r.status === 'Present';
+              });
+              if (!wasPresent) {
+                missedConsecutive++;
+              } else {
+                break; // consecutive missed ends
+              }
+            }
+
+            if (missedConsecutive >= 2) {
+              lapsedMembers.push({
+                member: m,
+                missedCount: missedConsecutive,
+                lastSeen: uniqueDates[missedConsecutive] || 'Over 3 weeks ago'
+              });
+            }
+          });
+        }
+
+        // Hide loading
         if (loadingEl) loadingEl.style.display = 'none';
 
-        const total = secondTimers.length + prayerReqs.length + needsVisit.length;
-        if (total === 0) { if (emptyEl) emptyEl.style.display = 'block'; return; }
+        // --- Compute stats ---
+        const pendingVisitors = allVisitors.filter(m => !getFollowupStatus(m['Name'] || '', m['Phone Number'] || '', false));
+        const pendingLapsed = lapsedMembers.filter(lm => !getFollowupStatus(lm.member.member_name || '', lm.member.member_phone || '', true));
 
-        // Stats bar
-        if (statsEl) statsEl.innerHTML = `
-      <div class="stat-card">
-        <div class="stat-icon navy"><i class="ti ti-repeat"></i></div>
-        <div class="stat-num">${secondTimers.length}</div>
-        <div class="stat-label">2nd Timers</div>
-        <div class="stat-change up"><i class="ti ti-arrow-up-right"></i> Want to join us</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon red"><i class="ti ti-heart"></i></div>
-        <div class="stat-num">${prayerReqs.length}</div>
-        <div class="stat-label">Prayer Requests</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon green"><i class="ti ti-map-pin"></i></div>
-        <div class="stat-num">${needsVisit.length}</div>
-        <div class="stat-label">Need a Visit</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon gold"><i class="ti ti-list-check"></i></div>
-        <div class="stat-num">${total}</div>
-        <div class="stat-label">Total Follow-Ups</div>
-      </div>`;
+        const secondTimersCount = allVisitors.filter(m => m['Second Time'] && m['Second Time'].trim().toLowerCase().startsWith('y')).length;
+        const total = pendingVisitors.length + pendingLapsed.length;
 
-        // Render each section
-        if (secondEl) secondEl.innerHTML = _buildFollowupSection(
-          secondTimers,
-          '2nd Timers — Returning Visitors', 'ti-repeat', '#185FA5',
-          'These people came back a second time — a clear sign they want to belong.',
-          m => m['Requests'] ? `<small style="color:#A32D2D"><i class="ti ti-heart" style="font-size:10px"></i> ${m['Requests']}</small>` : ''
-        );
+        // Keep update badge variable in sync
+        window.pendingFollowupsCount = total;
+        updateBadges();
 
-        if (prayerEl) prayerEl.innerHTML = _buildFollowupSection(
-          prayerReqs,
-          'Prayer Requests', 'ti-heart', '#A32D2D',
-          'These visitors have specific prayer needs that require personal follow-through.',
-          m => `<small style="color:#A32D2D;font-style:italic">"${m['Requests']}"</small>`
-        );
+        if (statsEl) {
+          statsEl.innerHTML = `
+            <div class="stat-card">
+              <div class="stat-icon gold"><i class="ti ti-users"></i></div>
+              <div class="stat-num">${allVisitors.length}</div>
+              <div class="stat-label">Total Visitors</div>
+              <div class="stat-change up"><i class="ti ti-check-circle"></i> ${allVisitors.length - pendingVisitors.length} followed up</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon red"><i class="ti ti-repeat"></i></div>
+              <div class="stat-num">${secondTimersCount}</div>
+              <div class="stat-label">Second Timers</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon green"><i class="ti ti-history"></i></div>
+              <div class="stat-num">${lapsedMembers.length}</div>
+              <div class="stat-label">Lapsed Members</div>
+              <div class="stat-change down"><i class="ti ti-alert-triangle"></i> ${pendingLapsed.length} pending contact</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon navy"><i class="ti ti-list-check"></i></div>
+              <div class="stat-num">${total}</div>
+              <div class="stat-label">Pending Follow-Ups</div>
+            </div>
+          `;
+        }
 
-        if (visitEl) visitEl.innerHTML = _buildFollowupSection(
-          needsVisit,
-          'Needs a Home / Campus Visit', 'ti-map-pin', '#3B6D11',
-          'These visitors indicated they would like someone to come to them.',
-          m => m['Address'] ? `<small style="color:var(--text-muted)"><i class="ti ti-map-pin" style="font-size:10px"></i> ${m['Address']}</small>` : ''
-        );
+        // Check if there's no data at all
+        if (allVisitors.length === 0 && lapsedMembers.length === 0) {
+          if (emptyEl) emptyEl.style.display = 'block';
+          return;
+        }
+
+        // --- Render visitors tab ---
+        if (currentFollowupTab === 'visitors') {
+          if (allVisitors.length === 0) {
+            visitorsCards.innerHTML = `<div class="card"><div class="empty-state"><p>No weekly visitors found.</p></div></div>`;
+          } else {
+            // Group by Date
+            const grouped = {};
+            allVisitors.forEach(m => {
+              const rawDate = m['Date'] || m['Service Date'] || m['date'] || m['date_added'] || null;
+              const dateStr = rawDate ? rawDate.split('T')[0] : 'Undated';
+              if (!grouped[dateStr]) grouped[dateStr] = [];
+              grouped[dateStr].push(m);
+            });
+
+            // Sort dates descending
+            const dates = Object.keys(grouped).sort((a,b) => {
+              if (a === 'Undated') return 1;
+              if (b === 'Undated') return -1;
+              return new Date(b) - new Date(a);
+            });
+
+            dates.forEach(date => {
+              const list = grouped[date];
+              const friendlyDate = date === 'Undated' ? 'Undated Records' : getFriendlyDate(date);
+              
+              const rowsHTML = list.map(m => {
+                const name = m['Name'] || '—';
+                const phone = m['Phone Number'] || '—';
+                const g12 = m['G12 leader'] || '—';
+                const deptJoined = m['Department Joined'] || '';
+                const deptInSchool = m['Department in School'] || '';
+                const requests = m['Requests'] || '';
+                const address = m['Address'] || '';
+                const isSecond = m['Second Time'] && m['Second Time'].trim().toLowerCase().startsWith('y');
+                const isDone = getFollowupStatus(name, phone, false);
+                const initials = name.split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0,2);
+                
+                const zone = getMemberZone({ school_address: address, home_address: address });
+
+                const waMsg = isSecond
+                  ? `Hi ${name}, welcome back to NCF UNN! It was great having you with us again. Hope to see you next service!`
+                  : `Hi ${name}, welcome to NCF UNN! We are glad you visited us. Hope you had a blessed time? Let us know if you need anything.`;
+                const waUrl = `https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(waMsg)}`;
+
+                return `
+                  <tr style="${isDone ? 'opacity: 0.6; background: rgba(0,0,0,0.02);' : ''}">
+                    <td>
+                      <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:${isDone ? '#e5e7eb' : 'rgba(13,27,42,0.08)'}; color:var(--navy); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0;">
+                          ${initials}
+                        </div>
+                        <div>
+                          <div style="font-weight:600; font-size:14.5px; ${isDone ? 'text-decoration: line-through;' : ''}">${name}</div>
+                          <div style="display:flex; gap:4px; flex-wrap:wrap; margin-top:2px;">
+                            <span class="badge ${isSecond ? 'badge-gold' : 'badge-gray'}">${isSecond ? '2nd Visit' : '1st Visit'}</span>
+                            ${m['Born Again']?.trim().toLowerCase().startsWith('y') ? '<span class="badge badge-green">Born Again</span>' : ''}
+                          </div>
+                          ${requests ? `<div style="font-size:11px; color:#A32D2D; margin-top:4px;"><i class="ti ti-heart"></i> <strong>Request:</strong> "${requests}"</div>` : ''}
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div style="display:flex; align-items:center; gap:6px;">
+                        <a href="tel:${phone}" style="color:var(--navy); font-weight:500; text-decoration:none;">${phone}</a>
+                        <a href="${waUrl}" target="_blank" class="social-btn" style="width:24px; height:24px; font-size:12px; background:#25D366; border:none; margin:0;" title="Send WhatsApp Message">
+                          <i class="ti ti-brand-whatsapp"></i>
+                        </a>
+                      </div>
+                    </td>
+                    <td>${g12 !== '—' && g12 !== 'Unassigned' ? `<span class="badge badge-blue">${g12}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+                    <td>${deptJoined ? `<span class="badge badge-green">${deptJoined}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+                    <td><span class="badge badge-gray"><i class="ti ti-map-pin" style="font-size:10px"></i> ${zone}</span></td>
+                    <td>
+                      <button class="btn btn-sm ${isDone ? 'btn-primary' : 'btn-outline'}" style="font-size:12px; padding:4px 10px; width:88px; justify-content:center;"
+                        onclick="toggleFollowupStatus('${name.replace(/'/g, "\\'")}', '${phone.replace(/'/g, "\\'")}', false)">
+                        <i class="ti ${isDone ? 'ti-check' : 'ti-phone'}"></i> ${isDone ? 'Done' : 'Contact'}
+                      </button>
+                    </td>
+                  </tr>
+                `;
+              }).join('');
+
+              visitorsCards.innerHTML += `
+                <div class="card" style="padding:0; margin-bottom:24px; overflow:hidden; border-top:3px solid var(--gold)">
+                  <div style="padding:18px 20px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:rgba(184,134,11,0.02)">
+                    <div>
+                      <div style="font-family:'Playfair Display',serif; font-size:17px; font-weight:600; color:var(--navy)">
+                        ${friendlyDate}
+                      </div>
+                      <div style="font-size:12.5px; color:var(--text-muted); margin-top:2px;">
+                        ${list.length} Visitor${list.length !== 1 ? 's' : ''} on this day
+                      </div>
+                    </div>
+                    <span class="badge badge-gold">Service Day</span>
+                  </div>
+                  <div class="table-wrap">
+                    <table style="width:100%; border-collapse:collapse">
+                      <thead>
+                        <tr style="border-bottom:1px solid var(--border)">
+                          <th style="padding:8px 16px; text-align:left; font-size:12px; color:var(--text-muted); font-weight:600">Name & Details</th>
+                          <th style="padding:8px 16px; text-align:left; font-size:12px; color:var(--text-muted); font-weight:600">Phone</th>
+                          <th style="padding:8px 16px; text-align:left; font-size:12px; color:var(--text-muted); font-weight:600">G12 Leader</th>
+                          <th style="padding:8px 16px; text-align:left; font-size:12px; color:var(--text-muted); font-weight:600">Dept. Joined</th>
+                          <th style="padding:8px 16px; text-align:left; font-size:12px; color:var(--text-muted); font-weight:600">Cell/Zone</th>
+                          <th style="padding:8px 16px; text-align:left; font-size:12px; color:var(--text-muted); font-weight:600">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>${rowsHTML}</tbody>
+                    </table>
+                  </div>
+                </div>
+              `;
+            });
+          }
+        } 
+        
+        // --- Render lapsed tab ---
+        else if (currentFollowupTab === 'lapsed') {
+          if (lapsedMembers.length === 0) {
+            lapsedSection.innerHTML = `
+              <div class="card">
+                <div class="empty-state" style="padding:40px 20px">
+                  <i class="ti ti-shield-check" style="font-size:36px; color:#3B6D11; opacity:0.3"></i>
+                  <p style="margin-top:12px;">No lapsed members detected. All members are active!</p>
+                </div>
+              </div>
+            `;
+          } else {
+            const rowsHTML = lapsedMembers.map(lm => {
+              const m = lm.member;
+              const name = m.member_name || '—';
+              const phone = m.member_phone || '—';
+              const g12 = m.g12_leader || '—';
+              const isDone = getFollowupStatus(name, phone, true);
+              const initials = name.split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0,2);
+              const zone = getMemberZone(m);
+
+              const waMsg = `Hi ${name}, we missed you at the last few services at NCF UNN! Hope you are doing great. Just checking in on you.`;
+              const waUrl = `https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(waMsg)}`;
+
+              return `
+                <tr style="${isDone ? 'opacity: 0.6; background: rgba(0,0,0,0.02);' : ''}">
+                  <td>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                      <div style="width:36px; height:36px; border-radius:50%; background:${isDone ? '#e5e7eb' : '#FCEBEB'}; color:${isDone ? 'var(--navy)' : '#A32D2D'}; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0;">
+                        ${initials}
+                      </div>
+                      <div>
+                        <div style="font-weight:600; font-size:14.5px; ${isDone ? 'text-decoration: line-through;' : ''}">${name}</div>
+                        <span class="badge badge-red" style="margin-top:2px;">Missed last ${lm.missedCount} services</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                      <a href="tel:${phone}" style="color:var(--navy); font-weight:500; text-decoration:none;">${phone}</a>
+                      <a href="${waUrl}" target="_blank" class="social-btn" style="width:24px; height:24px; font-size:12px; background:#25D366; border:none; margin:0;" title="Send WhatsApp Message">
+                        <i class="ti ti-brand-whatsapp"></i>
+                      </a>
+                    </div>
+                  </td>
+                  <td>${g12 !== 'Unassigned' && g12 !== '—' ? `<span class="badge badge-blue">${g12}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+                  <td><span class="badge badge-gray"><i class="ti ti-map-pin" style="font-size:10px"></i> ${zone}</span></td>
+                  <td><span style="font-size:12.5px; font-weight:500; color:var(--text-muted);">Consecutive Absences</span></td>
+                  <td>
+                    <button class="btn btn-sm ${isDone ? 'btn-primary' : 'btn-outline'}" style="font-size:12px; padding:4px 10px; width:88px; justify-content:center;"
+                      onclick="toggleFollowupStatus('${name.replace(/'/g, "\\'")}', '${phone.replace(/'/g, "\\'")}', true)">
+                      <i class="ti ${isDone ? 'ti-check' : 'ti-phone'}"></i> ${isDone ? 'Done' : 'Contact'}
+                    </button>
+                  </td>
+                </tr>
+              `;
+            }).join('');
+
+            lapsedSection.innerHTML = `
+              <div class="card" style="padding:0; margin-bottom:24px; overflow:hidden; border-top:3px solid #E94560">
+                <div style="padding:18px 20px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:rgba(233,69,96,0.02)">
+                  <div>
+                    <div style="font-family:'Playfair Display',serif; font-size:17px; font-weight:600; color:var(--navy)">
+                      Lapsed Members
+                    </div>
+                    <div style="font-size:12.5px; color:var(--text-muted); margin-top:2px;">
+                      ${lapsedMembers.length} member${lapsedMembers.length !== 1 ? 's' : ''} missed 2+ services consecutively
+                    </div>
+                  </div>
+                  <span class="badge badge-red">Needs Visitation/Contact</span>
+                </div>
+                <div class="table-wrap">
+                  <table style="width:100%; border-collapse:collapse">
+                    <thead>
+                      <tr style="border-bottom:1px solid var(--border)">
+                        <th style="padding:8px 16px; text-align:left; font-size:12px; color:var(--text-muted); font-weight:600">Member Name</th>
+                        <th style="padding:8px 16px; text-align:left; font-size:12px; color:var(--text-muted); font-weight:600">Phone</th>
+                        <th style="padding:8px 16px; text-align:left; font-size:12px; color:var(--text-muted); font-weight:600">G12 Leader</th>
+                        <th style="padding:8px 16px; text-align:left; font-size:12px; color:var(--text-muted); font-weight:600">Cell/Zone</th>
+                        <th style="padding:8px 16px; text-align:left; font-size:12px; color:var(--text-muted); font-weight:600">Absence Type</th>
+                        <th style="padding:8px 16px; text-align:left; font-size:12px; color:var(--text-muted); font-weight:600">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>${rowsHTML}</tbody>
+                  </table>
+                </div>
+              </div>
+            `;
+          }
+        }
 
       } catch (err) {
-        if (loadingEl) loadingEl.innerHTML = `
-      <div style="color:#A32D2D;padding:40px;text-align:center">
-        <i class="ti ti-alert-circle" style="font-size:24px;display:block;margin-bottom:8px"></i>
-        Could not load follow-up data: ${err.message}
-      </div>`;
-      }
-    }
-
-    function _buildFollowupSection(items, title, icon, accentColor, subtitle, extraFn) {
-      if (!items.length) return '';
-
-      // Group by date if a date column exists, otherwise one group
-      const grouped = {};
-      items.forEach(m => {
-        const rawDate = m['Date'] || m['Service Date'] || m['date'] || m['date_added'] || null;
-        let key;
-        if (rawDate) {
-          try {
-            const d = new Date(rawDate);
-            key = d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
-          } catch (e) { key = 'All Records'; }
-        } else {
-          key = 'All Records';
-        }
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(m);
-      });
-
-      const groupBlocks = Object.entries(grouped).map(([groupKey, groupItems]) => {
-        const rows = groupItems.map(m => {
-          const name = m['Name'] || '—';
-          const phone = m['Phone Number'] || '—';
-          const g12 = m['G12 leader'] || '—';
-          const dept = m['Department in School'] || '';
-          const deptJoined = m['Department Joined'] || '';
-          const extra = extraFn ? extraFn(m) : '';
-          const initials = name.split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0, 2);
-
-          return `<tr>
-        <td style="padding:12px 16px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <div style="width:36px;height:36px;border-radius:50%;background:rgba(13,27,42,0.08);color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${initials}</div>
-            <div>
-              <div style="font-weight:600;font-size:15px">${name}</div>
-              ${dept ? `<div style="font-size:12px;color:var(--text-muted)">${dept}</div>` : ''}
-              ${extra ? `<div style="margin-top:2px">${extra}</div>` : ''}
+        console.error('Follow-up render error:', err);
+        if (loadingEl) {
+          loadingEl.innerHTML = `
+            <div style="color:#A32D2D; padding:40px; text-align:center">
+              <i class="ti ti-alert-circle" style="font-size:24px; display:block; margin-bottom:8px"></i>
+              Could not load follow-up data: ${err.message}
             </div>
-          </div>
-        </td>
-        <td style="padding:12px 16px"><a href="tel:${phone}" style="color:var(--navy);font-weight:500;text-decoration:none">${phone}</a></td>
-        <td style="padding:12px 16px">${g12 !== '—' ? `<span class="badge badge-blue">${g12}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
-        <td style="padding:12px 16px">${deptJoined ? `<span class="badge badge-green">${deptJoined}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
-        <td style="padding:12px 16px">
-          <button class="btn btn-sm btn-outline" style="font-size:12px;padding:5px 12px;white-space:nowrap"
-            onclick="markFollowedUp('${name.replace(/'/g, "\\'")}','${phone}')">
-            <i class="ti ti-check"></i> Done
-          </button>
-        </td>
-      </tr>`;
-        }).join('');
-
-        const header = groupKey !== 'All Records'
-          ? `<div style="padding:8px 16px;font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;background:rgba(13,27,42,0.03);border-bottom:1px solid var(--border)">
-           <i class="ti ti-calendar-event" style="margin-right:4px"></i>${groupKey}
-         </div>` : '';
-
-        return header + `
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse">
-          <thead>
-            <tr style="border-bottom:1px solid var(--border)">
-              <th style="padding:8px 16px;text-align:left;font-size:12px;color:var(--text-muted);font-weight:600">Name</th>
-              <th style="padding:8px 16px;text-align:left;font-size:12px;color:var(--text-muted);font-weight:600">Phone</th>
-              <th style="padding:8px 16px;text-align:left;font-size:12px;color:var(--text-muted);font-weight:600">G12 Leader</th>
-              <th style="padding:8px 16px;text-align:left;font-size:12px;color:var(--text-muted);font-weight:600">Dept. Joined</th>
-              <th style="padding:8px 16px;text-align:left;font-size:12px;color:var(--text-muted);font-weight:600">Action</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>`;
-      }).join('');
-
-      return `
-    <div class="card" style="padding:0;margin-bottom:24px;overflow:hidden;border-top:3px solid ${accentColor}">
-      <div style="padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px">
-        <div style="width:38px;height:38px;border-radius:10px;background:${accentColor}18;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <i class="ti ${icon}" style="color:${accentColor};font-size:18px"></i>
-        </div>
-        <div style="flex:1">
-          <div style="font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--navy)">
-            ${title} <span style="font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;color:var(--text-muted)">· ${items.length}</span>
-          </div>
-          <div style="font-size:13px;color:var(--text-muted);margin-top:2px">${subtitle}</div>
-        </div>
-        <button class="btn btn-sm btn-outline" style="font-size:12px;flex-shrink:0" onclick="renderFollowup()">
-          <i class="ti ti-refresh"></i>
-        </button>
-      </div>
-      ${groupBlocks}
-    </div>`;
-    }
-
-    function markFollowedUp(name, phone) {
-      showToast(`${name} marked as followed up ✓`);
-      logActivity(`Follow-up completed: ${name}`, 'green', 'ti-check');
+          `;
+        }
+      }
     }
 
 
@@ -5809,7 +6082,7 @@
 
     function updateBadges() {
       document.getElementById('nb-members').textContent = state.members.length;
-      document.getElementById('nb-followup').textContent = state.followups.filter(f => f.outcome.includes('No response') || f.outcome.includes('again')).length;
+      document.getElementById('nb-followup').textContent = window.pendingFollowupsCount || 0;
     }
 
     function openModal(name) {
@@ -6322,6 +6595,7 @@
       fetchAndRenderMembers();
       renderReports();
       setupRealtimeListener();
+      calculateFollowupsCount(); // Silently calculate followups counts for badges
     }
 
     async function checkSession() {
