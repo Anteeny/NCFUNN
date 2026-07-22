@@ -19,27 +19,27 @@
       z-index: -1;
     }
     body, .bg { background: none !important; backdrop-filter: none !important; }
-    header { background: #0D1B2A !important; backdrop-filter: none !important; border-bottom: 2px solid rgba(201, 168, 76, 0.35); }
-    .card { background: #101D42 !important; backdrop-filter: none !important; border: 1px solid rgba(201,168,76,0.35); box-shadow: 0 8px 40px rgba(0,0,0,0.4); }
+    header { background: rgba(15, 23, 42, 0.8) !important; backdrop-filter: blur(20px) !important; border-bottom: 2px solid rgba(59, 130, 246, 0.3) !important; }
+    .card { background: rgba(17, 24, 39, 0.75) !important; backdrop-filter: blur(25px) !important; -webkit-backdrop-filter: blur(25px) !important; border: 1px solid rgba(59, 130, 246, 0.25) !important; border-radius: 20px !important; box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important; }
     .hero { background: transparent !important; backdrop-filter: none !important; }
-    h1, h2, h3, p, .section-label { color: #E8EDF2 !important; }
-    .card-icon { background: rgba(201,168,76,0.15) !important; color: #E8C97A !important; border: none !important; }
+    h1, h2, h3, p, .section-label { color: #F3F4F6 !important; }
+    .card-icon { background: rgba(59, 130, 246, 0.15) !important; color: #60a5fa !important; border: none !important; }
     
     /* Alert Card Styling */
     .alert-card {
-      background: linear-gradient(135deg, rgba(233, 69, 96, 0.12) 0%, rgba(201, 168, 76, 0.08) 100%) !important;
-      border: 1px solid rgba(201, 168, 76, 0.3) !important;
-      border-left: 5px solid var(--accent, #E94560) !important;
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(17, 24, 39, 0.8) 100%) !important;
+      border: 1px solid rgba(59, 130, 246, 0.25) !important;
+      border-left: 5px solid #3b82f6 !important;
       border-radius: 12px;
       padding: 20px;
       margin-bottom: 25px;
-      color: #E8EDF2;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+      color: #F3F4F6;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
     }
     .alert-title {
       font-size: 1.1rem;
       font-weight: 600;
-      color: var(--accent, #E94560);
+      color: #60a5fa;
       margin-bottom: 8px;
       display: flex;
       align-items: center;
@@ -47,7 +47,7 @@
     }
     .alert-desc {
       font-size: 0.85rem;
-      color: #A8B2D8;
+      color: #94A3B8;
       margin-bottom: 15px;
     }
     .pending-tags-container {
@@ -60,9 +60,9 @@
       align-items: center;
       gap: 5px;
       padding: 6px 14px;
-      background: rgba(233, 69, 96, 0.15);
-      border: 1.5px solid rgba(233, 69, 96, 0.4);
-      color: #E94560 !important;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1.5px solid rgba(59, 130, 246, 0.4);
+      color: #60a5fa !important;
       border-radius: 20px;
       font-size: 0.8rem;
       font-weight: 600;
@@ -71,20 +71,20 @@
       cursor: pointer;
     }
     .pending-tag:hover {
-      background: #E94560;
+      background: #3b82f6;
       color: #FFFFFF !important;
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(233, 69, 96, 0.3);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
     .pending-tag.dh-tag {
-      background: rgba(201, 168, 76, 0.15);
-      border: 1.5px solid rgba(201, 168, 76, 0.4);
-      color: #E8C97A !important;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1.5px solid rgba(59, 130, 246, 0.4);
+      color: #60a5fa !important;
     }
     .pending-tag.dh-tag:hover {
-      background: #C9A84C;
-      color: #101D42 !important;
-      box-shadow: 0 4px 12px rgba(201, 168, 76, 0.3);
+      background: #3b82f6;
+      color: #ffffff !important;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
     
 
@@ -321,31 +321,24 @@
         if (l.name !== 'Unassigned') rawLeaders.add(l.name);
       });
       members.forEach(m => {
-        if (m.g12_leader) rawLeaders.add(m.g12_leader.trim());
-        if ((m.leader_type === 'G12' || m.leader_type === 'DH') && m.member_name) {
-          rawLeaders.add(m.member_name.trim());
+        if (m.g12_leader) {
+          const canonical = normalizeLeaderName(m.g12_leader);
+          if (canonical !== 'Unassigned') {
+            rawLeaders.add(canonical);
+          }
         }
       });
       
-      const tempLeaders = [...rawLeaders].map(name => {
-        return name.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
-      });
-      window.allLeaders = [...new Set(tempLeaders)].sort();
+      window.allLeaders = [...rawLeaders].sort();
 
       const leaderTypes = {};
       LEADER_DICTIONARY.forEach(l => {
         if (l.name !== 'Unassigned') leaderTypes[l.name] = 'G12';
       });
       members.forEach(m => {
-        if (m.leader_type === 'G12' || m.leader_type === 'DH') {
-          if (m.member_name) {
-            const canonical = normalizeLeaderName(m.member_name);
-            leaderTypes[canonical] = m.leader_type;
-          }
-        }
         if (m.g12_leader) {
           const canonical = normalizeLeaderName(m.g12_leader);
-          if (m.leader_type === 'G12' || m.leader_type === 'DH') {
+          if (canonical !== 'Unassigned' && (m.leader_type === 'G12' || m.leader_type === 'DH')) {
             leaderTypes[canonical] = m.leader_type;
           }
         }

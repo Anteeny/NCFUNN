@@ -18,8 +18,8 @@
 
   <style>
     :root {
-      --gold: #C9A84C; --gold-light: #E8C97A;
-      --deep: #1A1A2E; --ink: #16213E; --card: #101D42;
+      --gold: #3b82f6; --gold-light: #60a5fa;
+      --deep: #090e1a; --ink: #0f172a; --card: rgba(17, 24, 39, 0.75);
       --text: #E8EDF2; --muted: #A8B2D8;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -52,8 +52,8 @@
       align-items: center;
       justify-content: flex-start;
       gap: 1.1rem;
-      border-bottom: 2px solid rgba(201, 168, 76, 0.35);
-      background: #0D1B2A;
+      border-bottom: 2px solid rgba(59, 130, 246, 0.35);
+      background: #090e1a;
       margin-bottom: 4vh;
     }
     .logo-wrap {
@@ -63,8 +63,8 @@
       animation: pulse-ring 3s ease-in-out infinite;
     }
     @keyframes pulse-ring {
-      0%, 100% { box-shadow: 0 0 0 0px rgba(201,168,76,0.5); }
-      50%       { box-shadow: 0 0 0 8px rgba(201,168,76,0); }
+      0%, 100% { box-shadow: 0 0 0 0px rgba(59, 130, 246,0.5); }
+      50%       { box-shadow: 0 0 0 8px rgba(59, 130, 246,0); }
     }
     .logo-wrap img { width: 50px; height: 50px; object-fit: contain; }
     .header-text { text-align: left; }
@@ -85,7 +85,7 @@
     
     .card {
       background: var(--card);
-      border: 1px solid rgba(201,168,76,0.35);
+      border: 1px solid rgba(59, 130, 246,0.35);
       border-radius: 1.25rem;
       padding: 30px;
       width: min(100% - 40px, 500px);
@@ -98,7 +98,7 @@
     input, select, textarea {
       width: 100%;
       background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(201,168,76,0.25);
+      border: 1px solid rgba(59, 130, 246,0.25);
       border-radius: 0.625rem;
       padding: 12px 16px;
       color: var(--text);
@@ -109,18 +109,18 @@
     input::placeholder, textarea::placeholder {
       color: rgba(255, 255, 255, 0.7);
     }
-    input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.15); background: rgba(255,255,255,0.09); }
+    input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(59, 130, 246,0.15); background: rgba(255,255,255,0.09); }
     select option { background: var(--deep); color: white; }
     textarea { resize: vertical; min-height: 80px; }
 
     .btn-submit {
       width: 100%; padding: 14px; border-radius: 0.75rem; border: none;
-      background: linear-gradient(135deg, #C9A84C 0%, #E8C97A 50%, #C9A84C 100%);
-      background-size: 200% 100%; color: #1A1A2E; font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 50%, #3b82f6 100%);
+      background-size: 200% 100%; color: #090e1a; font-family: 'DM Sans', sans-serif;
       font-weight: 700; font-size: 1rem; cursor: pointer; margin-top: 10px;
-      transition: all 0.4s ease; box-shadow: 0 4px 20px rgba(201,168,76,0.3);
+      transition: all 0.4s ease; box-shadow: 0 4px 20px rgba(59, 130, 246,0.3);
     }
-    .btn-submit:hover { background-position: 100% 0; transform: translateY(-2px); box-shadow: 0 6px 28px rgba(201,168,76,0.45); }
+    .btn-submit:hover { background-position: 100% 0; transform: translateY(-2px); box-shadow: 0 6px 28px rgba(59, 130, 246,0.45); }
     .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
 
     .success-msg { display: none; text-align: center; padding: 20px; }
@@ -134,7 +134,7 @@
     .modal-box .field-label { display:block; font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--gold-light); margin-bottom:8px; font-weight:600; }
     .smart-suggestions { display:none; position:absolute; top:100%; left:0; right:0; background:var(--card); border:1px solid var(--gold); border-radius:8px; max-height:160px; overflow-y:auto; z-index:10; box-shadow:0 8px 24px rgba(0,0,0,0.4); margin-top:4px; }
     .smart-suggestion-item { padding:10px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); font-size:14px; transition:background 0.2s; color:var(--text); }
-    .smart-suggestion-item:hover { background:rgba(201,168,76,0.15); color:var(--gold-light); }
+    .smart-suggestion-item:hover { background:rgba(59, 130, 246,0.15); color:var(--gold-light); }
     .smart-suggestion-item:last-child { border-bottom:none; }
 
 
@@ -385,21 +385,12 @@
         // 2. Add dynamic leaders from database
         if (data) {
           data.forEach(m => {
-            if (m.leader_type === 'G12' || m.leader_type === 'DH') {
-              if (m.member_name) {
-                const canonical = m.member_name.trim();
-                const cleaned = canonical.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
-                leaders.add(cleaned);
-                leaderTypes[cleaned] = m.leader_type;
-              }
-            }
             if (m.g12_leader) {
-              const canonical = m.g12_leader.trim();
-              if (canonical.toLowerCase() !== 'unassigned') {
-                const cleaned = canonical.replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
-                leaders.add(cleaned);
+              const canonical = normalizeLeaderName(m.g12_leader);
+              if (canonical !== 'Unassigned') {
+                leaders.add(canonical);
                 if (m.leader_type === 'G12' || m.leader_type === 'DH') {
-                  leaderTypes[cleaned] = m.leader_type;
+                  leaderTypes[canonical] = m.leader_type;
                 }
               }
             }

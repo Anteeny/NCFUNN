@@ -12,7 +12,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
-<body class="sidebar-collapsed">
+<body>
 
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap');
@@ -24,20 +24,20 @@
     }
 
     :root {
-      --gold: #B8860B;
-      --gold-light: #F5E6A0;
-      --gold-soft: #FDF8E8;
-      --navy: #0D1B2A;
-      --navy-mid: #1B2F45;
-      --navy-soft: #E8EDF2;
-      --text: #0f1923;
-      --text-muted: #4a5568;
-      --border: #dde1e8;
-      --bg: #f4f6f9;
-      --card: rgba(255, 255, 255, 0.94);
-      --radius: 10px;
-      --glass: rgba(255, 255, 255, 0.94);
-      --glass-border: rgba(0, 0, 0, 0.08);
+      --gold: #3b82f6;
+      --gold-light: #60a5fa;
+      --gold-soft: rgba(59, 130, 246, 0.12);
+      --navy: #090e1a;
+      --navy-mid: #0f172a;
+      --navy-soft: rgba(255, 255, 255, 0.06);
+      --text: #F3F4F6;
+      --text-muted: #94A3B8;
+      --border: rgba(255, 255, 255, 0.08);
+      --bg: rgba(10, 16, 27, 0.45);
+      --card: rgba(17, 24, 39, 0.7);
+      --radius: 20px;
+      --glass: rgba(10, 16, 27, 0.65);
+      --glass-border: rgba(255, 255, 255, 0.08);
     }
 
     body {
@@ -75,17 +75,38 @@
       position: fixed;
       top: 0;
       left: 0;
-      width: 220px;
+      width: 240px;
       height: 100vh;
-      background: rgba(10, 20, 35, 0.92);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-right: 1px solid rgba(255, 255, 255, 0.07);
-      z-index: 100;
+      background: rgba(10, 20, 35, 0.65);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      z-index: 1000;
       display: flex;
       flex-direction: column;
       overflow-y: auto;
-      transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1)
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    }
+
+    .sidebar.open {
+      transform: translateX(0);
+    }
+
+    .sidebar::-webkit-scrollbar {
+      width: 5px;
+    }
+    .sidebar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .sidebar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    .sidebar::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
     }
 
     .sidebar-logo {
@@ -146,7 +167,7 @@
 
     .nav-item.active {
       color: #fff;
-      background: rgba(184, 134, 11, 0.2);
+      background: rgba(59, 130, 246, 0.2);
       border-left-color: var(--gold)
     }
 
@@ -202,11 +223,10 @@
     }
 
     .main {
-      margin-left: 220px;
+      margin-left: 0;
       flex: 1;
       display: flex;
       flex-direction: column;
-      transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1)
     }
 
     .topbar {
@@ -221,7 +241,7 @@
       justify-content: space-between;
       position: sticky;
       top: 0;
-      z-index: 50
+      z-index: 50;
     }
 
     .page-title {
@@ -234,7 +254,7 @@
     .topbar-right {
       display: flex;
       align-items: center;
-      gap: 12px
+      gap: 16px
     }
 
     .topbar-btn {
@@ -450,7 +470,7 @@
     }
 
     tr:hover td {
-      background: rgba(184, 134, 11, 0.04);
+      background: rgba(59, 130, 246, 0.04);
     }
 
     tr:last-child td {
@@ -535,7 +555,7 @@
     }
 
     .bar-fill.gold {
-      background: linear-gradient(90deg, #B8860B 0%, #E9C46A 100%)
+      background: linear-gradient(90deg, #3b82f6 0%, #E9C46A 100%)
     }
 
     .bar-fill.green {
@@ -589,7 +609,7 @@
     select:focus,
     textarea:focus {
       border-color: var(--gold);
-      box-shadow: 0 0 0 2px rgba(184, 134, 11, 0.12)
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.12)
     }
 
     textarea {
@@ -948,7 +968,7 @@
       background: linear-gradient(135deg, rgba(13, 27, 42, 0.82) 0%, rgba(27, 47, 69, 0.78) 100%);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(184, 134, 11, 0.28);
+      border: 1px solid rgba(59, 130, 246, 0.28);
       border-radius: var(--radius);
       padding: 20px;
       color: #fff;
@@ -963,7 +983,7 @@
     .dash-ticker-wrap {
       background: rgba(13, 27, 42, 0.72);
       backdrop-filter: blur(12px);
-      border: 1px solid rgba(184, 134, 11, 0.22);
+      border: 1px solid rgba(59, 130, 246, 0.22);
       border-radius: 12px;
       padding: 0 20px;
       height: 42px;
@@ -1045,7 +1065,7 @@
 
     .chart-zone-filter {
       font-size: 12px;
-      border: 1px solid rgba(184, 134, 11, 0.4);
+      border: 1px solid rgba(59, 130, 246, 0.4);
       border-radius: 8px;
       padding: 5px 10px;
       background: rgba(255, 255, 255, 0.5);
@@ -1194,22 +1214,8 @@
     }
 
     @media (max-width: 768px) {
-      .sidebar {
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-      }
-
-      .sidebar.open {
-        transform: translateX(0);
-      }
-
       .main {
         margin-left: 0;
-      }
-
-      #mobile-menu-btn {
-        display: block !important;
       }
 
       .grid-2,
@@ -1274,11 +1280,12 @@
       }
 
       .content {
-        padding: 16px;
+        padding: 16px !important;
       }
 
       .topbar {
-        padding: 0 16px;
+        padding: 0 16px !important;
+        background: rgba(255, 255, 255, 0.88) !important;
       }
 
       .modal {
@@ -1334,6 +1341,17 @@
       .btn-sm {
         padding: 8px 12px !important;
         font-size: 13px !important;
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px !important;
+        margin-bottom: 16px !important;
+      }
+
+      .stat-card {
+        padding: 12px 14px !important;
+        border-radius: 14px !important;
       }
     }
 
@@ -1509,7 +1527,7 @@
     .login-input-field:focus {
       background: rgba(255, 255, 255, 0.7) !important;
       border-color: var(--gold) !important;
-      box-shadow: 0 4px 15px rgba(184, 134, 11, 0.1) !important;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1) !important;
     }
 
     .login-forgot-link {
@@ -1857,7 +1875,7 @@
     }
 
     .slide-badge.sunday {
-      background: #E94560;
+      background: #06b6d4;
     }
 
     .slide-badge.wednesday {
@@ -2006,7 +2024,7 @@
       background: var(--gold);
       border-color: var(--gold);
       transform: translateY(-2px);
-      box-shadow: 0 4px 10px rgba(184, 134, 11, 0.3);
+      box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
     }
 
     /* RESPONSIVENESS */
@@ -2043,67 +2061,7 @@
       }
     }
 
-    /* Collapsible Sidebar Styles (Desktop only) */
-    @media (min-width: 769px) {
-      body.sidebar-collapsed .sidebar {
-        width: 68px !important;
-      }
 
-      body.sidebar-collapsed .main {
-        margin-left: 68px !important;
-      }
-
-      body.sidebar-collapsed .sidebar-logo {
-        padding: 16px 8px !important;
-      }
-
-      body.sidebar-collapsed .sidebar-logo img {
-        width: 32px !important;
-        margin-bottom: 0 !important;
-      }
-
-      body.sidebar-collapsed .sidebar-logo .logo-title,
-      body.sidebar-collapsed .sidebar-logo .logo-sub,
-      body.sidebar-collapsed .nav-section,
-      body.sidebar-collapsed .sidebar-user .user-info>div:not(.user-avatar),
-      body.sidebar-collapsed .nav-item span:not(.ti) {
-        display: none !important;
-      }
-
-      body.sidebar-collapsed .nav-item {
-        font-size: 0 !important;
-        justify-content: center !important;
-        padding: 12px 16px !important;
-      }
-
-      body.sidebar-collapsed .nav-item i {
-        font-size: 18px !important;
-        margin: 0 !important;
-      }
-
-      body.sidebar-collapsed .nav-badge {
-        display: none !important;
-      }
-
-      body.sidebar-collapsed .sidebar-user {
-        padding: 4px 0 !important;
-      }
-
-      body.sidebar-collapsed .sidebar-user button span {
-        display: none !important;
-      }
-
-      body.sidebar-collapsed .sidebar-user button {
-        justify-content: center !important;
-        padding: 10px !important;
-        border-radius: 50% !important;
-        width: auto !important;
-      }
-
-      body.sidebar-collapsed .nav-sub-item {
-        display: none !important;
-      }
-    }
 
     /* Sub-nav items under main nav items */
     .nav-sub-item {
@@ -2126,7 +2084,7 @@
 
     .nav-sub-item.active {
       color: var(--gold);
-      background: rgba(184, 134, 11, 0.12);
+      background: rgba(59, 130, 246, 0.12);
       border-left-color: var(--gold);
     }
 
@@ -2155,11 +2113,7 @@
       color: var(--navy);
     }
 
-    @media (max-width: 768px) {
-      #sidebar-toggle-btn {
-        display: none !important;
-      }
-    }
+
 
     /* Premium Leader Cards (Modern Light Dashboard UI style) */
     .g12-container {
@@ -2203,13 +2157,13 @@
     .leader-card-modern:hover {
       transform: translateY(-4px);
       box-shadow: 0 16px 40px rgba(0, 0, 0, 0.04);
-      border-color: rgba(184, 134, 11, 0.25);
+      border-color: rgba(59, 130, 246, 0.25);
     }
 
     .leader-card-modern.selected {
       border-color: var(--gold);
-      box-shadow: 0 8px 30px rgba(184, 134, 11, 0.08);
-      background: rgba(184, 134, 11, 0.01);
+      box-shadow: 0 8px 30px rgba(59, 130, 246, 0.08);
+      background: rgba(59, 130, 246, 0.01);
     }
 
     .leader-avatar-circle {
@@ -2334,7 +2288,7 @@
     }
 
     .dropdown-item:hover {
-      background: rgba(184, 134, 11, 0.08);
+      background: rgba(59, 130, 246, 0.08);
       color: var(--gold);
     }
 
@@ -2359,7 +2313,7 @@
     }
 
     #app tr:hover td {
-      background: rgba(184, 134, 11, 0.04);
+      background: rgba(59, 130, 246, 0.04);
     }
 
     .dropdown-menu {
@@ -2375,6 +2329,139 @@
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       border: 1px solid rgba(0, 0, 0, 0.07) !important;
+    }
+
+    /* ─── MAKE OVERRIDES FOR THEME RE-SKINNING ─── */
+    .sidebar {
+      background: rgba(10, 16, 27, 0.75) !important;
+      border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+    .sidebar-logo {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+    .nav-item {
+      color: rgba(243, 244, 246, 0.6) !important;
+    }
+    .nav-item:hover {
+      color: #fff !important;
+      background: rgba(255, 255, 255, 0.03) !important;
+    }
+    .nav-item.active {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.22) 0%, rgba(59, 130, 246, 0.04) 100%) !important;
+      color: #60a5fa !important;
+      border-left: 3px solid #3b82f6 !important;
+      font-weight: 500;
+    }
+    .topbar {
+      background: rgba(15, 23, 42, 0.6) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+    .page-title {
+      color: #ffffff !important;
+    }
+    .topbar-date {
+      color: #94a3b8 !important;
+    }
+    .topbar-btn {
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      color: #f3f4f6 !important;
+    }
+    .topbar-btn:hover {
+      background: rgba(255, 255, 255, 0.05) !important;
+    }
+    .topbar-btn.primary {
+      background: #3b82f6 !important;
+      border-color: #3b82f6 !important;
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.3) !important;
+    }
+    .card, .leader-card-modern, .stats-card, .unit-card {
+      background: rgba(17, 24, 39, 0.65) !important;
+      backdrop-filter: blur(20px) !important;
+      -webkit-backdrop-filter: blur(20px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+      color: #f3f4f6 !important;
+    }
+    .card h3, .stats-card .stats-number, .card-title, .leader-card-modern h4, .leader-card-name {
+      color: #ffffff !important;
+    }
+    .announcement-banner {
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.16) 0%, rgba(17, 24, 39, 0.8) 100%) !important;
+      border: 1px solid rgba(59, 130, 246, 0.25) !important;
+      box-shadow: 0 8px 32px rgba(37, 99, 235, 0.12) !important;
+      color: #ffffff !important;
+    }
+    .announcement-banner .ann-title {
+      color: #ffffff !important;
+    }
+    .announcement-banner .ann-sub {
+      color: rgba(255, 255, 255, 0.7) !important;
+    }
+    .announcement-banner .ann-badge {
+      background: rgba(59, 130, 246, 0.25) !important;
+      color: #60a5fa !important;
+      border: 1px solid rgba(59, 130, 246, 0.4) !important;
+    }
+    /* Table Reskin */
+    #app th, .table-wrap th, table th {
+      background: rgba(15, 23, 42, 0.85) !important;
+      color: #94a3b8 !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+    }
+    #app td, .table-wrap td, table td {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+      color: #e2e8f0 !important;
+      background: transparent !important;
+    }
+    #app tr:hover td {
+      background: rgba(255, 255, 255, 0.02) !important;
+    }
+    .table-wrap {
+      background: rgba(17, 24, 39, 0.6) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      border-radius: 16px !important;
+    }
+    /* Form input Reskin */
+    input, select, textarea, .search-wrap, .search-bar select, .search-bar input {
+      background: rgba(15, 23, 42, 0.5) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      color: #ffffff !important;
+      border-radius: 8px !important;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #3b82f6 !important;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
+    }
+    /* Modals Reskin */
+    .modal-content {
+      background: rgba(15, 23, 42, 0.95) !important;
+      backdrop-filter: blur(30px) !important;
+      -webkit-backdrop-filter: blur(30px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      color: #f3f4f6 !important;
+      border-radius: 24px !important;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+    }
+    .modal-header h3 {
+      color: #ffffff !important;
+    }
+    /* Dropdowns Reskin */
+    .dropdown-menu {
+      background: rgba(15, 23, 42, 0.95) !important;
+      backdrop-filter: blur(25px) !important;
+      -webkit-backdrop-filter: blur(25px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.08) !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+    }
+    .dropdown-menu a {
+      color: #e2e8f0 !important;
+    }
+    .dropdown-menu a:hover {
+      background: rgba(255, 255, 255, 0.05) !important;
+      color: #ffffff !important;
     }
   </style>
 
@@ -2596,10 +2683,8 @@
     <div class="main">
       <div class="topbar">
         <div style="display:flex;align-items:center;gap:12px;">
-          <button id="mobile-menu-btn" onclick="toggleMobileMenu()"
-            style="display:none;background:none;border:none;font-size:24px;cursor:pointer;color:var(--text);">&#9776;</button>
-          <button id="sidebar-toggle-btn" onclick="toggleSidebar()" title="Toggle Sidebar">
-            <i class="ti ti-layout-sidebar-left-expand"></i>
+          <button id="sidebar-toggle-btn" onclick="toggleMobileMenu()" title="Toggle Menu">
+            <i class="ti ti-menu-2"></i>
           </button>
           <div class="page-title" id="page-title">Dashboard</div>
         </div>
@@ -2970,10 +3055,10 @@
           </div>
 
           <div class="card unit-card"
-            style="cursor:pointer; text-align:center; padding:40px; border-top: 4px solid #E94560;"
+            style="cursor:pointer; text-align:center; padding:40px; border-top: 4px solid #06b6d4;"
             onclick="enterReportCategory('connect')">
             <div class="unit-icon" style="background:#FCEBEB; width:60px; height:60px; margin:0 auto 20px;">
-              <i class="ti ti-heart-handshake" style="color:#E94560; font-size:28px;"></i>
+              <i class="ti ti-heart-handshake" style="color:#06b6d4; font-size:28px;"></i>
             </div>
             <div class="unit-name" style="font-size:18px; font-weight:600;">Connect</div>
             <p class="text-sm">Small group meetings</p>
@@ -3948,7 +4033,7 @@
 
     // Helper: Get a consistent avatar color based on the member's name
     function getAvatarColor(name) {
-      const colors = ['#0D1B2A', '#B8860B', '#185FA5', '#3B6D11', '#E94560', '#5F5E5A'];
+      const colors = ['#090e1a', '#3b82f6', '#185FA5', '#3B6D11', '#06b6d4', '#5F5E5A'];
       if (!name) return colors[0];
       let hash = 0;
       for (let i = 0; i < name.length; i++) {
@@ -4438,12 +4523,12 @@
           responsive: true,
           interaction: { mode: 'index', intersect: false },
           plugins: {
-            legend: { display: true, position: 'bottom', labels: { font: { family: 'DM Sans', size: 11 }, boxWidth: 10, padding: 12 } },
-            tooltip: { backgroundColor: 'rgba(13,27,42,0.85)', titleFont: { family: 'Playfair Display', size: 13 }, bodyFont: { family: 'DM Sans' }, cornerRadius: 8, padding: 10 }
+            legend: { display: true, position: 'bottom', labels: { color: '#94a3b8', font: { family: 'DM Sans', size: 11 }, boxWidth: 10, padding: 12 } },
+            tooltip: { backgroundColor: 'rgba(9, 14, 25, 0.95)', titleColor: '#ffffff', bodyColor: '#e2e8f0', borderColor: 'rgba(255,255,255,0.08)', borderWidth: 1, titleFont: { family: 'Playfair Display', size: 13 }, bodyFont: { family: 'DM Sans' }, cornerRadius: 8, padding: 10 }
           },
           scales: {
-            x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'DM Sans', size: 10 }, maxRotation: 45 } },
-            y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'DM Sans', size: 10 } }, beginAtZero: true }
+            x: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#94a3b8', font: { family: 'DM Sans', size: 10 }, maxRotation: 45 } },
+            y: { grid: { color: 'rgba(255,255,255,0.06)' }, ticks: { color: '#94a3b8', font: { family: 'DM Sans', size: 10 } }, beginAtZero: true }
           }
         };
 
@@ -4458,10 +4543,10 @@
               datasets: [{
                 label: 'Total Attendance',
                 data: attVals,
-                borderColor: '#B8860B',
-                backgroundColor: 'rgba(184,134,11,0.10)',
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246,0.10)',
                 borderWidth: 2.5,
-                pointBackgroundColor: '#B8860B',
+                pointBackgroundColor: '#3b82f6',
                 pointRadius: 4,
                 pointHoverRadius: 6,
                 fill: true,
@@ -4481,7 +4566,7 @@
             data: {
               labels,
               datasets: [
-                { label: 'First Timers', data: mvpVals, backgroundColor: 'rgba(184,134,11,0.75)', borderRadius: 6 },
+                { label: 'First Timers', data: mvpVals, backgroundColor: 'rgba(59, 130, 246,0.75)', borderRadius: 6 },
                 { label: 'New Converts', data: newConvVals, backgroundColor: 'rgba(59,109,17,0.72)', borderRadius: 6 }
               ]
             },
@@ -4833,7 +4918,7 @@
 
         let rowNum = 1;
         Object.keys(grouped).sort().forEach(dept => {
-          tbody.innerHTML += `<tr style="background: rgba(201,168,76,0.1); font-weight: 600;"><td colspan="10" style="padding: 12px; color: var(--gold);">📁 ${dept} (${grouped[dept].length})</td></tr>`;
+          tbody.innerHTML += `<tr style="background: rgba(59, 130, 246,0.1); font-weight: 600;"><td colspan="10" style="padding: 12px; color: var(--gold);">📁 ${dept} (${grouped[dept].length})</td></tr>`;
           grouped[dept].forEach(m => {
             const realIndex = state.members.indexOf(m);
             const safeName = m.member_name || 'Unnamed';
@@ -4864,7 +4949,7 @@
 
         let rowNum = 1;
         Object.keys(grouped).sort().forEach(leader => {
-          tbody.innerHTML += `<tr style="background: rgba(201,168,76,0.1); font-weight: 600;"><td colspan="10" style="padding: 12px; color: var(--gold);">👤 ${leader} (${grouped[leader].length})</td></tr>`;
+          tbody.innerHTML += `<tr style="background: rgba(59, 130, 246,0.1); font-weight: 600;"><td colspan="10" style="padding: 12px; color: var(--gold);">👤 ${leader} (${grouped[leader].length})</td></tr>`;
           grouped[leader].forEach(m => {
             const realIndex = state.members.indexOf(m);
             const safeName = m.member_name || 'Unnamed';
@@ -4895,7 +4980,7 @@
 
         let rowNum = 1;
         Object.keys(grouped).sort().forEach(zone => {
-          tbody.innerHTML += `<tr style="background: rgba(201,168,76,0.1); font-weight: 600;"><td colspan="10" style="padding: 12px; color: var(--gold);">📍 Zone: ${zone} (${grouped[zone].length})</td></tr>`;
+          tbody.innerHTML += `<tr style="background: rgba(59, 130, 246,0.1); font-weight: 600;"><td colspan="10" style="padding: 12px; color: var(--gold);">📍 Zone: ${zone} (${grouped[zone].length})</td></tr>`;
           grouped[zone].forEach(m => {
             const realIndex = state.members.indexOf(m);
             const safeName = m.member_name || 'Unnamed';
@@ -5481,7 +5566,7 @@
 
               visitorsCards.innerHTML += `
                 <div class="card" style="padding:0; margin-bottom:24px; overflow:hidden; border-top:3px solid var(--gold)">
-                  <div style="padding:18px 20px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:rgba(184,134,11,0.02)">
+                  <div style="padding:18px 20px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:rgba(59, 130, 246,0.02)">
                     <div>
                       <div style="font-family:'Playfair Display',serif; font-size:17px; font-weight:600; color:var(--navy)">
                         ${friendlyDate}
@@ -5572,8 +5657,8 @@
             }).join('');
 
             lapsedSection.innerHTML = `
-              <div class="card" style="padding:0; margin-bottom:24px; overflow:hidden; border-top:3px solid #E94560">
-                <div style="padding:18px 20px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:rgba(233,69,96,0.02)">
+              <div class="card" style="padding:0; margin-bottom:24px; overflow:hidden; border-top:3px solid #06b6d4">
+                <div style="padding:18px 20px 14px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; background:rgba(6, 182, 212,0.02)">
                   <div>
                     <div style="font-family:'Playfair Display',serif; font-size:17px; font-weight:600; color:var(--navy)">
                       Lapsed Members
@@ -5766,7 +5851,7 @@
         // Safe JSON for onclick — encode for HTML attribute
         const safeJson = JSON.stringify({ Name: name, 'Phone Number': phone, 'G12 leader': g12, Requests: requests }).replace(/"/g, '&quot;');
 
-        return `<tr style="${isSecond ? 'background:rgba(184,134,11,0.04)' : ''}">
+        return `<tr style="${isSecond ? 'background:rgba(59, 130, 246,0.04)' : ''}">
       <td style="color:var(--text-muted);font-size:13px">${sn}</td>
       <td>
         <strong>${name}</strong>
@@ -5798,7 +5883,7 @@
         if (!btn) return;
         btn.style.borderColor = f === filter ? 'var(--gold)' : '';
         btn.style.color = f === filter ? 'var(--gold)' : '';
-        btn.style.background = f === filter ? 'rgba(184,134,11,0.1)' : '';
+        btn.style.background = f === filter ? 'rgba(59, 130, 246,0.1)' : '';
       });
       _renderMvpTable();
     }
@@ -5845,7 +5930,7 @@
       const depts = Object.keys(deptMap).sort();
       if (unassignedCount > 0) depts.push('Unassigned'); // Add unassigned at the end
 
-      const deptColors = ['#0D1B2A', '#B8860B', '#185FA5', '#3B6D11', '#993556', '#993C1D', '#5F5E5A'];
+      const deptColors = ['#090e1a', '#3b82f6', '#185FA5', '#3B6D11', '#993556', '#993C1D', '#5F5E5A'];
 
       document.getElementById('units-grid').innerHTML = depts.map((dept, i) => {
         const count = dept === 'Unassigned' ? unassignedCount : deptMap[dept];
@@ -5914,7 +5999,7 @@
         deptNames.forEach(dept => {
           if (deptMap[dept]) {
             const members = deptMap[dept];
-            html += `<tr style="background: rgba(201,168,76,0.1); font-weight: 600;"><td colspan="4" style="padding: 12px; color: var(--gold);">📁 ${dept} (${members.length})</td></tr>`;
+            html += `<tr style="background: rgba(59, 130, 246,0.1); font-weight: 600;"><td colspan="4" style="padding: 12px; color: var(--gold);">📁 ${dept} (${members.length})</td></tr>`;
             html += members.map(m => {
               const safeName = m.member_name || "Unnamed Member";
               return `
@@ -7208,7 +7293,7 @@
       if (!confirm("⚠️ This will normalize ALL leader names in your database.\n\nThis will:\n• Convert aliases to canonical names\n• Remove title prefixes (Pastor, Pa, etc.)\n• Merge duplicate entries\n\nContinue?")) return;
 
       const statusEl = document.createElement('div');
-      statusEl.style.cssText = "position:fixed;top:20px;right:20px;background:#101D42;border:2px solid var(--gold);padding:20px;border-radius:10px;max-width:350px;z-index:9999;font-size:13px;line-height:1.6;color:#fff;";
+      statusEl.style.cssText = "position:fixed;top:20px;right:20px;background:rgba(17, 24, 39, 0.75);border:2px solid var(--gold);padding:20px;border-radius:10px;max-width:350px;z-index:9999;font-size:13px;line-height:1.6;color:#fff;";
       statusEl.innerHTML = "🔄 Phase 1: Fetching all members...";
       document.body.appendChild(statusEl);
 

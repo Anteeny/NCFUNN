@@ -21,18 +21,18 @@
 
     :root {
       --gold: #edbf3e;
-      --gold-light: #E8C97A;
-      --dark: #0D1B2A;
+      --gold-light: #60a5fa;
+      --dark: #090e1a;
       --darker: #050a15;
-      --mid: #1B2F45;
-      --accent: #101D42;
+      --mid: #0f172a;
+      --accent: rgba(17, 24, 39, 0.75);
       --text: #E8EDF2;
       --muted: #ffffff;
       --card-bg: rgba(255,255,255,0.04);
-      --border: rgba(201,168,76,0.18);
+      --border: rgba(59, 130, 246,0.18);
       --input-bg: rgba(255,255,255,0.06);
-      --input-border: rgba(201,168,76,0.3);
-      --input-focus: rgba(201,168,76,0.7);
+      --input-border: rgba(59, 130, 246,0.3);
+      --input-focus: rgba(59, 130, 246,0.7);
       --radius: 14px;
     }
 
@@ -61,8 +61,8 @@
       align-items: center;
       gap: 18px;
       padding: 22px 40px;
-      border-bottom: 2px solid rgba(201, 168, 76, 0.35);
-      background: #0D1B2A;
+      border-bottom: 2px solid rgba(59, 130, 246, 0.35);
+      background: #090e1a;
       margin-bottom: 4vh;
     }
 
@@ -145,8 +145,8 @@
     }
 
     .form-card {
-      background: #101D42;
-      border: 1px solid rgba(201,168,76,0.35);
+      background: rgba(17, 24, 39, 0.75);
+      border: 1px solid rgba(59, 130, 246,0.35);
       border-radius: 20px;
       padding: 40px 44px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.4);
@@ -229,7 +229,7 @@
 
     input, select, textarea {
       background: rgba(0,0,0,0.2);
-      border: 1px solid rgba(201,168,76,0.3);
+      border: 1px solid rgba(59, 130, 246,0.3);
       border-radius: 9px;
       padding: 11px 14px;
       color: var(--text);
@@ -242,11 +242,11 @@
 
     input::placeholder, textarea::placeholder { color: rgba(168,178,216,0.5); }
 
-    select option { background: #0D1B2A; color: #fff; }
+    select option { background: #090e1a; color: #fff; }
 
     input:focus, select:focus, textarea:focus {
       border-color: var(--gold);
-      box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246,0.1);
     }
 
     textarea { resize: vertical; min-height: 90px; }
@@ -276,14 +276,14 @@
       color: var(--muted);
       transition: all 0.3s;
     }
-    .step-indicator.active { background: var(--gold); border-color: var(--gold); color: var(--darker); box-shadow: 0 0 15px rgba(201,168,76,0.3); }
+    .step-indicator.active { background: var(--gold); border-color: var(--gold); color: var(--darker); box-shadow: 0 0 15px rgba(59, 130, 246,0.3); }
     .step-line { width: 50px; height: 2px; background: var(--border); }
     .step-line.active { background: var(--gold); }
 
     /* Total row */
     .total-row input {
-      border-color: rgba(201,168,76,0.5);
-      background: rgba(201,168,76,0.07);
+      border-color: rgba(59, 130, 246,0.5);
+      background: rgba(59, 130, 246,0.07);
       font-weight: 600;
       color: var(--gold-light);
     }
@@ -305,7 +305,7 @@
       color: var(--text);
       cursor: pointer;
       background: rgba(0,0,0,0.2);
-      border: 1px solid rgba(201,168,76,0.3);
+      border: 1px solid rgba(59, 130, 246,0.3);
       border-radius: 8px;
       padding: 8px 14px;
       transition: border-color 0.2s, background 0.2s;
@@ -325,7 +325,7 @@
 
     .radio-group label.active {
       border-color: var(--gold);
-      background: rgba(201,168,76,0.12);
+      background: rgba(59, 130, 246,0.12);
       color: var(--gold-light);
     }
 
@@ -350,12 +350,12 @@
       border-radius: 50px;
       cursor: pointer;
       transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
-      box-shadow: 0 4px 24px rgba(201,168,76,0.25);
+      box-shadow: 0 4px 24px rgba(59, 130, 246,0.25);
     }
 
     .btn-submit:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 32px rgba(201,168,76,0.4);
+      box-shadow: 0 8px 32px rgba(59, 130, 246,0.4);
     }
 
     .btn-submit:active { transform: scale(0.98); }
@@ -363,7 +363,7 @@
     /* ── SUCCESS ── */
     .success-banner {
       display: none;
-      background: rgba(201,168,76,0.12);
+      background: rgba(59, 130, 246,0.12);
       border: 1px solid var(--gold);
       border-radius: 12px;
       padding: 18px 24px;
