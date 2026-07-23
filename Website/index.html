@@ -98,13 +98,16 @@
     .sidebar::-webkit-scrollbar {
       width: 5px;
     }
+
     .sidebar::-webkit-scrollbar-track {
       background: transparent;
     }
+
     .sidebar::-webkit-scrollbar-thumb {
       background: rgba(255, 255, 255, 0.15);
       border-radius: 4px;
     }
+
     .sidebar::-webkit-scrollbar-thumb:hover {
       background: rgba(255, 255, 255, 0.3);
     }
@@ -2193,7 +2196,7 @@
       font-family: 'DM Sans', sans-serif;
       font-size: 15px;
       font-weight: 600;
-      color: var(--navy);
+      color: #ffffff;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -2336,45 +2339,59 @@
       background: rgba(10, 16, 27, 0.75) !important;
       border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
+
     .sidebar-logo {
       border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
+
     .nav-item {
       color: rgba(243, 244, 246, 0.6) !important;
     }
+
     .nav-item:hover {
       color: #fff !important;
       background: rgba(255, 255, 255, 0.03) !important;
     }
+
     .nav-item.active {
       background: linear-gradient(135deg, rgba(59, 130, 246, 0.22) 0%, rgba(59, 130, 246, 0.04) 100%) !important;
       color: #60a5fa !important;
       border-left: 3px solid #3b82f6 !important;
       font-weight: 500;
     }
+
     .topbar {
       background: rgba(15, 23, 42, 0.6) !important;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
     }
+
     .page-title {
       color: #ffffff !important;
     }
+
     .topbar-date {
       color: #94a3b8 !important;
     }
+
     .topbar-btn {
       border-color: rgba(255, 255, 255, 0.1) !important;
       color: #f3f4f6 !important;
     }
+
     .topbar-btn:hover {
       background: rgba(255, 255, 255, 0.05) !important;
     }
+
     .topbar-btn.primary {
       background: #3b82f6 !important;
       border-color: #3b82f6 !important;
       box-shadow: 0 0 12px rgba(59, 130, 246, 0.3) !important;
     }
-    .card, .leader-card-modern, .stats-card, .unit-card {
+
+    .card,
+    .leader-card-modern,
+    .stats-card,
+    .unit-card {
       background: rgba(17, 24, 39, 0.65) !important;
       backdrop-filter: blur(20px) !important;
       -webkit-backdrop-filter: blur(20px) !important;
@@ -2382,28 +2399,42 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
       color: #f3f4f6 !important;
     }
-    .card h3, .stats-card .stats-number, .card-title, .leader-card-modern h4, .leader-card-name {
+
+    .card h3,
+    .stats-card .stats-number,
+    .card-title,
+    .leader-card-modern h4,
+    .leader-card-name,
+    .leader-name-text,
+    .g12-section-title {
       color: #ffffff !important;
     }
+
     .announcement-banner {
       background: linear-gradient(135deg, rgba(37, 99, 235, 0.16) 0%, rgba(17, 24, 39, 0.8) 100%) !important;
       border: 1px solid rgba(59, 130, 246, 0.25) !important;
       box-shadow: 0 8px 32px rgba(37, 99, 235, 0.12) !important;
       color: #ffffff !important;
     }
+
     .announcement-banner .ann-title {
       color: #ffffff !important;
     }
+
     .announcement-banner .ann-sub {
       color: rgba(255, 255, 255, 0.7) !important;
     }
+
     .announcement-banner .ann-badge {
       background: rgba(59, 130, 246, 0.25) !important;
       color: #60a5fa !important;
       border: 1px solid rgba(59, 130, 246, 0.4) !important;
     }
+
     /* Table Reskin */
-    #app th, .table-wrap th, table th {
+    #app th,
+    .table-wrap th,
+    table th {
       background: rgba(15, 23, 42, 0.85) !important;
       color: #94a3b8 !important;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -2411,32 +2442,47 @@
       font-size: 11px;
       letter-spacing: 0.05em;
     }
-    #app td, .table-wrap td, table td {
+
+    #app td,
+    .table-wrap td,
+    table td {
       border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
       color: #e2e8f0 !important;
       background: transparent !important;
     }
+
     #app tr:hover td {
       background: rgba(255, 255, 255, 0.02) !important;
     }
+
     .table-wrap {
       background: rgba(17, 24, 39, 0.6) !important;
       border: 1px solid rgba(255, 255, 255, 0.08) !important;
       border-radius: 16px !important;
     }
+
     /* Form input Reskin */
-    input, select, textarea, .search-wrap, .search-bar select, .search-bar input {
+    input,
+    select,
+    textarea,
+    .search-wrap,
+    .search-bar select,
+    .search-bar input {
       background: rgba(15, 23, 42, 0.5) !important;
       border: 1px solid rgba(255, 255, 255, 0.08) !important;
       color: #ffffff !important;
       border-radius: 8px !important;
     }
-    input:focus, select:focus, textarea:focus {
+
+    input:focus,
+    select:focus,
+    textarea:focus {
       border-color: #3b82f6 !important;
       box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25) !important;
     }
+
     /* Modals Reskin */
-    .modal-content {
+    .modal-content, .modal {
       background: rgba(15, 23, 42, 0.95) !important;
       backdrop-filter: blur(30px) !important;
       -webkit-backdrop-filter: blur(30px) !important;
@@ -2445,9 +2491,24 @@
       border-radius: 24px !important;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
     }
-    .modal-header h3 {
+
+    .modal-header, .modal-header h3, .modal-title {
+      color: #ffffff !important;
+      border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    .modal-close {
+      color: rgba(255, 255, 255, 0.55) !important;
+      background: transparent !important;
+      border: none !important;
+      font-size: 24px !important;
+      cursor: pointer !important;
+    }
+
+    .modal-close:hover {
       color: #ffffff !important;
     }
+
     /* Dropdowns Reskin */
     .dropdown-menu {
       background: rgba(15, 23, 42, 0.95) !important;
@@ -2456,9 +2517,11 @@
       border: 1px solid rgba(255, 255, 255, 0.08) !important;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
     }
+
     .dropdown-menu a {
       color: #e2e8f0 !important;
     }
+
     .dropdown-menu a:hover {
       background: rgba(255, 255, 255, 0.05) !important;
       color: #ffffff !important;
@@ -2769,331 +2832,333 @@
 
         </div>
 
-      <!-- MVP PAGE -->
-      <div class="page" id="page-mvp">
-        <!-- Summary stats row -->
-        <div class="stats-grid" id="mvp-stats" style="margin-bottom:20px"></div>
-        <!-- Filter bar -->
-        <div class="search-bar" style="margin-bottom:16px">
-          <div class="search-wrap">
-            <i class="ti ti-search"></i>
-            <input type="text" id="mvp-search" placeholder="Search MVPs..." oninput="filterMvpTable()">
-          </div>
-          <button class="btn btn-outline" onclick="filterMvpBy('all')" id="mvp-filter-all"
-            style="border-color:var(--gold);color:var(--gold)"><i class="ti ti-users"></i> All</button>
-          <button class="btn btn-outline" onclick="filterMvpBy('second')" id="mvp-filter-second"><i
-              class="ti ti-repeat"></i> 2nd Timers</button>
-          <button class="btn btn-outline" onclick="filterMvpBy('prayer')" id="mvp-filter-prayer"><i
-              class="ti ti-heart"></i> Prayer Requests</button>
-          <button class="btn btn-outline" onclick="filterMvpBy('visit')" id="mvp-filter-visit"><i
-              class="ti ti-map-pin"></i> Needs Visit</button>
-          <button class="btn btn-gold" onclick="renderMvp()"><i class="ti ti-refresh"></i> Refresh</button>
-        </div>
-        <!-- Table -->
-        <div class="card" style="padding:0">
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Name</th>
-                  <th>Phone</th>
-                  <th>Date Visited</th>
-                  <th>Service</th>
-                  <th>Zone</th>
-                  <th>Times</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody id="mvp-tbody">
-                <tr>
-                  <td colspan="9" style="text-align:center;padding:40px"><i class="ti ti-loader"
-                      style="font-size:20px;opacity:0.3"></i></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- G12 PAGE -->
-      <div class="page" id="page-g12">
-        <div class="search-bar"
-          style="margin-bottom: 24px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-          <div class="search-wrap" style="flex: 1; min-width: 200px; max-width: 300px;">
-            <i class="ti ti-search"></i>
-            <input type="text" id="g12-search-input" placeholder="Search leader..." oninput="renderG12()">
-          </div>
-          <select id="g12-type-filter" onchange="renderG12()"
-            style="min-width: 150px; max-width: 200px; padding: 8px 10px; border-radius: 6px; border: 0.5px solid var(--border); background: var(--card); color: var(--text);">
-            <option value="all">All Categories</option>
-            <option value="G12">G12 Leaders</option>
-            <option value="DH">DH Leaders</option>
-          </select>
-          <button class="btn btn-gold" onclick="addNewLeaderPrompt()" style="margin-left: auto;">
-            <i class="ti ti-plus"></i> Add Leader
-          </button>
-          <button class="btn btn-outline" onclick="cleanupDatabaseG12()"
-            style="border-color: var(--gold); color: var(--gold);">
-            <i class="ti ti-refresh"></i> Cleanup Database
-          </button>
-        </div>
-
-        <div class="g12-container">
-          <!-- G12 Leaders section -->
-          <div id="g12-leaders-section">
-            <div class="g12-section-title">🌿 G12 Leaders</div>
-            <div class="leader-grid-modern" id="g12-leaders-grid"></div>
-          </div>
-
-          <!-- DH Leaders section -->
-          <div id="dh-leaders-section">
-            <div class="g12-section-title">🏠 DH Leaders</div>
-            <div class="leader-grid-modern" id="dh-leaders-grid"></div>
-          </div>
-        </div>
-
-        <!-- Selected Leader's Members Section (Modal Popup) -->
-        <div class="modal-backdrop" id="modal-g12-details" style="z-index: 205;">
-          <div class="modal" style="max-width: 900px; width: 95%;">
-            <div class="modal-header">
-              <div class="modal-title" id="g12-selected-title"
-                style="font-family: 'Playfair Display', serif; font-size: 19px; color: var(--navy); font-weight: 600;">
-                Members under Leader</div>
-              <button class="modal-close" onclick="closeG12Details()">×</button>
+        <!-- MVP PAGE -->
+        <div class="page" id="page-mvp">
+          <!-- Summary stats row -->
+          <div class="stats-grid" id="mvp-stats" style="margin-bottom:20px"></div>
+          <!-- Filter bar -->
+          <div class="search-bar" style="margin-bottom:16px">
+            <div class="search-wrap">
+              <i class="ti ti-search"></i>
+              <input type="text" id="mvp-search" placeholder="Search MVPs..." oninput="filterMvpTable()">
             </div>
-            <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
-              <div class="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>Name</th>
-                      <th>Phone</th>
-                      <th>Department</th>
-                      <th>Leader Type</th>
-                      <th>School Address</th>
-                      <th>Home Address</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody id="g12-selected-members-tbody">
-                    <!-- Members will be listed here -->
-                  </tbody>
-                </table>
+            <button class="btn btn-outline" onclick="filterMvpBy('all')" id="mvp-filter-all"
+              style="border-color:var(--gold);color:var(--gold)"><i class="ti ti-users"></i> All</button>
+            <button class="btn btn-outline" onclick="filterMvpBy('second')" id="mvp-filter-second"><i
+                class="ti ti-repeat"></i> 2nd Timers</button>
+            <button class="btn btn-outline" onclick="filterMvpBy('prayer')" id="mvp-filter-prayer"><i
+                class="ti ti-heart"></i> Prayer Requests</button>
+            <button class="btn btn-outline" onclick="filterMvpBy('visit')" id="mvp-filter-visit"><i
+                class="ti ti-map-pin"></i> Needs Visit</button>
+            <button class="btn btn-gold" onclick="renderMvp()"><i class="ti ti-refresh"></i> Refresh</button>
+          </div>
+          <!-- Table -->
+          <div class="card" style="padding:0">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Date Visited</th>
+                    <th>Service</th>
+                    <th>Zone</th>
+                    <th>Times</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="mvp-tbody">
+                  <tr>
+                    <td colspan="9" style="text-align:center;padding:40px"><i class="ti ti-loader"
+                        style="font-size:20px;opacity:0.3"></i></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- G12 PAGE -->
+        <div class="page" id="page-g12">
+          <div class="search-bar"
+            style="margin-bottom: 24px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <div class="search-wrap" style="flex: 1; min-width: 200px; max-width: 300px;">
+              <i class="ti ti-search"></i>
+              <input type="text" id="g12-search-input" placeholder="Search leader..." oninput="renderG12()">
+            </div>
+            <select id="g12-type-filter" onchange="renderG12()"
+              style="min-width: 150px; max-width: 200px; padding: 8px 10px; border-radius: 6px; border: 0.5px solid var(--border); background: var(--card); color: var(--text);">
+              <option value="all">All Categories</option>
+              <option value="G12">G12 Leaders</option>
+              <option value="DH">DH Leaders</option>
+            </select>
+            <button class="btn btn-gold" onclick="addNewLeaderPrompt()" style="margin-left: auto;">
+              <i class="ti ti-plus"></i> Add Leader
+            </button>
+            <button class="btn btn-outline" onclick="cleanupDatabaseG12()"
+              style="border-color: var(--gold); color: var(--gold);">
+              <i class="ti ti-refresh"></i> Cleanup Database
+            </button>
+          </div>
+
+          <div class="g12-container">
+            <!-- G12 Leaders section -->
+            <div id="g12-leaders-section">
+              <div class="g12-section-title" id="g12-leaders-title">🌿 G12 Leaders</div>
+              <div class="leader-grid-modern" id="g12-leaders-grid"></div>
+            </div>
+
+            <!-- DH Leaders section -->
+            <div id="dh-leaders-section">
+              <div class="g12-section-title" id="dh-leaders-title">🏠 DH Leaders</div>
+              <div class="leader-grid-modern" id="dh-leaders-grid"></div>
+            </div>
+          </div>
+
+          <!-- Selected Leader's Members Section (Modal Popup) -->
+          <div class="modal-backdrop" id="modal-g12-details" style="z-index: 205;">
+            <div class="modal" style="max-width: 900px; width: 95%;">
+              <div class="modal-header">
+                <div class="modal-title" id="g12-selected-title"
+                  style="font-family: 'Playfair Display', serif; font-size: 19px; color: var(--navy); font-weight: 600;">
+                  Members under Leader</div>
+                <button class="modal-close" onclick="closeG12Details()">×</button>
+              </div>
+              <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Department</th>
+                        <th>Leader Type</th>
+                        <th>School Address</th>
+                        <th>Home Address</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="g12-selected-members-tbody">
+                      <!-- Members will be listed here -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeG12Details()">Close</button>
+                <button class="btn btn-gold" onclick="openAddMemberForSelectedLeader()"><i class="ti ti-plus"></i> Add
+                  Member</button>
               </div>
             </div>
-            <div class="modal-footer">
-              <button class="btn btn-outline" onclick="closeG12Details()">Close</button>
-              <button class="btn btn-gold" onclick="openAddMemberForSelectedLeader()"><i class="ti ti-plus"></i> Add
-                Member</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- MEMBERS -->
-      <div class="page" id="page-members">
-        <div class="search-bar">
-          <div class="search-wrap">
-            <i class="ti ti-search"></i>
-            <input type="text" id="member-search" placeholder="Search members..." oninput="filterMembers()">
-          </div>
-          <button class="btn btn-outline" onclick="clearAllFilters()" id="btn-filter-all"
-            style="border-color: var(--gold); color: var(--gold);">
-            <i class="ti ti-eye"></i> All members
-          </button>
-          <div class="dropdown">
-            <button class="btn btn-outline" id="btn-group-by" onclick="toggleGroupByDropdown(event)"
-              style="border-color: var(--gold); color: var(--gold); background: transparent;">
-              <i class="ti ti-filter"></i> Group By <i class="ti ti-chevron-down"
-                style="font-size: 10px; margin-left: 4px;"></i>
-            </button>
-            <div class="dropdown-menu" id="group-by-menu">
-              <div class="dropdown-item" onclick="setGroupByMode('none')">None (All)</div>
-              <div class="dropdown-item" onclick="setGroupByMode('by-department')">📁 By Department</div>
-              <div class="dropdown-item" onclick="setGroupByMode('by-leader')">👤 By G12 Leader</div>
-              <div class="dropdown-item" onclick="setGroupByMode('by-zone')">📍 By Zone</div>
-            </div>
-          </div>
-          <button class="btn btn-outline" onclick="filterDuplicates()" id="btn-filter-dup"
-            style="border-color: var(--danger); color: var(--danger);">
-            <i class="ti ti-copy"></i> Duplicates
-          </button>
-          <button class="btn btn-gold" onclick="openModal('add-member')"><i class="ti ti-plus"></i> Add
-            Member</button>
-        </div>
-        <div class="card" style="padding:0">
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Name</th>
-                  <th>Phone</th>
-                  <th>Department</th>
-                  <th>G12 Leader</th>
-                  <th>Leader Type</th>
-                  <th>School Address</th>
-                  <th>Home Address</th>
-                  <th>G12 Phone</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="members-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- ATTENDANCE -->
-      <div class="page" id="page-attendance">
-        <div class="flex-between mb-16">
-          <div class="card-title" style="margin-bottom:0">Service Reports</div>
-          <button class="btn btn-outline" onclick="renderAttendance()"><i class="ti ti-refresh"></i> Refresh</button>
-        </div>
-        <div id="attendance-list-area">
-          <div class="empty-state"><i class="ti ti-loader"></i>
-            <p>Loading service reports...</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- FOLLOW-UP -->
-      <div class="page" id="page-followup">
-        <!-- Summary stats bar -->
-        <div class="stats-grid" id="fu-summary-stats" style="margin-bottom:20px"></div>
-
-        <!-- Tabs for Follow-Up -->
-        <div class="search-bar" style="margin-bottom: 20px; display: flex; gap: 10px;">
-          <button class="btn btn-gold" id="btn-fu-visitors" onclick="switchFollowupTab('visitors')">
-            <i class="ti ti-users"></i> Weekly Visitors
-          </button>
-          <button class="btn btn-outline" id="btn-fu-lapsed" onclick="switchFollowupTab('lapsed')" style="border-color:var(--gold);color:var(--gold);background:transparent;">
-            <i class="ti ti-history"></i> Lapsed Members
-          </button>
-        </div>
-
-        <!-- Weekly Visitors Cards -->
-        <div id="fu-visitors-section">
-          <div id="fu-visitors-cards"></div>
-        </div>
-
-        <!-- Lapsed Members Section -->
-        <div id="fu-lapsed-section" style="display: none;"></div>
-
-        <!-- Empty state -->
-        <div id="fu-empty" style="display:none">
-          <div class="card">
-            <div class="empty-state" style="padding:60px 20px">
-              <i class="ti ti-phone-off" style="font-size:40px;opacity:0.15"></i>
-              <p style="margin-top:16px;font-size:15px">No follow-up items yet.<br>
-                <span style="font-size:13px;opacity:0.6">People who need follow up will appear here automatically.</span>
-              </p>
-            </div>
           </div>
         </div>
 
-        <!-- Loading state -->
-        <div id="fu-loading" class="card" style="text-align:center;padding:50px">
-          <i class="ti ti-loader" style="font-size:28px;opacity:0.25"></i>
-          <p style="margin-top:12px;color:var(--text-muted)">Loading follow-up data...</p>
-        </div>
-      </div>
-
-
-      <!-- UNITS -->
-      <div class="page" id="page-units">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px"
-          id="units-grid"></div>
-        <div class="card">
-          <div class="card-title">Unit Members</div>
+        <!-- MEMBERS -->
+        <div class="page" id="page-members">
           <div class="search-bar">
-            <select id="unit-select-filter" onchange="filterByUnit()"
-              style="font-size:12px;padding:7px 10px;width:auto">
-              <option value="">All Units</option>
-            </select>
+            <div class="search-wrap">
+              <i class="ti ti-search"></i>
+              <input type="text" id="member-search" placeholder="Search members..." oninput="filterMembers()">
+            </div>
+            <button class="btn btn-outline" onclick="clearAllFilters()" id="btn-filter-all"
+              style="border-color: var(--gold); color: var(--gold);">
+              <i class="ti ti-eye"></i> All members
+            </button>
+            <div class="dropdown">
+              <button class="btn btn-outline" id="btn-group-by" onclick="toggleGroupByDropdown(event)"
+                style="border-color: var(--gold); color: var(--gold); background: transparent;">
+                <i class="ti ti-filter"></i> Group By <i class="ti ti-chevron-down"
+                  style="font-size: 10px; margin-left: 4px;"></i>
+              </button>
+              <div class="dropdown-menu" id="group-by-menu">
+                <div class="dropdown-item" onclick="setGroupByMode('none')">None (All)</div>
+                <div class="dropdown-item" onclick="setGroupByMode('by-department')">📁 By Department</div>
+                <div class="dropdown-item" onclick="setGroupByMode('by-leader')">👤 By G12 Leader</div>
+                <div class="dropdown-item" onclick="setGroupByMode('by-zone')">📍 By Zone</div>
+              </div>
+            </div>
+            <button class="btn btn-outline" onclick="filterDuplicates()" id="btn-filter-dup"
+              style="border-color: var(--danger); color: var(--danger);">
+              <i class="ti ti-copy"></i> Duplicates
+            </button>
+            <button class="btn btn-gold" onclick="openModal('add-member')"><i class="ti ti-plus"></i> Add
+              Member</button>
           </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Phone</th>
-                  <th>Status</th>
-                  <th>Joined</th>
-                </tr>
-              </thead>
-              <tbody id="unit-tbody"></tbody>
-            </table>
+          <div class="card" style="padding:0">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Department</th>
+                    <th>G12 Leader</th>
+                    <th>Leader Type</th>
+                    <th>School Address</th>
+                    <th>Home Address</th>
+                    <th>G12 Phone</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="members-tbody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- REPORTS -->
-      <div class="page" id="page-reports">
-        <div id="reports-landing"
-          style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:16px;">
-
-          <div class="card unit-card" style="cursor:pointer; text-align:center; padding:40px;"
-            onclick="enterReportCategory('g12')">
-            <div class="unit-icon" style="background:var(--gold-soft); width:60px; height:60px; margin:0 auto 20px;">
-              <i class="ti ti-users" style="color:var(--gold); font-size:28px;"></i>
-            </div>
-            <div class="unit-name" style="font-size:18px; font-weight:600;">G12 Reports</div>
-            <p class="text-sm">Leadership of 12</p>
+        <!-- ATTENDANCE -->
+        <div class="page" id="page-attendance">
+          <div class="flex-between mb-16">
+            <div class="card-title" style="margin-bottom:0">Service Reports</div>
+            <button class="btn btn-outline" onclick="renderAttendance()"><i class="ti ti-refresh"></i> Refresh</button>
           </div>
-
-          <div class="card unit-card" style="cursor:pointer; text-align:center; padding:40px;"
-            onclick="enterReportCategory('department')">
-            <div class="unit-icon" style="background:var(--navy-soft); width:60px; height:60px; margin:0 auto 20px;">
-              <i class="ti ti-grid-dots" style="color:var(--navy); font-size:28px;"></i>
+          <div id="attendance-list-area">
+            <div class="empty-state"><i class="ti ti-loader"></i>
+              <p>Loading service reports...</p>
             </div>
-            <div class="unit-name" style="font-size:18px; font-weight:600;">Dept. Reports</div>
-            <p class="text-sm">Unit & worker activity</p>
           </div>
-
-          <div class="card unit-card"
-            style="cursor:pointer; text-align:center; padding:40px; border-top: 4px solid #06b6d4;"
-            onclick="enterReportCategory('connect')">
-            <div class="unit-icon" style="background:#FCEBEB; width:60px; height:60px; margin:0 auto 20px;">
-              <i class="ti ti-heart-handshake" style="color:#06b6d4; font-size:28px;"></i>
-            </div>
-            <div class="unit-name" style="font-size:18px; font-weight:600;">Connect</div>
-            <p class="text-sm">Small group meetings</p>
-          </div>
-
         </div>
 
+        <!-- FOLLOW-UP -->
+        <div class="page" id="page-followup">
+          <!-- Summary stats bar -->
+          <div class="stats-grid" id="fu-summary-stats" style="margin-bottom:20px"></div>
+
+          <!-- Tabs for Follow-Up -->
+          <div class="search-bar" style="margin-bottom: 20px; display: flex; gap: 10px;">
+            <button class="btn btn-gold" id="btn-fu-visitors" onclick="switchFollowupTab('visitors')">
+              <i class="ti ti-users"></i> Weekly Visitors
+            </button>
+            <button class="btn btn-outline" id="btn-fu-lapsed" onclick="switchFollowupTab('lapsed')"
+              style="border-color:var(--gold);color:var(--gold);background:transparent;">
+              <i class="ti ti-history"></i> Lapsed Members
+            </button>
+          </div>
+
+          <!-- Weekly Visitors Cards -->
+          <div id="fu-visitors-section">
+            <div id="fu-visitors-cards"></div>
+          </div>
+
+          <!-- Lapsed Members Section -->
+          <div id="fu-lapsed-section" style="display: none;"></div>
+
+          <!-- Empty state -->
+          <div id="fu-empty" style="display:none">
+            <div class="card">
+              <div class="empty-state" style="padding:60px 20px">
+                <i class="ti ti-phone-off" style="font-size:40px;opacity:0.15"></i>
+                <p style="margin-top:16px;font-size:15px">No follow-up items yet.<br>
+                  <span style="font-size:13px;opacity:0.6">People who need follow up will appear here
+                    automatically.</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading state -->
+          <div id="fu-loading" class="card" style="text-align:center;padding:50px">
+            <i class="ti ti-loader" style="font-size:28px;opacity:0.25"></i>
+            <p style="margin-top:12px;color:var(--text-muted)">Loading follow-up data...</p>
+          </div>
+        </div>
+
+
+        <!-- UNITS -->
+        <div class="page" id="page-units">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px"
+            id="units-grid"></div>
+          <div class="card">
+            <div class="card-title">Unit Members</div>
+            <div class="search-bar">
+              <select id="unit-select-filter" onchange="filterByUnit()"
+                style="font-size:12px;padding:7px 10px;width:auto">
+                <option value="">All Units</option>
+              </select>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                  </tr>
+                </thead>
+                <tbody id="unit-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- REPORTS -->
+        <div class="page" id="page-reports">
+          <div id="reports-landing"
+            style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:16px;">
+
+            <div class="card unit-card" style="cursor:pointer; text-align:center; padding:40px;"
+              onclick="enterReportCategory('g12')">
+              <div class="unit-icon" style="background:var(--gold-soft); width:60px; height:60px; margin:0 auto 20px;">
+                <i class="ti ti-users" style="color:var(--gold); font-size:28px;"></i>
+              </div>
+              <div class="unit-name" style="font-size:18px; font-weight:600;">G12 Reports</div>
+              <p class="text-sm">Leadership of 12</p>
+            </div>
+
+            <div class="card unit-card" style="cursor:pointer; text-align:center; padding:40px;"
+              onclick="enterReportCategory('department')">
+              <div class="unit-icon" style="background:var(--navy-soft); width:60px; height:60px; margin:0 auto 20px;">
+                <i class="ti ti-grid-dots" style="color:var(--navy); font-size:28px;"></i>
+              </div>
+              <div class="unit-name" style="font-size:18px; font-weight:600;">Dept. Reports</div>
+              <p class="text-sm">Unit & worker activity</p>
+            </div>
+
+            <div class="card unit-card"
+              style="cursor:pointer; text-align:center; padding:40px; border-top: 4px solid #06b6d4;"
+              onclick="enterReportCategory('connect')">
+              <div class="unit-icon" style="background:#FCEBEB; width:60px; height:60px; margin:0 auto 20px;">
+                <i class="ti ti-heart-handshake" style="color:#06b6d4; font-size:28px;"></i>
+              </div>
+              <div class="unit-name" style="font-size:18px; font-weight:600;">Connect</div>
+              <p class="text-sm">Small group meetings</p>
+            </div>
+
+          </div>
+
+          <div id="reports-detail-view" style="display:none;">
+            <div class="flex-between mb-16">
+              <button class="btn btn-outline" onclick="exitReportCategory()">
+                <i class="ti ti-arrow-left"></i> Back to Categories
+              </button>
+              <div id="category-action-area"></div>
+            </div>
+
+            <div id="category-content" class="card">
+            </div>
+          </div>
+        </div>
+
+        <!-- DETAILED CATEGORY VIEW (Hidden by default) -->
         <div id="reports-detail-view" style="display:none;">
           <div class="flex-between mb-16">
             <button class="btn btn-outline" onclick="exitReportCategory()">
               <i class="ti ti-arrow-left"></i> Back to Categories
             </button>
-            <div id="category-action-area"></div>
+            <div id="category-action-area">
+              <!-- Add Member Button will be injected here -->
+            </div>
           </div>
 
           <div id="category-content" class="card">
+            <!-- Data/Charts will load here -->
           </div>
         </div>
-      </div>
-
-      <!-- DETAILED CATEGORY VIEW (Hidden by default) -->
-      <div id="reports-detail-view" style="display:none;">
-        <div class="flex-between mb-16">
-          <button class="btn btn-outline" onclick="exitReportCategory()">
-            <i class="ti ti-arrow-left"></i> Back to Categories
-          </button>
-          <div id="category-action-area">
-            <!-- Add Member Button will be injected here -->
-          </div>
-        </div>
-
-        <div id="category-content" class="card">
-          <!-- Data/Charts will load here -->
-        </div>
-      </div>
       </div>
     </div>
 
@@ -3158,6 +3223,34 @@
 
   </div>
   </div>
+  </div>
+
+  <!-- MISSING FOLDERS MODAL -->
+  <div class="modal-backdrop" id="modal-missing-folders" style="z-index: 210;">
+    <div class="modal" style="max-width: 500px; width: 90%;">
+      <div class="modal-header">
+        <div class="modal-title">Missing Reports – <span id="missing-date-label"></span></div>
+        <button class="modal-close" onclick="closeModal('missing-folders')">×</button>
+      </div>
+      <div class="modal-body" style="max-height: 400px; overflow-y: auto; padding: 20px;">
+        <!-- WhatsApp Broadcast & Server Automations -->
+        <div id="missing-broadcast-container" style="margin-bottom: 16px; display: none; display: flex; flex-direction: column; gap: 8px;">
+          <button onclick="broadcastWhatsAppReminders()" class="btn btn-gold" style="width:100%; background:#25D366 !important; border-color:#25D366 !important; color:#fff !important; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600; box-shadow:0 4px 12px rgba(37,211,102,0.25);">
+            <i class="ti ti-brand-whatsapp" style="font-size:18px;"></i> Broadcast 7PM Reminders (Manual)
+          </button>
+          <button onclick="triggerAutomatedEdgeFunction()" class="btn btn-gold" style="width:100%; background:#3b82f6 !important; border-color:#3b82f6 !important; color:#fff !important; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600; box-shadow:0 4px 12px rgba(59,130,246,0.25);">
+            <i class="ti ti-send" style="font-size:18px;"></i> Send Automated Reminders (Server)
+          </button>
+        </div>
+
+        <div style="margin-bottom: 16px; font-size: 13px; color: var(--text-muted);">
+          The following leaders have not submitted their folder reports for the latest service date window:
+        </div>
+        <div id="missing-leaders-list" style="display: flex; flex-direction: column; gap: 10px;">
+          <!-- Missing leaders loaded dynamically -->
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ADD MEMBER MODAL -->
@@ -3338,6 +3431,7 @@
     const state = {
       members: [],
       attendance: [],
+      latestStats: null,
       followups: [
         { member: "James Uchenna", type: "Phone Call", outcome: "Positive – will return", date: "2025-04-28", assignedTo: "Pastor Mike", notes: "Called after 3 weeks absence" },
         { member: "Faith Okeke", type: "Home Visit", outcome: "Saved / Rededicated", date: "2025-04-26", assignedTo: "Adaeze Nwosu", notes: "Wonderful visit" },
@@ -3383,12 +3477,21 @@
       const datalist = document.getElementById('g12-leaders-list');
       if (!datalist) return;
 
+      let deletedLeaders = [];
+      try {
+        deletedLeaders = JSON.parse(localStorage.getItem('ncf_deleted_leaders') || '[]');
+      } catch (e) {
+        deletedLeaders = [];
+      }
+
       const leaders = new Set();
       const leaderTypes = {};
 
       // Add from static LEADER_DICTIONARY first
       LEADER_DICTIONARY.forEach(l => {
-        if (l.name !== 'Unassigned') {
+        const canonical = normalizeLeaderName(l.name).toLowerCase().trim();
+        const raw = l.name.toLowerCase().trim();
+        if (l.name !== 'Unassigned' && !deletedLeaders.includes(canonical) && !deletedLeaders.includes(raw)) {
           leaders.add(l.name);
           leaderTypes[l.name] = 'G12';
         }
@@ -3398,7 +3501,8 @@
       state.members.forEach(m => {
         if (m.g12_leader) {
           const canonical = normalizeLeaderName(m.g12_leader);
-          if (canonical !== 'Unassigned') {
+          const canonicalLower = canonical.toLowerCase().trim();
+          if (canonical !== 'Unassigned' && !deletedLeaders.includes(canonicalLower) && !deletedLeaders.includes(m.g12_leader.toLowerCase().trim())) {
             leaders.add(canonical);
             if (m.leader_type === 'G12' || m.leader_type === 'DH') {
               leaderTypes[canonical] = m.leader_type;
@@ -3408,8 +3512,11 @@
         if (m.leader_type === 'G12' || m.leader_type === 'DH') {
           if (m.member_name) {
             const canonicalName = normalizeLeaderName(m.member_name);
-            leaders.add(canonicalName);
-            leaderTypes[canonicalName] = m.leader_type;
+            const canonicalLower = canonicalName.toLowerCase().trim();
+            if (!deletedLeaders.includes(canonicalLower) && !deletedLeaders.includes(m.member_name.toLowerCase().trim())) {
+              leaders.add(canonicalName);
+              leaderTypes[canonicalName] = m.leader_type;
+            }
           }
         }
       });
@@ -3669,8 +3776,11 @@
 
       if (category === 'g12') {
         content.innerHTML = `
-      <div class="search-bar">
-        <input type="text" id="g12-leader-search" placeholder="Search Leader..." oninput="filterG12()">
+      <div class="search-bar" style="display: flex; gap: 10px; align-items: center;">
+        <input type="text" id="g12-leader-search" placeholder="Search Leader..." oninput="filterG12()" style="flex: 1;">
+        <button class="btn btn-gold btn-sm" onclick="exportAllG12ReportsCSV()" style="white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;">
+          <i class="ti ti-file-spreadsheet"></i> Export All Spreadsheet
+        </button>
       </div>
       <div id="g12-list-area"></div>`;
         filterG12();
@@ -4621,6 +4731,7 @@
     function renderDashboard() {
       // Trigger async background database calculation
       getLatestServiceStats().then(stats => {
+        state.latestStats = stats;
         const presentPercentage = stats.totalMembers > 0 ? Math.round((stats.presentCount / stats.totalMembers) * 100) : 0;
 
         document.getElementById('dash-stats').innerHTML = `
@@ -4642,7 +4753,7 @@
         <div class="stat-label">Absent (Last Service)</div>
         <div class="stat-change down"><i class="ti ti-arrow-down"></i> Follow-up group</div>
       </div>
-      <div class="stat-card">
+      <div class="stat-card" style="cursor: pointer;" onclick="showMissingReportsModal()" title="View missing folder reports">
         <div class="stat-icon navy"><i class="ti ti-users-group"></i></div>
         <div class="stat-num">${stats.reportsSubmitted}<span style="font-size:14px;color:var(--text-muted)"> / ${stats.totalDH}</span></div>
         <div class="stat-label">DH Folders Submitted</div>
@@ -4711,7 +4822,7 @@
 
           // Combine into a list of pending items sorted by date/urgency
           const items = [];
-          
+
           pendingVisitors.forEach(v => {
             const rawDate = v['Date'] || v['Service Date'] || v['date'] || v['date_added'] || '';
             const isSecond = v['Second Time'] && v['Second Time'].trim().toLowerCase().startsWith('y');
@@ -5300,14 +5411,14 @@
         const stored = JSON.parse(localStorage.getItem('ncf_followed_up_mvps') || '{}');
         stored[key] = !stored[key];
         localStorage.setItem('ncf_followed_up_mvps', JSON.stringify(stored));
-        
+
         const isDone = stored[key];
         showToast(isDone ? `${name} marked as Followed Up ✓` : `${name} marked as Pending`);
         logActivity(isDone ? `Follow-up completed: ${name}` : `Follow-up marked pending: ${name}`, isDone ? 'green' : 'navy', isDone ? 'ti-check' : 'ti-phone');
       } catch (e) {
         console.error(e);
       }
-      
+
       // Calculate updated count dynamically in background after toggle
       calculateFollowupsCount();
       renderFollowup();
@@ -5329,7 +5440,7 @@
         const { data: mvpData } = await supabaseClient.from('mvps').select('Name, Phone Number, Second Time, Requests, Visitation');
         const { data: membersData } = await supabaseClient.from('members').select('member_name, member_phone, g12_leader, leader_type');
         const { data: reportsData } = await supabaseClient.from('g12_reports').select('report_date, meeting_date, member_name, status');
-        
+
         const allVisitors = mvpData || [];
         const members = membersData || [];
         const reports = reportsData || [];
@@ -5394,7 +5505,7 @@
         // 2. Fetch members and reports to calculate lapsed members
         const { data: membersData, error: mErr } = await supabaseClient.from('members').select('*');
         const { data: reportsData, error: rErr } = await supabaseClient.from('g12_reports').select('report_date, meeting_date, member_name, status');
-        
+
         const members = membersData || [];
         const reports = reportsData || [];
 
@@ -5410,7 +5521,7 @@
           members.forEach(m => {
             if (!m.member_name) return;
             const mName = m.member_name.toLowerCase().trim();
-            
+
             let missedConsecutive = 0;
             for (let i = 0; i < uniqueDates.length; i++) {
               const date = uniqueDates[i];
@@ -5497,7 +5608,7 @@
             });
 
             // Sort dates descending
-            const dates = Object.keys(grouped).sort((a,b) => {
+            const dates = Object.keys(grouped).sort((a, b) => {
               if (a === 'Undated') return 1;
               if (b === 'Undated') return -1;
               return new Date(b) - new Date(a);
@@ -5506,7 +5617,7 @@
             dates.forEach(date => {
               const list = grouped[date];
               const friendlyDate = date === 'Undated' ? 'Undated Records' : getFriendlyDate(date);
-              
+
               const rowsHTML = list.map(m => {
                 const name = m['Name'] || '—';
                 const phone = m['Phone Number'] || '—';
@@ -5517,8 +5628,8 @@
                 const address = m['Address'] || '';
                 const isSecond = m['Second Time'] && m['Second Time'].trim().toLowerCase().startsWith('y');
                 const isDone = getFollowupStatus(name, phone, false);
-                const initials = name.split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0,2);
-                
+                const initials = name.split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0, 2);
+
                 const zone = getMemberZone({ school_address: address, home_address: address });
 
                 const waMsg = isSecond
@@ -5596,8 +5707,8 @@
               `;
             });
           }
-        } 
-        
+        }
+
         // --- Render lapsed tab ---
         else if (currentFollowupTab === 'lapsed') {
           if (lapsedMembers.length === 0) {
@@ -5616,7 +5727,7 @@
               const phone = m.member_phone || '—';
               const g12 = m.g12_leader || '—';
               const isDone = getFollowupStatus(name, phone, true);
-              const initials = name.split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0,2);
+              const initials = name.split(' ').map(w => w[0] || '').join('').toUpperCase().slice(0, 2);
               const zone = getMemberZone(m);
 
               const waMsg = `Hi ${name}, we missed you at the last few services at NCF UNN! Hope you are doing great. Just checking in on you.`;
@@ -6189,7 +6300,12 @@
                 <strong style="font-size: 14px; color: var(--gold);">${formatServiceDate(serviceDate)}</strong>
                 <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">${filteredReports[serviceDate].length} report(s) submitted</div>
               </div>
-              <span class="badge badge-gold" style="height: fit-content;">${filteredReports[serviceDate].length}</span>
+              <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation();">
+                <button class="btn btn-sm" onclick="exportG12DateFolderCSV('${serviceDate}')" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); color: #60a5fa; font-size: 12px; padding: 4px 10px; display: inline-flex; align-items: center; gap: 6px;" title="Export spreadsheet data for this date folder">
+                  <i class="ti ti-file-spreadsheet" style="font-size: 15px;"></i> Export Spreadsheet
+                </button>
+                <span class="badge badge-gold" style="height: fit-content;">${filteredReports[serviceDate].length}</span>
+              </div>
             </div>
             <div id="group_${serviceDate.replace(/[^a-zA-Z0-9]/g, '_')}" style="display:none; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
               ${leaders.map(leader => {
@@ -6237,6 +6353,113 @@
   `;
     }
 
+    async function exportG12DateFolderCSV(serviceDate) {
+      showToast(`Preparing spreadsheet for ${formatServiceDate(serviceDate)}...`);
+      try {
+        const reports = await fetchG12Reports();
+        const dateReports = reports.filter(r => getServiceDate(r.report_date || r.meeting_date) === serviceDate);
+
+        if (dateReports.length === 0) {
+          showToast("No records found for this date.");
+          return;
+        }
+
+        const headers = ["Service Date", "Report Date", "G12/DH Leader", "Member Name", "Status", "Zone", "Notes"];
+
+        const escapeCsv = (str) => {
+          if (str === null || str === undefined) return '""';
+          const val = String(str).replace(/"/g, '""');
+          return `"${val}"`;
+        };
+
+        const csvRows = [headers.map(escapeCsv).join(',')];
+
+        dateReports.forEach(r => {
+          const reportDateVal = r.report_date || r.meeting_date || '';
+          const reportDateStr = reportDateVal ? reportDateVal.split('T')[0] : '';
+          csvRows.push([
+            escapeCsv(serviceDate),
+            escapeCsv(reportDateStr),
+            escapeCsv(r.leader_name || ''),
+            escapeCsv(r.member_name || ''),
+            escapeCsv(r.status || ''),
+            escapeCsv(r.zone || ''),
+            escapeCsv(r.notes || '')
+          ].join(','));
+        });
+
+        const csvContent = "\uFEFF" + csvRows.join("\r\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `G12_Report_${serviceDate}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        showToast(`Spreadsheet exported for ${serviceDate}!`);
+        logActivity(`Exported G12 spreadsheet for date ${serviceDate}`, 'gold', 'ti-file-spreadsheet');
+      } catch (err) {
+        console.error("Export Error:", err);
+        showToast("Failed to export spreadsheet.");
+      }
+    }
+
+    async function exportAllG12ReportsCSV() {
+      showToast("Preparing full G12 reports spreadsheet...");
+      try {
+        const reports = await fetchG12Reports();
+        if (reports.length === 0) {
+          showToast("No G12 reports available to export.");
+          return;
+        }
+
+        const headers = ["Service Date", "Report Date", "G12/DH Leader", "Member Name", "Status", "Zone", "Notes"];
+
+        const escapeCsv = (str) => {
+          if (str === null || str === undefined) return '""';
+          const val = String(str).replace(/"/g, '""');
+          return `"${val}"`;
+        };
+
+        const csvRows = [headers.map(escapeCsv).join(',')];
+
+        reports.forEach(r => {
+          const sDate = getServiceDate(r.report_date || r.meeting_date);
+          const reportDateVal = r.report_date || r.meeting_date || '';
+          const reportDateStr = reportDateVal ? reportDateVal.split('T')[0] : '';
+          csvRows.push([
+            escapeCsv(sDate),
+            escapeCsv(reportDateStr),
+            escapeCsv(r.leader_name || ''),
+            escapeCsv(r.member_name || ''),
+            escapeCsv(r.status || ''),
+            escapeCsv(r.zone || ''),
+            escapeCsv(r.notes || '')
+          ].join(','));
+        });
+
+        const csvContent = "\uFEFF" + csvRows.join("\r\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `All_G12_Reports_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        showToast(`Full spreadsheet exported (${reports.length} rows)!`);
+        logActivity(`Exported all G12 reports spreadsheet`, 'gold', 'ti-file-spreadsheet');
+      } catch (err) {
+        console.error("Export Error:", err);
+        showToast("Failed to export spreadsheet.");
+      }
+    }
+
     // Helper function to show/hide the details when a service date is clicked
     function toggleServiceDateGroup(serviceDateId) {
       const el = document.getElementById('group_' + serviceDateId);
@@ -6275,6 +6498,114 @@
     }
 
     function closeModal(name) { document.getElementById('modal-' + name).classList.remove('open'); }
+
+    function showMissingReportsModal() {
+      const stats = state.latestStats;
+      if (!stats) return;
+
+      document.getElementById('missing-date-label').textContent = stats.dateLabel;
+
+      const listEl = document.getElementById('missing-leaders-list');
+      listEl.innerHTML = '';
+
+      const broadcastContainer = document.getElementById('missing-broadcast-container');
+
+      if (!stats.missingLeaders || stats.missingLeaders.length === 0) {
+        if (broadcastContainer) broadcastContainer.style.display = 'none';
+        listEl.innerHTML = `
+          <div style="text-align: center; padding: 24px; color: #10B981; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <i class="ti ti-circle-check" style="font-size: 32px;"></i>
+            All folders submitted! Excellent work! 🎉
+          </div>`;
+      } else {
+        const hasPhones = stats.missingLeaders.some(l => l.phone && l.phone.trim() !== '');
+        if (broadcastContainer) broadcastContainer.style.display = hasPhones ? 'block' : 'none';
+
+        stats.missingLeaders.forEach(l => {
+          const cleanPhone = l.phone ? l.phone.replace(/[^0-9]/g, '') : '';
+          const msg = `Hi ${l.name}, this is a friendly reminder to please submit your NCF ${l.type} folder report for today's service. The submission deadline is 7:00 PM today. Thank you!`;
+          const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}` : '#';
+
+          const item = document.createElement('div');
+          item.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 14px; gap: 12px;";
+
+          const info = document.createElement('div');
+          info.style.cssText = "display: flex; flex-direction: column; gap: 4px; flex: 1;";
+
+          info.innerHTML = `
+            <div style="font-weight: 600; color: #ffffff; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span style="font-size: 15px; color: #ffffff;">${l.name}</span>
+              <span class="badge" style="font-size: 10px; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); padding: 2px 6px; border-radius: 6px;">${l.type}</span>
+            </div>
+            ${l.phone ? `<div style="font-size: 12px; color: var(--text-muted);">${l.phone}</div>` : '<div style="font-size: 12px; color: var(--text-muted); font-style: italic;">No contact info</div>'}
+          `;
+
+          const action = document.createElement('div');
+          action.style.cssText = "display: flex; gap: 8px; align-items: center;";
+
+          if (l.phone && cleanPhone) {
+            action.innerHTML = `
+              <a href="tel:${l.phone}" class="btn btn-sm" title="Call Leader" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0 !important; background: rgba(59, 130, 246, 0.15) !important; border: 1px solid rgba(59, 130, 246, 0.3) !important; color: #60a5fa !important; border-radius: 8px; transition: all 0.2s;">
+                <i class="ti ti-phone" style="font-size: 16px;"></i>
+              </a>
+              <a href="${waUrl}" target="_blank" class="btn btn-sm" title="Send WhatsApp Reminder" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0 !important; background: rgba(37, 211, 102, 0.15) !important; border: 1px solid rgba(37, 211, 102, 0.3) !important; color: #25D366 !important; border-radius: 8px; transition: all 0.2s;">
+                <i class="ti ti-brand-whatsapp" style="font-size: 16px;"></i>
+              </a>
+            `;
+          } else {
+            action.innerHTML = `<span style="font-size: 11px; color: var(--text-muted); font-style: italic;">No contact</span>`;
+          }
+
+          item.appendChild(info);
+          item.appendChild(action);
+          listEl.appendChild(item);
+        });
+      }
+
+      openModal('missing-folders');
+    }
+
+    function broadcastWhatsAppReminders() {
+      const stats = state.latestStats;
+      if (!stats || !stats.missingLeaders) return;
+
+      const missingWithPhones = stats.missingLeaders.filter(l => l.phone && l.phone.trim() !== '');
+      if (missingWithPhones.length === 0) {
+        showToast("No missing leaders with phone numbers found.");
+        return;
+      }
+
+      // Open the first WhatsApp reminder
+      const l = missingWithPhones[0];
+      const cleanPhone = l.phone.replace(/[^0-9]/g, '');
+      const msg = `Hi ${l.name}, this is a friendly reminder to please submit your NCF ${l.type} folder report for today's service. The submission deadline is 7:00 PM today. Thank you!`;
+      const waUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
+
+      showToast(`Opening WhatsApp reminder for ${l.name}...`);
+      window.open(waUrl, '_blank');
+    }
+
+    async function triggerAutomatedEdgeFunction() {
+      showToast("Triggering automated server reminders...");
+      try {
+        const res = await fetch("https://cjbedftdexzcsydwayig.supabase.co/functions/v1/send-reminders", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + supabaseKey
+          }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(`Success: ${data.message || 'Reminders dispatched!'}`);
+        } else {
+          showToast(`Error: ${data.error || 'Server dispatch failed.'}`);
+        }
+      } catch (err) {
+        showToast("Network error triggering reminders.");
+        console.error(err);
+      }
+    }
 
     function showToast(msg) {
       let t = document.getElementById('toast');
@@ -6962,8 +7293,17 @@
       const unassignedMembers = [];
       const leaderMap = {};
 
+      let deletedLeaders = [];
+      try {
+        deletedLeaders = JSON.parse(localStorage.getItem('ncf_deleted_leaders') || '[]');
+      } catch (e) {
+        deletedLeaders = [];
+      }
+
       LEADER_DICTIONARY.forEach(entry => {
-        if (entry.name !== 'Unassigned') {
+        const canonicalDict = normalizeLeaderName(entry.name).toLowerCase().trim();
+        const rawDict = entry.name.toLowerCase().trim();
+        if (entry.name !== 'Unassigned' && !deletedLeaders.includes(canonicalDict) && !deletedLeaders.includes(rawDict)) {
           leaderMap[entry.name] = {
             name: entry.name,
             type: 'G12',
@@ -6981,7 +7321,10 @@
           return;
         }
         const canonical = normalizeLeaderName(leaderName);
-        if (canonical === 'Unassigned') {
+        const canonicalLower = canonical.toLowerCase().trim();
+        const rawLower = leaderName.toLowerCase().trim();
+
+        if (canonical === 'Unassigned' || deletedLeaders.includes(canonicalLower) || deletedLeaders.includes(rawLower)) {
           unassignedMembers.push(member);
           return;
         }
@@ -7097,6 +7440,11 @@
 
       const g12Section = document.getElementById('g12-leaders-section');
       const dhSection = document.getElementById('dh-leaders-section');
+      const g12Title = document.getElementById('g12-leaders-title');
+      const dhTitle = document.getElementById('dh-leaders-title');
+
+      if (g12Title) g12Title.textContent = `🌿 G12 Leaders (${g12Count})`;
+      if (dhTitle) dhTitle.textContent = `🏠 DH Leaders (${dhCount})`;
 
       if (g12Section) {
         g12Section.style.display = (g12Count === 0 || typeFilter === 'DH') ? 'none' : 'block';
@@ -7117,6 +7465,17 @@
       const name = prompt("Enter the new G12/DH leader's name:");
       if (!name || !name.trim()) return;
       const canonical = name.trim();
+
+      // Un-delete if this leader was previously deleted
+      let deletedLeaders = [];
+      try {
+        deletedLeaders = JSON.parse(localStorage.getItem('ncf_deleted_leaders') || '[]');
+      } catch (e) {
+        deletedLeaders = [];
+      }
+      const canonicalLower = canonical.toLowerCase();
+      deletedLeaders = deletedLeaders.filter(l => l !== canonicalLower && l !== name.trim().toLowerCase());
+      localStorage.setItem('ncf_deleted_leaders', JSON.stringify(deletedLeaders));
 
       const type = prompt("Enter leader type (G12 or DH):", "G12");
       if (!type) return;
@@ -7244,34 +7603,43 @@
 
     async function deleteLeaderPrompt(leaderName) {
       if (!leaderName || leaderName === 'Unassigned') return;
-      if (!confirm(`⚠️ WARNING: This will delete leader "${leaderName}" AND ALL members/disciples assigned to them!\n\nThis action cannot be undone.\n\nAre you sure you want to proceed?`)) return;
+      if (!confirm(`⚠️ WARNING: Are you sure you want to remove leader "${leaderName}"?\n\nThis action will remove the leader card permanently. Any assigned members will be moved to Unassigned.`)) return;
 
-      showToast(`Deleting leader "${leaderName}" and group...`);
+      showToast(`Deleting leader "${leaderName}"...`);
 
-      const deleteDisciplesPromise = supabaseClient
+      // 1. Save deleted leader to localStorage so static dictionary doesn't re-seed them
+      let deletedLeaders = [];
+      try {
+        deletedLeaders = JSON.parse(localStorage.getItem('ncf_deleted_leaders') || '[]');
+      } catch (e) {
+        deletedLeaders = [];
+      }
+      const canonicalLower = normalizeLeaderName(leaderName).toLowerCase().trim();
+      const rawLower = leaderName.toLowerCase().trim();
+      if (!deletedLeaders.includes(canonicalLower)) deletedLeaders.push(canonicalLower);
+      if (!deletedLeaders.includes(rawLower)) deletedLeaders.push(rawLower);
+      localStorage.setItem('ncf_deleted_leaders', JSON.stringify(deletedLeaders));
+
+      // 2. Move disciples/members under this leader to Unassigned
+      const unassignDisciplesPromise = supabaseClient
         .from('members')
-        .delete()
+        .update({ g12_leader: 'Unassigned' })
         .eq('g12_leader', leaderName);
 
+      // 3. Delete leader self record if any
       const deleteLeaderSelfPromise = supabaseClient
         .from('members')
         .delete()
-        .eq('member_name', leaderName)
-        .in('leader_type', ['G12', 'DH']);
+        .or(`member_name.eq."${leaderName}",g12_leader.eq."${leaderName}"`);
 
-      const [res1, res2] = await Promise.all([deleteDisciplesPromise, deleteLeaderSelfPromise]);
+      await Promise.all([unassignDisciplesPromise, deleteLeaderSelfPromise]);
 
-      if (res1.error || res2.error) {
-        console.error("Error deleting leader:", res1.error || res2.error);
-        showToast("Error deleting leader. Check console.");
-      } else {
-        showToast(`Deleted leader "${leaderName}" and group.`);
-        logActivity(`Deleted leader: ${leaderName} and their group`, 'red', 'ti-trash');
-        if (selectedG12Leader === leaderName) {
-          selectedG12Leader = null;
-        }
-        fetchAndRenderMembers();
+      showToast(`Deleted leader "${leaderName}".`);
+      logActivity(`Deleted leader: ${leaderName}`, 'red', 'ti-trash');
+      if (selectedG12Leader === leaderName) {
+        selectedG12Leader = null;
       }
+      fetchAndRenderMembers();
     }
 
     function setupRealtimeListener() {

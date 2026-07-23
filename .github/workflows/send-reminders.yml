@@ -1,0 +1,17 @@
+name: Trigger 7PM Report Reminders
+
+on:
+  schedule:
+    # Runs at 18:00 UTC (7:00 PM Nigerian Time / GMT+1) every Sunday (0) and Wednesday (3)
+    - cron: '0 18 * * 0,3'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+jobs:
+  trigger-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Supabase Edge Function
+        run: |
+          curl -i -X POST "https://cjbedftdexzcsydwayig.supabase.co/functions/v1/send-reminders" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json"

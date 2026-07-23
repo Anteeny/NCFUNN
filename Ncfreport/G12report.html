@@ -49,12 +49,21 @@
 
       if (error) throw error;
       
+      let deletedLeaders = [];
+      try {
+        deletedLeaders = JSON.parse(localStorage.getItem('ncf_deleted_leaders') || '[]');
+      } catch (e) {
+        deletedLeaders = [];
+      }
+
       const leaders = new Set();
       const leaderTypes = {};
 
       // 1. Add static leaders from LEADER_DICTIONARY
       LEADER_DICTIONARY.forEach(l => {
-        if (l.name !== 'Unassigned') {
+        const canonical = normalizeLeaderName(l.name).toLowerCase().trim();
+        const raw = l.name.toLowerCase().trim();
+        if (l.name !== 'Unassigned' && !deletedLeaders.includes(canonical) && !deletedLeaders.includes(raw)) {
           leaders.add(l.name);
           leaderTypes[l.name] = 'G12'; // default
         }
@@ -65,10 +74,23 @@
         data.forEach(m => {
           if (m.g12_leader) {
             const canonical = normalizeLeaderName(m.g12_leader);
-            if (canonical !== 'Unassigned') {
+            const canonicalLower = canonical.toLowerCase().trim();
+            const rawLower = m.g12_leader.toLowerCase().trim();
+            if (canonical !== 'Unassigned' && !deletedLeaders.includes(canonicalLower) && !deletedLeaders.includes(rawLower)) {
               leaders.add(canonical);
               if (m.leader_type === 'G12' || m.leader_type === 'DH') {
                 leaderTypes[canonical] = m.leader_type;
+              }
+            }
+          }
+          if (m.leader_type === 'G12' || m.leader_type === 'DH') {
+            if (m.member_name) {
+              const canonicalName = normalizeLeaderName(m.member_name);
+              const canonicalLower = canonicalName.toLowerCase().trim();
+              const rawLower = m.member_name.toLowerCase().trim();
+              if (!deletedLeaders.includes(canonicalLower) && !deletedLeaders.includes(rawLower)) {
+                leaders.add(canonicalName);
+                leaderTypes[canonicalName] = m.leader_type;
               }
             }
           }
@@ -79,11 +101,18 @@
       window.leaderTypes = leaderTypes;
     } catch (err) {
       console.error("Error fetching leaders:", err.message);
-      // Fallback: just use LEADER_DICTIONARY
+      let deletedLeaders = [];
+      try {
+        deletedLeaders = JSON.parse(localStorage.getItem('ncf_deleted_leaders') || '[]');
+      } catch (e) {
+        deletedLeaders = [];
+      }
       const leaders = new Set();
       const leaderTypes = {};
       LEADER_DICTIONARY.forEach(l => {
-        if (l.name !== 'Unassigned') {
+        const canonical = normalizeLeaderName(l.name).toLowerCase().trim();
+        const raw = l.name.toLowerCase().trim();
+        if (l.name !== 'Unassigned' && !deletedLeaders.includes(canonical) && !deletedLeaders.includes(raw)) {
           leaders.add(l.name);
           leaderTypes[l.name] = 'G12';
         }
@@ -615,11 +644,6 @@
       <div class="step-label">Step 1 of 3</div>
       <h2 class="step-title">Select appropriate category</h2>
       
-      <style>
-        .cat-tabs { grid-template-columns: repeat(3, 1fr) !important; }
-        @media(max-width:550px) { .cat-tabs { grid-template-columns: 1fr !important; } }
-      </style>
-
       <div class="cat-tabs">
         <div class="cat-tab dh-tab" onclick="selectCategory('DH', this)">
           <div class="cat-name">DH Leader</div>
@@ -629,21 +653,6 @@
           <div class="cat-name">G12 Leader</div>
           <div class="cat-sub">Government of 12</div>
         </div>
-        <div class="cat-tab admin-tab" id="adminTabBtn" onclick="selectCategory('ADMIN', this)">
-          <span class="cat-icon">🔐</span>
-          <div class="cat-name">Admin</div>
-          <div class="cat-sub">Manage Leaders</div>
-        </div>
-      </div>
-
-      <!-- Admin Login Fields -->
-      <div id="adminAuthFields" style="display:none; margin-top: 20px; border-top: 1px solid rgba(59, 130, 246,0.2); padding-top: 20px;">
-        <label class="field-label">Admin Username</label>
-        <input type="text" id="adminUser" placeholder="Enter username" style="margin-bottom: 15px;">
-        
-        <label class="field-label">Access PIN</label>
-        <input type="password" id="adminPin" placeholder="••••" maxlength="4" style="letter-spacing: 0.5em; text-align: center;">
-        <p class="error-msg" id="errAdminAuth">Invalid Username or PIN.</p>
       </div>
 
       <p class="error-msg" id="errCat">Please select a category.</p>
@@ -712,51 +721,7 @@
     </div>
   </div>
 
-  <!-- ADMIN DASHBOARD STEP -->
-<div class="step" id="adminDashboard">
-  <div class="card">
-    <div class="step-label">Admin Control Panel</div>
-    <h2 class="step-title">Database Management</h2>
-    
-    <!-- G12 Leaders Section -->
-    <div style="margin-bottom: 2rem;">
-      <h3 style="color: #60a5fa; font-size: 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 1.3rem;">🌿</span> G12 Leaders
-      </h3>
-      <div id="g12-leaders-grid"></div>
-    </div>
 
-    <!-- DH Leaders Section -->
-    <div style="margin-bottom: 2rem;">
-      <h3 style="color: #60a5fa; font-size: 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
-        <span style="font-size: 1.3rem;">🏠</span> DH Leaders
-      </h3>
-      <div id="dh-leaders-grid"></div>
-    </div>
-
-    <!-- Members Modal Popup -->
-    <div id="members-modal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:1000; backdrop-filter:blur(4px); justify-content:center; align-items:center;">
-      <div style="background:rgba(17, 24, 39, 0.75); border:1px solid rgba(59, 130, 246,0.35); border-radius:12px; padding:0; max-width:500px; width:90%; max-height:80vh; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.6); display:flex; flex-direction:column;">
-        <!-- Modal Header -->
-        <div style="background:linear-gradient(135deg, rgba(59, 130, 246,0.15) 0%, rgba(6, 182, 212,0.1) 100%); padding:20px; border-bottom:1px solid rgba(59, 130, 246,0.25); display:flex; justify-content:space-between; align-items:center;">
-          <h3 id="modal-leader-name" style="color:#E8EDF2; margin:0; font-size:1.1rem;">Leader Name</h3>
-          <button onclick="closeLeaderModal()" style="background:none; border:none; color:#A8B2D8; font-size:24px; cursor:pointer; padding:0; width:32px; height:32px; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">✕</button>
-        </div>
-        <!-- Modal Body -->
-        <div id="modal-members-list" style="flex:1; overflow-y:auto; padding:20px;">
-          <!-- Members will be inserted here -->
-        </div>
-      </div>
-    </div>
-
-    <div id="adminDataList" style="display:none;"></div>
-
-    <div class="btn-row">
-      <button class="btn" style="padding: 12px 24px; background: rgba(76, 175, 124, 0.2); border: 1.5px solid rgba(76, 175, 124, 0.5); color: #4CAF7C;" onclick="cleanupLeaderNames()">🔄 Cleanup Leader Names</button>
-      <button class="btn btn-ghost" onclick="restart()">Logout</button>
-    </div>
-  </div>
-</div>
 
   <!-- Success -->
   <div class="success-screen" id="successScreen">
@@ -1419,18 +1384,24 @@ async function renderAttendance() {
   const list = document.getElementById('memberList');
   list.innerHTML = '<p style="text-align:center;">Loading members...</p>';
 
-    const { data, error } = await supabaseClient
+  const { data, error } = await supabaseClient
     .from('members')
-    .select('id, member_name')
-    .eq('g12_leader', leader)
-    .eq('leader_type', selectedCategory);
+    .select('id, member_name, g12_leader');
 
   if (error) { list.innerHTML = '<p>Error loading.</p>'; return; }
 
-  // Filter out the leader's own entry (where member_name === g12_leader)
-  const filteredData = data.filter(m => m.member_name !== leader);
-  
-  currentMembers = filteredData.map(m => m.member_name);
+  const canonicalLeader = normalizeLeaderName(leader);
+
+  // Filter members whose normalized g12_leader matches the selected leader, excluding leader's self row
+  const filteredData = (data || []).filter(m => {
+    if (!m.g12_leader) return false;
+    const mLeaderNorm = normalizeLeaderName(m.g12_leader);
+    const mNameNorm = normalizeLeaderName(m.member_name);
+    return (mLeaderNorm === canonicalLeader || m.g12_leader.trim() === leader.trim()) &&
+           mNameNorm !== canonicalLeader && m.member_name.trim() !== leader.trim();
+  });
+
+  currentMembers = [...new Set(filteredData.map(m => m.member_name))];
   list.innerHTML = ''; 
 
   if (currentMembers.length === 0) {
