@@ -4293,10 +4293,12 @@
         if (countError) throw countError;
         const totalMembers = dbTotalMembers || 0;
 
-        // 2. Fetch all report lines from g12_reports
+        // 2. Fetch all report lines from g12_reports (order by ID desc so newest rows are fetched first)
         const { data: g12Reports, error: g12Error } = await supabaseClient
           .from('g12_reports')
-          .select('*');
+          .select('*')
+          .order('id', { ascending: false })
+          .limit(2500);
 
         if (g12Error) throw g12Error;
         const reports = g12Reports || [];
@@ -4810,7 +4812,11 @@
         try {
           const { data: mvpData } = await supabaseClient.from('mvps').select('*');
           const { data: membersData } = await supabaseClient.from('members').select('*');
-          const { data: reportsData } = await supabaseClient.from('g12_reports').select('report_date, meeting_date, member_name, status');
+          const { data: reportsData } = await supabaseClient
+            .from('g12_reports')
+            .select('report_date, meeting_date, member_name, status')
+            .order('id', { ascending: false })
+            .limit(2500);
 
           const allVisitors = mvpData || [];
           const members = membersData || [];
@@ -5474,7 +5480,11 @@
       try {
         const { data: mvpData } = await supabaseClient.from('mvps').select('Name, Phone Number, Second Time, Requests, Visitation');
         const { data: membersData } = await supabaseClient.from('members').select('member_name, member_phone, g12_leader, leader_type');
-        const { data: reportsData } = await supabaseClient.from('g12_reports').select('report_date, meeting_date, member_name, status');
+        const { data: reportsData } = await supabaseClient
+          .from('g12_reports')
+          .select('report_date, meeting_date, member_name, status')
+          .order('id', { ascending: false })
+          .limit(2500);
 
         const allVisitors = mvpData || [];
         const members = membersData || [];
@@ -5539,7 +5549,11 @@
 
         // 2. Fetch members and reports to calculate lapsed members
         const { data: membersData, error: mErr } = await supabaseClient.from('members').select('*');
-        const { data: reportsData, error: rErr } = await supabaseClient.from('g12_reports').select('report_date, meeting_date, member_name, status');
+        const { data: reportsData, error: rErr } = await supabaseClient
+          .from('g12_reports')
+          .select('report_date, meeting_date, member_name, status')
+          .order('id', { ascending: false })
+          .limit(2500);
 
         const members = membersData || [];
         const reports = reportsData || [];
