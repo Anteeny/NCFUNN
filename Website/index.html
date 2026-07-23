@@ -3788,43 +3788,24 @@
     async function fetchG12Reports(leaderName = "") {
       let query = supabaseClient
         .from('g12_reports')
-        .select('*');
+        .select('*')
+        .order('id', { ascending: false });
 
       if (leaderName) {
         query = query.ilike('leader_name', `%${leaderName}%`);
       }
 
       const { data, error } = await query;
-      console.log("🔍 G12 Reports Raw Response:", JSON.stringify({ data, error, dataType: typeof data, dataIsArray: Array.isArray(data), dataLength: data?.length }));
 
       if (error) {
         console.error("❌ Error fetching G12 reports:", error);
-        showToast("Failed to fetch G12 reports: " + error.message);
         return [];
       }
 
-      if (!data) {
-        console.warn("⚠️ Data is null/undefined");
-        return [];
-      }
+      if (!data || !Array.isArray(data)) return [];
 
-      if (!Array.isArray(data)) {
-        console.error("❌ Data is not an array:", data);
-        return [];
-      }
-
-      // Sort in JavaScript instead of Supabase to avoid null issues
-      const sorted = data.sort((a, b) => {
-        const dateA = new Date(a.report_date || a.meeting_date || 0);
-        const dateB = new Date(b.report_date || b.meeting_date || 0);
-        return dateB - dateA;
-      });
-
-      console.log("✅ Fetched " + sorted.length + " G12 reports");
-      if (sorted.length > 0) {
-        console.log("📋 First report:", sorted[0]);
-      }
-      return sorted;
+      // Sort by ID DESC so the most recent submission is always first
+      return data.sort((a, b) => (b.id || 0) - (a.id || 0));
     }
 
     async function renderCategoryData(category) {
@@ -6243,45 +6224,66 @@
   `;
     }
 
-    // Helper: Get the service date for a given report date
+    // Helper: Get the service date for a given report date (Timezone safe)
     function getServiceDate(reportDate) {
       if (!reportDate) return 'Unknown Date';
-      const date = new Date(reportDate);
-      if (isNaN(date.getTime())) return 'Unknown Date';
-      const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ..., 3=Wednesday, ..., 6=Saturday
 
-      let serviceDate;
-      if (dayOfWeek === 0 || dayOfWeek === 1) {
-        // Sunday or Monday → group under Sunday
-        serviceDate = new Date(date);
-        if (dayOfWeek === 1) {
-          // If Monday, go back to Sunday
-          serviceDate.setDate(serviceDate.getDate() - 1);
+      let y, m, d;
+      if (typeof reportDate === 'string') {
+        const parts = reportDate.split('T')[0].split('-');
+        if (parts.length === 3) {
+          y = parseInt(parts[0], 10);
+          m = parseInt(parts[1], 10) - 1;
+          d = parseInt(parts[2], 10);
         }
-      } else if (dayOfWeek === 3 || dayOfWeek === 4) {
-        // Wednesday or Thursday → group under Wednesday
-        serviceDate = new Date(date);
-        if (dayOfWeek === 4) {
-          // If Thursday, go back to Wednesday
-          serviceDate.setDate(serviceDate.getDate() - 1);
-        }
-      } else {
-        // Other days (Tue, Fri, Sat) - shouldn't happen in normal reports
-        // but we'll group them under the nearest service day
-        serviceDate = new Date(date);
       }
 
-      return serviceDate.toISOString().split('T')[0]; // Return as YYYY-MM-DD
+      let dt;
+      if (y !== undefined && !isNaN(y)) {
+        dt = new Date(y, m, d); // Local midnight, NO UTC shift!
+      } else {
+        dt = new Date(reportDate);
+      }
+
+      if (isNaN(dt.getTime())) return 'Unknown Date';
+
+      const dayOfWeek = dt.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+      const target = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+
+      if (dayOfWeek === 0) { // Sunday
+        // keep as Sunday
+      } else if (dayOfWeek === 1) { // Monday -> move back to Sunday
+        target.setDate(target.getDate() - 1);
+      } else if (dayOfWeek === 6) { // Saturday -> move forward to Sunday
+        target.setDate(target.getDate() + 1);
+      } else if (dayOfWeek === 3) { // Wednesday
+        // keep as Wednesday
+      } else if (dayOfWeek === 4) { // Thursday -> move back to Wednesday
+        target.setDate(target.getDate() - 1);
+      } else if (dayOfWeek === 2) { // Tuesday -> move forward to Wednesday
+        target.setDate(target.getDate() + 1);
+      }
+
+      const yr = target.getFullYear();
+      const mo = String(target.getMonth() + 1).padStart(2, '0');
+      const da = String(target.getDate()).padStart(2, '0');
+      return `${yr}-${mo}-${da}`;
     }
 
     // Helper: Format service date display
     function formatServiceDate(dateStr) {
-      if (dateStr === 'Unknown Date') return 'Unknown Date';
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return dateStr;
-      const dayOfWeek = date.getDay();
-      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      return `${dayNames[dayOfWeek]}, ${date.toLocaleDateString('en-GB', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+      if (!dateStr || dateStr === 'Unknown Date') return 'Unknown Date';
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10) - 1;
+        const d = parseInt(parts[2], 10);
+        const dt = new Date(y, m, d);
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${dayNames[dt.getDay()]}, ${d} ${monthNames[m]} ${y}`;
+      }
+      return dateStr;
     }
 
     // This function groups the reports by Service Dates (Sunday and Wednesday) and then by Leader
@@ -6291,13 +6293,10 @@
       const reports = await fetchG12Reports();
       const listArea = document.getElementById('g12-list-area');
 
-      console.log("🔍 filterG12 Debug:", { reportsLength: reports?.length, searchTerm, listArea: !!listArea });
-
       if (!listArea) return;
 
       if (reports.length === 0) {
         listArea.innerHTML = `<div class="empty-state"><p>No reports found.</p></div>`;
-        console.warn("⚠️ No reports returned from Supabase");
         return;
       }
 
@@ -6313,7 +6312,7 @@
       const serviceDates = Object.keys(groupedByService).sort((a, b) => {
         if (a === 'Unknown Date') return 1;
         if (b === 'Unknown Date') return -1;
-        return new Date(b) - new Date(a);
+        return b.localeCompare(a);
       });
 
       // Filter by search term if provided
@@ -6337,7 +6336,7 @@
 
       listArea.innerHTML = `
     <div id="service-date-groups">
-      ${filteredDates.map(serviceDate => {
+      ${filteredDates.map((serviceDate, idx) => {
         // Group reports by leader within this service date
         const leaderGroups = filteredReports[serviceDate].reduce((acc, report) => {
           const leader = report.leader_name || "Unknown Leader";
@@ -6347,6 +6346,7 @@
         }, {});
 
         const leaders = Object.keys(leaderGroups).sort();
+        const isOpen = (idx === 0); // Newest service date folder is OPEN by default!
 
         return `
           <div class="card" style="margin-bottom: 16px; border-left: 4px solid var(--gold);">
@@ -6363,7 +6363,7 @@
                 <span class="badge badge-gold" style="height: fit-content;">${filteredReports[serviceDate].length}</span>
               </div>
             </div>
-            <div id="group_${serviceDate.replace(/[^a-zA-Z0-9]/g, '_')}" style="display:none; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+            <div id="group_${serviceDate.replace(/[^a-zA-Z0-9]/g, '_')}" style="display:${isOpen ? 'block' : 'none'}; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
               ${leaders.map(leader => {
           const safeLeaderId = leader.replace(/[^a-zA-Z0-9]/g, '_');
           const safeDateId = serviceDate.replace(/[^a-zA-Z0-9]/g, '_');
