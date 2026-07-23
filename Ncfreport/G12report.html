@@ -44,11 +44,11 @@
   async function fetchAllLeaders() {
     try {
       const { data, error } = await supabaseClient
-          .from('members')
-          .select('member_name, g12_leader, leader_type');
+        .from('members')
+        .select('member_name, g12_leader, leader_type');
 
       if (error) throw error;
-      
+
       let deletedLeaders = [];
       try {
         deletedLeaders = JSON.parse(localStorage.getItem('ncf_deleted_leaders') || '[]');
@@ -56,48 +56,56 @@
         deletedLeaders = [];
       }
 
-      const leaders = new Set();
-      const leaderTypes = {};
+      const leaderMap = {};
 
       // 1. Add static leaders from LEADER_DICTIONARY
-      LEADER_DICTIONARY.forEach(l => {
-        const canonical = normalizeLeaderName(l.name).toLowerCase().trim();
-        const raw = l.name.toLowerCase().trim();
-        if (l.name !== 'Unassigned' && !deletedLeaders.includes(canonical) && !deletedLeaders.includes(raw)) {
-          leaders.add(l.name);
-          leaderTypes[l.name] = 'G12'; // default
+      LEADER_DICTIONARY.forEach(entry => {
+        const canonicalDict = normalizeLeaderName(entry.name).toLowerCase().trim();
+        const rawDict = entry.name.toLowerCase().trim();
+        if (entry.name !== 'Unassigned' && !deletedLeaders.includes(canonicalDict) && !deletedLeaders.includes(rawDict)) {
+          leaderMap[entry.name] = {
+            name: entry.name,
+            type: 'G12'
+          };
         }
       });
 
-      // 2. Add dynamic leaders from database
+      // 2. Add dynamic leaders from database based on g12_leader assignments
       if (data) {
         data.forEach(m => {
-          if (m.g12_leader) {
-            const canonical = normalizeLeaderName(m.g12_leader);
-            const canonicalLower = canonical.toLowerCase().trim();
-            const rawLower = m.g12_leader.toLowerCase().trim();
-            if (canonical !== 'Unassigned' && !deletedLeaders.includes(canonicalLower) && !deletedLeaders.includes(rawLower)) {
-              leaders.add(canonical);
-              if (m.leader_type === 'G12' || m.leader_type === 'DH') {
-                leaderTypes[canonical] = m.leader_type;
-              }
-            }
+          const leaderName = m.g12_leader;
+          if (!leaderName) return;
+
+          const canonical = normalizeLeaderName(leaderName);
+          const canonicalLower = canonical.toLowerCase().trim();
+          const rawLower = leaderName.toLowerCase().trim();
+
+          if (canonical === 'Unassigned' || deletedLeaders.includes(canonicalLower) || deletedLeaders.includes(rawLower)) {
+            return;
           }
-          if (m.leader_type === 'G12' || m.leader_type === 'DH') {
-            if (m.member_name) {
-              const canonicalName = normalizeLeaderName(m.member_name);
-              const canonicalLower = canonicalName.toLowerCase().trim();
-              const rawLower = m.member_name.toLowerCase().trim();
-              if (!deletedLeaders.includes(canonicalLower) && !deletedLeaders.includes(rawLower)) {
-                leaders.add(canonicalName);
-                leaderTypes[canonicalName] = m.leader_type;
-              }
-            }
+
+          if (!leaderMap[canonical]) {
+            leaderMap[canonical] = {
+              name: canonical,
+              type: m.leader_type || 'G12'
+            };
+          }
+
+          if (m.leader_type === 'DH') {
+            leaderMap[canonical].type = 'DH';
           }
         });
       }
 
-      window.allLeaders = [...leaders].sort();
+      const leaders = [];
+      const leaderTypes = {};
+
+      Object.values(leaderMap).forEach(l => {
+        leaders.push(l.name);
+        leaderTypes[l.name] = l.type;
+      });
+
+      window.allLeaders = leaders.sort();
       window.leaderTypes = leaderTypes;
     } catch (err) {
       console.error("Error fetching leaders:", err.message);
@@ -107,17 +115,17 @@
       } catch (e) {
         deletedLeaders = [];
       }
-      const leaders = new Set();
+      const leaders = [];
       const leaderTypes = {};
       LEADER_DICTIONARY.forEach(l => {
         const canonical = normalizeLeaderName(l.name).toLowerCase().trim();
         const raw = l.name.toLowerCase().trim();
         if (l.name !== 'Unassigned' && !deletedLeaders.includes(canonical) && !deletedLeaders.includes(raw)) {
-          leaders.add(l.name);
+          leaders.push(l.name);
           leaderTypes[l.name] = 'G12';
         }
       });
-      window.allLeaders = [...leaders].sort();
+      window.allLeaders = leaders.sort();
       window.leaderTypes = leaderTypes;
     }
   }
@@ -125,7 +133,7 @@
   function normalizeLeaderName(name) {
     if (!name || name.trim() === "") return "Unassigned";
     const normalized = name.trim().toLowerCase();
-    
+
     // Try exact match in active leaders first
     const leadersList = window.allLeaders;
     if (leadersList && leadersList.length > 0) {
@@ -139,14 +147,14 @@
         return entry.name;
       }
     }
-    
+
     // Try keyword matching
     for (let entry of LEADER_DICTIONARY) {
       if (entry.keywords.some(kw => kw.toLowerCase() === normalized)) {
         return entry.name;
       }
     }
-    
+
     // Try partial keyword matching
     for (let entry of LEADER_DICTIONARY) {
       for (let kw of entry.keywords) {
@@ -155,7 +163,7 @@
         }
       }
     }
-    
+
     // Remove common titles and return proper Title Case
     let clean = name.trim();
     const titles = ["pastor", "pa", "pst", "mr", "mrs", "ms", "miss", "dr", "prof", "brother", "sister", "mama", "sis", "fr"];
@@ -163,27 +171,27 @@
       const regex = new RegExp(`^${title}\\s+`, "i");
       clean = clean.replace(regex, "");
     }
-    
+
     const cleanedName = clean.trim().replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
-    
+
     if (leadersList && leadersList.length > 0) {
       const activeCleanMatch = leadersList.find(l => l.toLowerCase() === cleanedName.toLowerCase());
       if (activeCleanMatch) return activeCleanMatch;
     }
-    
+
     return cleanedName;
   }
 </script>
 
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>NCF Accountability System</title>
-   <link rel="icon" type="image/png" href="images.png?v=3">
-<link rel="shortcut icon" type="image/x-icon" href="images.png?v=3">
-<link rel="apple-touch-icon" href="images.png?v=3">
-  
-  
+  <link rel="icon" type="image/png" href="images.png?v=3">
+  <link rel="shortcut icon" type="image/x-icon" href="images.png?v=3">
+  <link rel="apple-touch-icon" href="images.png?v=3">
+
+
   <style>
     :root {
       --gold: #3b82f6;
@@ -196,15 +204,19 @@
       --soft: #A8B2D8;
       --danger: #E05A5A;
       --success: #4CAF7C;
-      --border: rgba(59, 130, 246,0.25);
+      --border: rgba(59, 130, 246, 0.25);
       --text: #E8EDF2;
       --muted: #A8B2D8;
-      --absent-bg: rgba(224,90,90,0.08);
+      --absent-bg: rgba(224, 90, 90, 0.08);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-     body {
+    body {
       font-family: 'DM Sans', sans-serif;
       min-height: 100vh;
       color: var(--text);
@@ -218,13 +230,20 @@
     body::before {
       content: "";
       position: fixed;
-      top: -15px; left: -15px; right: -15px; bottom: -15px;
-      background: url('fyf.jpg') center center / cover no-repeat fixed;
+      top: -15px;
+      left: -15px;
+      right: -15px;
+      bottom: -15px;
+      background: url('FYF.jpg') center center / cover no-repeat fixed;
       filter: blur(6px);
       z-index: -1;
     }
 
-    h1, h2, h3 { font-family: 'Playfair Display', serif; }
+    h1,
+    h2,
+    h3 {
+      font-family: 'Playfair Display', serif;
+    }
 
     /* --- UNIFIED HEADER --- */
     header {
@@ -238,165 +257,530 @@
       background: #090e1a;
       margin-bottom: 4vh;
     }
+
     .logo-wrap {
-      width: 58px; height: 58px; border-radius: 50%;
-      background: #FFFFFF; display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; border: 2.5px solid var(--gold); overflow: hidden;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 2.5px solid var(--gold);
+      overflow: hidden;
       animation: pulse-ring 3s ease-in-out infinite;
     }
+
     @keyframes pulse-ring {
-      0%, 100% { box-shadow: 0 0 0 0px rgba(59, 130, 246,0.5); }
-      50%       { box-shadow: 0 0 0 8px rgba(59, 130, 246,0); }
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0px rgba(59, 130, 246, 0.5);
+      }
+
+      50% {
+        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+      }
     }
-    .logo-wrap img { width: 50px; height: 50px; object-fit: contain; }
-    .header-text { text-align: left; }
+
+    .logo-wrap img {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+    }
+
+    .header-text {
+      text-align: left;
+    }
+
     .header-text h1 {
       font-family: 'Playfair Display', serif;
       font-size: clamp(1.1rem, 3vw, 1.55rem);
-      font-weight: 900; color: #FFFFFF; line-height: 1.15; margin: 0;
+      font-weight: 900;
+      color: #FFFFFF;
+      line-height: 1.15;
+      margin: 0;
     }
+
     .header-text p {
-      font-size: 0.75rem; color: var(--gold-light, var(--gold));
-      font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
-      margin-top: 0.2rem; margin-bottom: 0;
+      font-size: 0.75rem;
+      color: var(--gold-light, var(--gold));
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-top: 0.2rem;
+      margin-bottom: 0;
     }
+
     .header-date {
-      margin-left: auto; font-size: 0.78rem; color: rgba(255,255,255,0.5);
+      margin-left: auto;
+      font-size: 0.78rem;
+      color: rgba(255, 255, 255, 0.5);
     }
-    @media (max-width: 480px) { .header-date { display: none; } }
+
+    @media (max-width: 480px) {
+      .header-date {
+        display: none;
+      }
+    }
 
     /* ── CONTAINER ── */
-    .container { max-width: 680px; margin: 0 auto; padding: 0 16px 60px; width: 100%; }
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 0 16px 60px;
+      width: 100%;
+    }
 
     /* ── PROGRESS ── */
-    .progress-wrap { display:flex; gap:8px; margin-bottom:28px; align-items:center; }
-    .progress-dot { width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.1); border:2px solid rgba(59, 130, 246,0.3); transition:all 0.3s; }
-    .progress-dot.done { background:var(--gold); border-color:var(--gold); box-shadow: 0 0 8px rgba(59, 130, 246,0.5); }
-    .progress-line { flex:1; height:2px; background:rgba(59, 130, 246,0.15); position:relative; overflow:hidden; }
-    .progress-line::after { content:''; position:absolute; top:0; left:0; height:100%; width:0; background:var(--gold); transition:width 0.5s ease; }
-    .progress-line.filled::after { width:100%; }
+    .progress-wrap {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 28px;
+      align-items: center;
+    }
+
+    .progress-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(59, 130, 246, 0.3);
+      transition: all 0.3s;
+    }
+
+    .progress-dot.done {
+      background: var(--gold);
+      border-color: var(--gold);
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+    }
+
+    .progress-line {
+      flex: 1;
+      height: 2px;
+      background: rgba(59, 130, 246, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .progress-line::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0;
+      background: var(--gold);
+      transition: width 0.5s ease;
+    }
+
+    .progress-line.filled::after {
+      width: 100%;
+    }
 
     /* ── STEPS ── */
-    .step { display:none; }
-    .step.active { display:block; animation:fadeUp 0.4s ease; }
-    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+    .step {
+      display: none;
+    }
+
+    .step.active {
+      display: block;
+      animation: fadeUp 0.4s ease;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 
     /* ── GLASS CARD ── */
     .card {
       background: rgba(17, 24, 39, 0.75);
-      border: 1px solid rgba(59, 130, 246,0.35);
+      border: 1px solid rgba(59, 130, 246, 0.35);
       border-radius: 1.25rem;
       padding: 28px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
     }
 
-    .step-label { font-size:11px; text-transform:uppercase; letter-spacing:3px; color:var(--gold); margin-bottom:6px; opacity:0.8; }
-    .step-title { font-family:'Playfair Display',serif; font-size:clamp(18px,4vw,24px); margin-bottom:22px; color: var(--gold-light); }
+    .step-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--gold);
+      margin-bottom: 6px;
+      opacity: 0.8;
+    }
+
+    .step-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(18px, 4vw, 24px);
+      margin-bottom: 22px;
+      color: var(--gold-light);
+    }
 
     /* ── CATEGORY TABS ── */
-    .cat-tabs { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:8px; }
-    .cat-tab {
-      padding:22px 16px; border-radius:14px; border:2px solid rgba(59, 130, 246,0.25);
-      background:rgba(255,255,255,0.05); cursor:pointer; text-align:center; transition:all 0.25s;
+    .cat-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 8px;
     }
-    .cat-tab:hover { border-color:var(--gold); background:rgba(59, 130, 246,0.08); }
-    .cat-tab .cat-icon { font-size:32px; display:block; margin-bottom:10px; }
-    .cat-tab .cat-name { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; color:var(--text); }
-    .cat-tab .cat-sub { font-size:12px; color:var(--muted); margin-top:4px; }
-    .cat-tab.dh-tab.selected { border-color:var(--gold); background:rgba(59, 130, 246,0.12); }
-    .cat-tab.dh-tab.selected .cat-name { color:var(--gold); }
-    .cat-tab.g12-tab.selected { border-color:#5B8FD4; background:rgba(91,143,212,0.12); }
-    .cat-tab.g12-tab.selected .cat-name { color:#5B8FD4; }
+
+    .cat-tab {
+      padding: 22px 16px;
+      border-radius: 14px;
+      border: 2px solid rgba(59, 130, 246, 0.25);
+      background: rgba(255, 255, 255, 0.05);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.25s;
+    }
+
+    .cat-tab:hover {
+      border-color: var(--gold);
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    .cat-tab .cat-icon {
+      font-size: 32px;
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .cat-tab .cat-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .cat-tab .cat-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .cat-tab.dh-tab.selected {
+      border-color: var(--gold);
+      background: rgba(59, 130, 246, 0.12);
+    }
+
+    .cat-tab.dh-tab.selected .cat-name {
+      color: var(--gold);
+    }
+
+    .cat-tab.g12-tab.selected {
+      border-color: #5B8FD4;
+      background: rgba(91, 143, 212, 0.12);
+    }
+
+    .cat-tab.g12-tab.selected .cat-name {
+      color: #5B8FD4;
+    }
 
     /* ── FIELDS ── */
     label.field-label {
-      display:block; font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase;
-      color:var(--gold-light); margin-bottom:8px; font-weight:600;
+      display: block;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-bottom: 8px;
+      font-weight: 600;
     }
-    select, input[type="date"], input[type="text"] {
-      width:100%; background:rgba(255,255,255,0.06); border:1px solid rgba(59, 130, 246,0.25);
-      border-radius:0.625rem; color:var(--text); font-family:'DM Sans',sans-serif;
-      font-size:15px; padding:13px 16px; outline:none; transition:border-color 0.2s, box-shadow 0.2s, background 0.2s;
-      appearance:none;
+
+    select,
+    input[type="date"],
+    input[type="text"] {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      border-radius: 0.625rem;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      padding: 13px 16px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      appearance: none;
     }
-    select:focus, input:focus {
-      border-color:var(--gold); box-shadow:0 0 0 3px rgba(59, 130, 246,0.15);
-      background:rgba(255,255,255,0.09);
+
+    select:focus,
+    input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+      background: rgba(255, 255, 255, 0.09);
     }
-    select option { background: rgba(17, 24, 39, 0.6); }
-    input::placeholder { color:rgba(168,178,216,0.45); }
+
+    select option {
+      background: rgba(17, 24, 39, 0.6);
+    }
+
+    input::placeholder {
+      color: rgba(168, 178, 216, 0.45);
+    }
 
     /* ── SERVICE TAGS ── */
-    .service-tags { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
-    .tag-btn {
-      padding:9px 18px; border-radius:30px; border:1.5px solid rgba(59, 130, 246,0.25);
-      background:transparent; color:var(--muted); font-family:'DM Sans',sans-serif;
-      font-size:13px; cursor:pointer; transition:all 0.2s;
+    .service-tags {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
     }
-    .tag-btn:hover { border-color:var(--gold); color:var(--gold-light); }
-    .tag-btn.selected { background:var(--gold); border-color:var(--gold); color:#090e1a; font-weight:600; }
+
+    .tag-btn {
+      padding: 9px 18px;
+      border-radius: 30px;
+      border: 1.5px solid rgba(59, 130, 246, 0.25);
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tag-btn:hover {
+      border-color: var(--gold);
+      color: var(--gold-light);
+    }
+
+    .tag-btn.selected {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #090e1a;
+      font-weight: 600;
+    }
 
     /* ── ATTENDANCE ── */
     .att-header {
-      display:grid; grid-template-columns:1fr 80px 80px; gap:8px;
-      padding:0 0 10px; border-bottom:1px solid rgba(59, 130, 246,0.2); margin-bottom:6px;
-      font-size:11px; text-transform:uppercase; letter-spacing:2px; color:var(--muted);
+      display: grid;
+      grid-template-columns: 1fr 80px 80px;
+      gap: 8px;
+      padding: 0 0 10px;
+      border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+      margin-bottom: 6px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--muted);
     }
-    .att-header span:last-child, .att-header span:nth-child(2) { text-align:center; }
-    .member-row { border-radius:10px; margin-bottom:5px; overflow:hidden; }
+
+    .att-header span:last-child,
+    .att-header span:nth-child(2) {
+      text-align: center;
+    }
+
+    .member-row {
+      border-radius: 10px;
+      margin-bottom: 5px;
+      overflow: hidden;
+    }
+
     .member-main {
-      display:grid; grid-template-columns:1fr 80px 80px; gap:8px;
-      align-items:center; padding:11px 0; border-bottom:1px solid transparent; outline:none;
+      display: grid;
+      grid-template-columns: 1fr 80px 80px;
+      gap: 8px;
+      align-items: center;
+      padding: 11px 0;
+      border-bottom: 1px solid transparent;
+      outline: none;
     }
-    .member-row.absent-row { background:var(--absent-bg); border-radius:10px; padding:0 12px; }
-    .member-row.absent-row .member-main { border-bottom-color:rgba(224,90,90,0.15); }
-    .member-name { font-size:14px; font-weight:500; color:var(--text); outline:none; user-select:none; }
-    .check-cell { display:flex; justify-content:center; }
-    .radio-wrap input[type="radio"] { display:none; }
+
+    .member-row.absent-row {
+      background: var(--absent-bg);
+      border-radius: 10px;
+      padding: 0 12px;
+    }
+
+    .member-row.absent-row .member-main {
+      border-bottom-color: rgba(224, 90, 90, 0.15);
+    }
+
+    .member-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      outline: none;
+      user-select: none;
+    }
+
+    .check-cell {
+      display: flex;
+      justify-content: center;
+    }
+
+    .radio-wrap input[type="radio"] {
+      display: none;
+    }
+
     .radio-wrap label {
-      display:flex; align-items:center; justify-content:center;
-      width:34px; height:34px; border-radius:50%;
-      border:2px solid rgba(59, 130, 246,0.25); cursor:pointer; font-size:15px;
-      transition:all 0.2s; color:transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid rgba(59, 130, 246, 0.25);
+      cursor: pointer;
+      font-size: 15px;
+      transition: all 0.2s;
+      color: transparent;
     }
-    .radio-wrap.present-wrap input:checked + label { background:var(--success); border-color:var(--success); color:white; }
-    .radio-wrap.absent-wrap input:checked + label { background:var(--danger); border-color:var(--danger); color:white; }
-    .radio-wrap label:hover { border-color:var(--gold); }
-    .absence-reason { display:none; padding:9px 0 11px; animation:fadeUp 0.3s ease; }
-    .absence-reason.show { display:block; }
-    .absence-reason input { background:rgba(255,255,255,0.05); font-size:13px; padding:9px 13px; border: 2px solid rgba(59, 130, 246,0.4); border-radius: 5px; transition: all 0.2s; outline:none; }
-    .absence-reason input:focus { background:rgba(59, 130, 246,0.1); border-color: var(--gold); box-shadow: 0 0 8px rgba(59, 130, 246,0.3); }
-    .absence-reason input.error { border-color: var(--danger) !important; background:rgba(224,90,90,0.12) !important; box-shadow: 0 0 8px rgba(224,90,90,0.2) !important; }
+
+    .radio-wrap.present-wrap input:checked+label {
+      background: var(--success);
+      border-color: var(--success);
+      color: white;
+    }
+
+    .radio-wrap.absent-wrap input:checked+label {
+      background: var(--danger);
+      border-color: var(--danger);
+      color: white;
+    }
+
+    .radio-wrap label:hover {
+      border-color: var(--gold);
+    }
+
+    .absence-reason {
+      display: none;
+      padding: 9px 0 11px;
+      animation: fadeUp 0.3s ease;
+    }
+
+    .absence-reason.show {
+      display: block;
+    }
+
+    .absence-reason input {
+      background: rgba(255, 255, 255, 0.05);
+      font-size: 13px;
+      padding: 9px 13px;
+      border: 2px solid rgba(59, 130, 246, 0.4);
+      border-radius: 5px;
+      transition: all 0.2s;
+      outline: none;
+    }
+
+    .absence-reason input:focus {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: var(--gold);
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.3);
+    }
+
+    .absence-reason input.error {
+      border-color: var(--danger) !important;
+      background: rgba(224, 90, 90, 0.12) !important;
+      box-shadow: 0 0 8px rgba(224, 90, 90, 0.2) !important;
+    }
 
     /* ── BUTTONS ── */
-    .btn-row { display:flex; gap:10px; margin-top:24px; justify-content:flex-end; }
-    .btn { padding:12px 24px; border-radius:10px; border:none; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.2s; letter-spacing:0.04em; }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 10px;
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.04em;
+    }
+
     .btn-ghost {
-      background:transparent; border:1.5px solid rgba(168,178,216,0.25); color:var(--muted);
+      background: transparent;
+      border: 1.5px solid rgba(168, 178, 216, 0.25);
+      color: var(--muted);
     }
-    .btn-ghost:hover { border-color:rgba(168,178,216,0.5); color:var(--text); }
+
+    .btn-ghost:hover {
+      border-color: rgba(168, 178, 216, 0.5);
+      color: var(--text);
+    }
+
     .btn-primary {
-      background:linear-gradient(135deg, #3b82f6 0%, #60a5fa 50%, #3b82f6 100%);
-      background-size:200% 100%; color:#090e1a;
-      box-shadow:0 4px 20px rgba(59, 130, 246,0.3);
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 50%, #3b82f6 100%);
+      background-size: 200% 100%;
+      color: #090e1a;
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
     }
-    .btn-primary:hover { background-position:100% 0; transform:translateY(-1px); box-shadow:0 6px 28px rgba(59, 130, 246,0.45); }
-    .btn-submit { font-size:15px; padding:13px 36px; }
+
+    .btn-primary:hover {
+      background-position: 100% 0;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 28px rgba(59, 130, 246, 0.45);
+    }
+
+    .btn-submit {
+      font-size: 15px;
+      padding: 13px 36px;
+    }
 
     /* ── MISC ── */
-    .error-msg { color:var(--danger); font-size:13px; margin-top:6px; display:none; }
-    .error-msg.show { display:block; }
+    .error-msg {
+      color: var(--danger);
+      font-size: 13px;
+      margin-top: 6px;
+      display: none;
+    }
 
-    .cat-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; letter-spacing:1px; margin-bottom:14px; }
-    .cat-badge.dh { background:rgba(59, 130, 246,0.15); color:var(--gold); border:1px solid rgba(59, 130, 246,0.3); }
-    .cat-badge.g12 { background:rgba(91,143,212,0.15); color:#5B8FD4; border:1px solid rgba(91,143,212,0.3); }
+    .error-msg.show {
+      display: block;
+    }
+
+    .cat-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+    }
+
+    .cat-badge.dh {
+      background: rgba(59, 130, 246, 0.15);
+      color: var(--gold);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .cat-badge.g12 {
+      background: rgba(91, 143, 212, 0.15);
+      color: #5B8FD4;
+      border: 1px solid rgba(91, 143, 212, 0.3);
+    }
 
     .info-box {
-      background:rgba(59, 130, 246,0.07); border:1px solid rgba(59, 130, 246,0.2);
-      border-radius:10px; padding:12px 16px; margin-bottom:20px; font-size:13px;
-      color:var(--muted); line-height:1.6;
+      background: rgba(59, 130, 246, 0.07);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
     }
-    .info-box strong { color:var(--gold); }
+
+    .info-box strong {
+      color: var(--gold);
+    }
 
     /* Admin Dashboard Grid Styles */
     #g12-leaders-grid,
@@ -409,8 +793,8 @@
     }
 
     .leader-square {
-      background: linear-gradient(135deg, rgba(59, 130, 246,0.15) 0%, rgba(6, 182, 212,0.08) 100%);
-      border: 1.5px solid rgba(59, 130, 246,0.35);
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(6, 182, 212, 0.08) 100%);
+      border: 1.5px solid rgba(59, 130, 246, 0.35);
       border-radius: 10px;
       padding: 20px;
       cursor: pointer;
@@ -432,14 +816,14 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: radial-gradient(circle at 30% 30%, rgba(59, 130, 246,0.2), transparent);
+      background: radial-gradient(circle at 30% 30%, rgba(59, 130, 246, 0.2), transparent);
       opacity: 0;
       transition: opacity 0.3s;
     }
 
     .leader-square:hover {
       border-color: #3b82f6;
-      box-shadow: 0 8px 24px rgba(59, 130, 246,0.25), inset 0 0 20px rgba(59, 130, 246,0.1);
+      box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25), inset 0 0 20px rgba(59, 130, 246, 0.1);
       transform: translateY(-4px) scale(1.02);
     }
 
@@ -478,8 +862,13 @@
     }
 
     @keyframes modalFadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
     }
 
     .modal-member-item {
@@ -488,15 +877,15 @@
       gap: 12px;
       padding: 12px;
       margin-bottom: 8px;
-      background: rgba(59, 130, 246,0.08);
-      border: 0.5px solid rgba(59, 130, 246,0.2);
+      background: rgba(59, 130, 246, 0.08);
+      border: 0.5px solid rgba(59, 130, 246, 0.2);
       border-radius: 6px;
       transition: all 0.2s;
     }
 
     .modal-member-item:hover {
-      background: rgba(59, 130, 246,0.12);
-      border-color: rgba(59, 130, 246,0.35);
+      background: rgba(59, 130, 246, 0.12);
+      border-color: rgba(59, 130, 246, 0.35);
     }
 
     .modal-member-avatar {
@@ -530,6 +919,7 @@
     }
 
     @media (max-width: 1200px) {
+
       #g12-leaders-grid,
       #dh-leaders-grid {
         grid-template-columns: repeat(3, 1fr) !important;
@@ -537,94 +927,138 @@
     }
 
     @media (max-width: 768px) {
+
       #g12-leaders-grid,
       #dh-leaders-grid {
         grid-template-columns: repeat(2, 1fr) !important;
       }
     }
-  
+
 
     /* ── GOLD DIVIDER ── */
     .gold-divider {
-      border:none; height:1px;
-      background:linear-gradient(to right, transparent, var(--gold), transparent);
-      opacity:0.3; margin:4px 0;
+      border: none;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--gold), transparent);
+      opacity: 0.3;
+      margin: 4px 0;
     }
 
     /* ── SUCCESS SCREEN ── */
-    .success-screen { display:none; text-align:center; padding:40px 20px; }
-    .success-screen.active { display:block; animation:fadeUp 0.5s ease; }
+    .success-screen {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .success-screen.active {
+      display: block;
+      animation: fadeUp 0.5s ease;
+    }
+
     .success-card {
       background: rgba(17, 24, 39, 0.75);
-      border: 1px solid rgba(59, 130, 246,0.35);
+      border: 1px solid rgba(59, 130, 246, 0.35);
       border-radius: 1.25rem;
       padding: 40px 28px;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
       max-width: 480px;
       margin: 0 auto;
     }
-    .checkmark { font-size:60px; margin-bottom:14px; }
-    .success-screen h2 { font-family:'Playfair Display',serif; font-size:26px; color:var(--gold-light); margin-bottom:10px; }
-    .success-screen p { color:var(--muted); line-height:1.7; }
-    .restart-btn { margin-top:24px; }
 
-    @media(max-width:480px){
-      .card{ padding:18px 14px; }
-      .att-header{ grid-template-columns:1fr 64px 64px; }
-      .member-main{ grid-template-columns:1fr 64px 64px; }
-      .cat-tabs{ grid-template-columns:1fr 1fr; }
+    .checkmark {
+      font-size: 60px;
+      margin-bottom: 14px;
     }
+
+    .success-screen h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px;
+      color: var(--gold-light);
+      margin-bottom: 10px;
+    }
+
+    .success-screen p {
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .restart-btn {
+      margin-top: 24px;
+    }
+
+    @media(max-width:480px) {
+      .card {
+        padding: 18px 14px;
+      }
+
+      .att-header {
+        grid-template-columns: 1fr 64px 64px;
+      }
+
+      .member-main {
+        grid-template-columns: 1fr 64px 64px;
+      }
+
+      .cat-tabs {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
     /* Styles for the Admin Accordion */
-.member-sub-list {
-  display: none; /* Hidden by default */
-  padding-left: 15px;
-  border-left: 2px solid var(--gold);
-  margin-top: 10px;
-}
+    .member-sub-list {
+      display: none;
+      /* Hidden by default */
+      padding-left: 15px;
+      border-left: 2px solid var(--gold);
+      margin-top: 10px;
+    }
 
-.member-sub-list.active {
-  display: block; /* Shown when leader is clicked */
-}
+    .member-sub-list.active {
+      display: block;
+      /* Shown when leader is clicked */
+    }
 
-.leader-header {
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: rgba(59, 130, 246, 0.1);
-  padding: 12px 16px;
-  border-radius: 8px;
-  transition: background 0.2s;
-}
+    .leader-header {
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(59, 130, 246, 0.1);
+      padding: 12px 16px;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
 
-.leader-header:hover {
-  background: rgba(59, 130, 246, 0.2);
-}
+    .leader-header:hover {
+      background: rgba(59, 130, 246, 0.2);
+    }
 
-.add-member-btn {
-  background: var(--gold);
-  color: #090e1a;
-  border: none;
-  border-radius: 4px;
-  width: 24px;
-  height: 24px;
-  font-weight: bold;
-  cursor: pointer;
-}
+    .add-member-btn {
+      background: var(--gold);
+      color: #090e1a;
+      border: none;
+      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      font-weight: bold;
+      cursor: pointer;
+    }
   </style>
 </head>
+
 <body>
 
-<header>
-  <div class="logo-wrap">
-    <img src="images.png?v=3" alt="NCF UNN Logo" />
-  </div>
-  <div class="header-text">
-    <h1>New Covenant Family</h1>
-    <p>Leader Accountability System</p>
-  </div>
-  <div class="header-date" id="live-date"></div>
-</header>
+  <header>
+    <div class="logo-wrap">
+      <img src="images.png?v=3" alt="NCF UNN Logo" />
+    </div>
+    <div class="header-text">
+      <h1>New Covenant Family</h1>
+      <p>Leader Accountability System</p>
+    </div>
+    <div class="header-date" id="live-date"></div>
+  </header>
 
 
   <div class="progress-wrap" id="progressWrap">
@@ -643,7 +1077,7 @@
     <div class="card">
       <div class="step-label">Step 1 of 3</div>
       <h2 class="step-title">Select appropriate category</h2>
-      
+
       <div class="cat-tabs">
         <div class="cat-tab dh-tab" onclick="selectCategory('DH', this)">
           <div class="cat-name">DH Leader</div>
@@ -656,7 +1090,7 @@
       </div>
 
       <p class="error-msg" id="errCat">Please select a category.</p>
-      
+
       <!-- THIS WAS MISSING: The Next Button -->
       <div class="btn-row">
         <button class="btn btn-primary" onclick="goStep(2)">Next →</button>
@@ -672,14 +1106,16 @@
       <div id="catBadge2" class="cat-badge"></div>
 
       <label class="field-label" for="leaderSelect">Select Your Name</label>
-      <select id="leaderSelect"><option value="">— Choose your name —</option></select>
+      <select id="leaderSelect">
+        <option value="">— Choose your name —</option>
+      </select>
       <p class="error-msg" id="errLeader">Please select your name.</p>
 
       <div style="margin-top:20px;">
         <label class="field-label">Service Type</label>
         <div class="service-tags">
           <button class="tag-btn" onclick="selectService(this,'Sunday Service')">☀️ Sunday Service</button>
-          <button class="tag-btn" onclick="selectService(this,'Wednesday Equipped')">⚡ Wednesday Equipped</button>
+          <button class="tag-btn" onclick="selectService(this,'Wednesday Bible Study')">⚡ Wednesday Bible Study</button>
           <button class="tag-btn" onclick="selectService(this,'Midweek Service')">📖 Midweek Service</button>
           <button class="tag-btn" onclick="selectService(this,'Equip Training')">🎓 Equip Training</button>
         </div>
@@ -688,7 +1124,7 @@
 
       <div style="margin-top:20px;">
         <label class="field-label" for="serviceDate">Service Date</label>
-        <input type="date" id="serviceDate"/>
+        <input type="date" id="serviceDate" />
         <p class="error-msg" id="errDate">Please select the service date.</p>
       </div>
 
@@ -707,7 +1143,8 @@
       <div id="catBadge3" class="cat-badge"></div>
       <div class="info-box" id="reportInfo"></div>
       <p style="color:var(--muted);font-size:13px;margin-bottom:18px;">
-        Tap <strong style="color:var(--success)">✓ Present</strong> or <strong style="color:var(--danger)">✗ Absent</strong>. Add a reason for anyone absent.
+        Tap <strong style="color:var(--success)">✓ Present</strong> or <strong style="color:var(--danger)">✗
+          Absent</strong>. Add a reason for anyone absent.
       </p>
       <div class="att-header">
         <span>Member</span><span>Present</span><span>Absent</span>
@@ -732,209 +1169,209 @@
       <button class="btn btn-primary restart-btn" onclick="restart()">Submit Another Report</button>
     </div>
   </div>
-</div>
-</div>
+  </div>
+  </div>
 
-<script>
-// --- GLOBAL STATE ---
-let selectedCategory = '';
-let selectedService = '';
-let currentStep = 1;
-let currentMembers = [];
+  <script>
+    // --- GLOBAL STATE ---
+    let selectedCategory = '';
+    let selectedService = '';
+    let currentStep = 1;
+    let currentMembers = [];
 
-// --- CONFIGURATION ---
-const ADMIN_CREDENTIALS = {
-  user: "admin",
-  pin: "1234" 
-};
+    // --- CONFIGURATION ---
+    const ADMIN_CREDENTIALS = {
+      user: "admin",
+      pin: "1234"
+    };
 
-// --- NAVIGATION & UI LOGIC ---
-/**
- * Handles the selection of a Service Type.
- * Updates the global state and toggles CSS classes for visual feedback.
- */
-function selectService(btn, val) {
-  // 1. Clear the 'selected' class from all other service buttons
-  document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
-  
-  // 2. Add the 'selected' class to the button that was just clicked
-  btn.classList.add('selected');
-  
-  // 3. Update the global variable so the 'goStep' validation can see it
-  selectedService = val;
-  
-  // 4. Hide any existing error messages since a selection is now made
-  hideErr('errService');
-  
-  // Optional: Log for debugging to ensure the value is captured
-  console.log("Active Service Set To:", selectedService);
-}
+    // --- NAVIGATION & UI LOGIC ---
+    /**
+     * Handles the selection of a Service Type.
+     * Updates the global state and toggles CSS classes for visual feedback.
+     */
+    function selectService(btn, val) {
+      // 1. Clear the 'selected' class from all other service buttons
+      document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
 
-function selectCategory(cat, el) {
-  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedCategory = cat;
-  
-  // FIX: Hide all step-specific errors when a new category is picked
-  hideErr('errCat');
-  hideErr('errLeader');
-  hideErr('errService');
-  hideErr('errDate');
+      // 2. Add the 'selected' class to the button that was just clicked
+      btn.classList.add('selected');
 
-  const authFields = document.getElementById('adminAuthFields');
-  if (cat === 'ADMIN') {
-    authFields.style.display = 'block';
-  } else {
-    authFields.style.display = 'none';
-  }
-}
+      // 3. Update the global variable so the 'goStep' validation can see it
+      selectedService = val;
 
-async function handleAdminLogin() {
-    const user = document.getElementById('adminUser').value;
-    const pin = document.getElementById('adminPin').value;
+      // 4. Hide any existing error messages since a selection is now made
+      hideErr('errService');
 
-    if (user === ADMIN_CREDENTIALS.user && pin === ADMIN_CREDENTIALS.pin) {
+      // Optional: Log for debugging to ensure the value is captured
+      console.log("Active Service Set To:", selectedService);
+    }
+
+    function selectCategory(cat, el) {
+      document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedCategory = cat;
+
+      // FIX: Hide all step-specific errors when a new category is picked
+      hideErr('errCat');
+      hideErr('errLeader');
+      hideErr('errService');
+      hideErr('errDate');
+
+      const authFields = document.getElementById('adminAuthFields');
+      if (cat === 'ADMIN') {
+        authFields.style.display = 'block';
+      } else {
+        authFields.style.display = 'none';
+      }
+    }
+
+    async function handleAdminLogin() {
+      const user = document.getElementById('adminUser').value;
+      const pin = document.getElementById('adminPin').value;
+
+      if (user === ADMIN_CREDENTIALS.user && pin === ADMIN_CREDENTIALS.pin) {
         hideErr('errAdminAuth');
         document.getElementById('step1').classList.remove('active');
         document.getElementById('progressWrap').style.display = 'none';
         document.getElementById('adminDashboard').classList.add('active');
         currentStep = 'adminDashboard';
-        loadAdminData(); 
+        loadAdminData();
         console.log("Admin authenticated.");
-    } else {
+      } else {
         showErr('errAdminAuth');
-    }
-}
-
-function goStep(n) {
-  if (currentStep === 1 && n === 2) {
-    if (!selectedCategory) { showErr('errCat'); return; }
-    if (selectedCategory === 'ADMIN') { handleAdminLogin(); return; }
-    populateLeaders();
-  }
-
-  if (currentStep === 2 && n === 3) {
-    const leader = document.getElementById('leaderSelect').value;
-    const date = document.getElementById('serviceDate').value;
-    if (!leader) { showErr('errLeader'); return; }
-    if (!selectedService) { showErr('errService'); return; }
-    if (!date) { showErr('errDate'); return; }
-    hideErr('errLeader'); hideErr('errService'); hideErr('errDate');
-    renderAttendance();
-  }
-
-  // Clear all error messages when navigating to a new step
-  if (currentStep !== n) {
-    document.querySelectorAll('.error-msg').forEach(msg => msg.classList.remove('show'));
-  }
-
-  document.getElementById('step' + currentStep).classList.remove('active');
-  currentStep = n;
-  document.getElementById('step' + currentStep).classList.add('active');
-  updateProgress();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function updateProgress() {
-  for (let i = 1; i <= 4; i++) {
-    const d = document.getElementById('dot' + i);
-    if (d) d.classList.toggle('done', i <= currentStep);
-  }
-  for (let i = 1; i <= 3; i++) {
-    const l = document.getElementById('line' + i);
-    if (l) l.classList.toggle('filled', i < currentStep);
-  }
-}
-
-// --- DATABASE: ADMIN CRUD OPERATIONS ---
-
-async function loadAdminData() {
-  console.log('loadAdminData called');
-  const { data, error } = await supabaseClient
-    .from('members')
-    .select('id, member_name, g12_leader, leader_type');
-
-  if (error) {
-    console.error('Error loading admin data:', error);
-    alert('Error loading data: ' + error.message);
-    return;
-  }
-
-  console.log('Data loaded, count:', data ? data.length : 0, 'Data:', data);
-
-  // Group data by Type ('DH' or 'G12') and then by Leader Name
-  const grouped = data.reduce((acc, current) => {
-    const type = current.leader_type || "G12";
-    const leader = normalizeLeaderName(current.g12_leader || "Unassigned");
-    if (!acc[type]) acc[type] = {};
-    if (!acc[type][leader]) acc[type][leader] = [];
-    acc[type][leader].push(current);
-    return acc;
-  }, {});
-
-  window.cachedG12Data = grouped.G12 || {};
-  window.cachedDHData = grouped.DH || {};
-
-  console.log('G12 Leaders:', Object.keys(window.cachedG12Data));
-  console.log('DH Leaders:', Object.keys(window.cachedDHData));
-
-  // Display grids
-  displayLeaderGrid(window.cachedG12Data, 'g12-leaders-grid');
-  displayLeaderGrid(window.cachedDHData, 'dh-leaders-grid');
-}
-
-function displayLeaderGrid(leaderMap, containerId) {
-  const container = document.getElementById(containerId);
-  if (!container) {
-    console.error('Container not found:', containerId);
-    return;
-  }
-  
-  console.log('Rendering grid for:', containerId, 'Leaders:', Object.keys(leaderMap));
-  
-  container.innerHTML = '';
-  
-  // Store leader data globally
-  window.leaderGridData = window.leaderGridData || {};
-  window.leaderGridData[containerId] = leaderMap;
-  
-  const leaderNames = Object.keys(leaderMap).sort();
-  let html = '';
-  
-  leaderNames.forEach((leaderName, idx) => {
-    const members = leaderMap[leaderName];
-    const isFemale = leaderName.includes('Mmesoma') || leaderName.includes('Emmanuella') || 
-                    leaderName.includes('Onyinye') || leaderName.includes('Nkechi') || 
-                    leaderName.includes('Precious') || leaderName.includes('Ifeyinwa') || 
-                    leaderName.includes('Lovina') || leaderName.includes('Chioma');
-    
-    const handlerId = containerId + '_' + idx;
-    window[handlerId] = () => {
-      console.log('Handler called for', leaderName);
-      const mems = window.leaderGridData[containerId][leaderName];
-      showLeaderMembers(leaderName, mems);
-    };
-    
-    const editLeaderId = 'editLeader_' + idx;
-    window[editLeaderId] = (e) => {
-      e.stopPropagation();
-      console.log('Edit leader:', leaderName);
-      promptSmartModal('Edit Leader', `Edit leader name:`, leaderName).then(newName => {
-        if (newName && newName.trim() !== leaderName) {
-          console.log('Renaming', leaderName, 'to', newName);
-        }
-      });
-    };
-    
-    const deleteLeaderId = 'deleteLeader_' + idx;
-    window[deleteLeaderId] = (e) => {
-      e.stopPropagation();
-      if (confirm(`Delete leader "${leaderName}" and all ${members.length} members?`)) {
-        console.log('Delete leader:', leaderName);
       }
-    };
-    
-    html += `
+    }
+
+    function goStep(n) {
+      if (currentStep === 1 && n === 2) {
+        if (!selectedCategory) { showErr('errCat'); return; }
+        if (selectedCategory === 'ADMIN') { handleAdminLogin(); return; }
+        populateLeaders();
+      }
+
+      if (currentStep === 2 && n === 3) {
+        const leader = document.getElementById('leaderSelect').value;
+        const date = document.getElementById('serviceDate').value;
+        if (!leader) { showErr('errLeader'); return; }
+        if (!selectedService) { showErr('errService'); return; }
+        if (!date) { showErr('errDate'); return; }
+        hideErr('errLeader'); hideErr('errService'); hideErr('errDate');
+        renderAttendance();
+      }
+
+      // Clear all error messages when navigating to a new step
+      if (currentStep !== n) {
+        document.querySelectorAll('.error-msg').forEach(msg => msg.classList.remove('show'));
+      }
+
+      document.getElementById('step' + currentStep).classList.remove('active');
+      currentStep = n;
+      document.getElementById('step' + currentStep).classList.add('active');
+      updateProgress();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function updateProgress() {
+      for (let i = 1; i <= 4; i++) {
+        const d = document.getElementById('dot' + i);
+        if (d) d.classList.toggle('done', i <= currentStep);
+      }
+      for (let i = 1; i <= 3; i++) {
+        const l = document.getElementById('line' + i);
+        if (l) l.classList.toggle('filled', i < currentStep);
+      }
+    }
+
+    // --- DATABASE: ADMIN CRUD OPERATIONS ---
+
+    async function loadAdminData() {
+      console.log('loadAdminData called');
+      const { data, error } = await supabaseClient
+        .from('members')
+        .select('id, member_name, g12_leader, leader_type');
+
+      if (error) {
+        console.error('Error loading admin data:', error);
+        alert('Error loading data: ' + error.message);
+        return;
+      }
+
+      console.log('Data loaded, count:', data ? data.length : 0, 'Data:', data);
+
+      // Group data by Type ('DH' or 'G12') and then by Leader Name
+      const grouped = data.reduce((acc, current) => {
+        const type = current.leader_type || "G12";
+        const leader = normalizeLeaderName(current.g12_leader || "Unassigned");
+        if (!acc[type]) acc[type] = {};
+        if (!acc[type][leader]) acc[type][leader] = [];
+        acc[type][leader].push(current);
+        return acc;
+      }, {});
+
+      window.cachedG12Data = grouped.G12 || {};
+      window.cachedDHData = grouped.DH || {};
+
+      console.log('G12 Leaders:', Object.keys(window.cachedG12Data));
+      console.log('DH Leaders:', Object.keys(window.cachedDHData));
+
+      // Display grids
+      displayLeaderGrid(window.cachedG12Data, 'g12-leaders-grid');
+      displayLeaderGrid(window.cachedDHData, 'dh-leaders-grid');
+    }
+
+    function displayLeaderGrid(leaderMap, containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) {
+        console.error('Container not found:', containerId);
+        return;
+      }
+
+      console.log('Rendering grid for:', containerId, 'Leaders:', Object.keys(leaderMap));
+
+      container.innerHTML = '';
+
+      // Store leader data globally
+      window.leaderGridData = window.leaderGridData || {};
+      window.leaderGridData[containerId] = leaderMap;
+
+      const leaderNames = Object.keys(leaderMap).sort();
+      let html = '';
+
+      leaderNames.forEach((leaderName, idx) => {
+        const members = leaderMap[leaderName];
+        const isFemale = leaderName.includes('Mmesoma') || leaderName.includes('Emmanuella') ||
+          leaderName.includes('Onyinye') || leaderName.includes('Nkechi') ||
+          leaderName.includes('Precious') || leaderName.includes('Ifeyinwa') ||
+          leaderName.includes('Lovina') || leaderName.includes('Chioma');
+
+        const handlerId = containerId + '_' + idx;
+        window[handlerId] = () => {
+          console.log('Handler called for', leaderName);
+          const mems = window.leaderGridData[containerId][leaderName];
+          showLeaderMembers(leaderName, mems);
+        };
+
+        const editLeaderId = 'editLeader_' + idx;
+        window[editLeaderId] = (e) => {
+          e.stopPropagation();
+          console.log('Edit leader:', leaderName);
+          promptSmartModal('Edit Leader', `Edit leader name:`, leaderName).then(newName => {
+            if (newName && newName.trim() !== leaderName) {
+              console.log('Renaming', leaderName, 'to', newName);
+            }
+          });
+        };
+
+        const deleteLeaderId = 'deleteLeader_' + idx;
+        window[deleteLeaderId] = (e) => {
+          e.stopPropagation();
+          if (confirm(`Delete leader "${leaderName}" and all ${members.length} members?`)) {
+            console.log('Delete leader:', leaderName);
+          }
+        };
+
+        html += `
       <div class="leader-square" onclick="window['${handlerId}']()" style="cursor: pointer; position: relative;">
         <span class="leader-square-icon">${isFemale ? '👩' : '👨'}</span>
         <div class="leader-square-name">${leaderName}</div>
@@ -947,46 +1384,46 @@ function displayLeaderGrid(leaderMap, containerId) {
         </div>
       </div>
     `;
-  });
-  
-  container.innerHTML = html;
-  console.log('Grid rendered with', leaderNames.length, 'leaders');
-}
-
-function showLeaderMembers(leaderName, members) {
-  document.getElementById('modal-leader-name').textContent = leaderName;
-  
-  const membersList = document.getElementById('modal-members-list');
-  membersList.innerHTML = '';
-  
-  const fragment = document.createDocumentFragment();
-  
-  members.forEach((member, mIdx) => {
-    const memberDiv = document.createElement('div');
-    memberDiv.className = 'modal-member-item';
-    
-    const firstLetter = (member.member_name || 'M').charAt(0).toUpperCase();
-    
-    const editMemberId = 'editMember_' + mIdx;
-    window[editMemberId] = (e) => {
-      e.stopPropagation();
-      console.log('Edit member:', member.member_name);
-      promptSmartModal('Edit Member', `Edit member name:`, member.member_name).then(newName => {
-        if (newName && newName.trim() !== member.member_name) {
-          console.log('Renaming', member.member_name, 'to', newName);
-        }
       });
-    };
-    
-    const deleteMemberId = 'deleteMember_' + mIdx;
-    window[deleteMemberId] = (e) => {
-      e.stopPropagation();
-      if (confirm(`Delete member "${member.member_name}"?`)) {
-        console.log('Delete member:', member.member_name);
-      }
-    };
-    
-    memberDiv.innerHTML = `
+
+      container.innerHTML = html;
+      console.log('Grid rendered with', leaderNames.length, 'leaders');
+    }
+
+    function showLeaderMembers(leaderName, members) {
+      document.getElementById('modal-leader-name').textContent = leaderName;
+
+      const membersList = document.getElementById('modal-members-list');
+      membersList.innerHTML = '';
+
+      const fragment = document.createDocumentFragment();
+
+      members.forEach((member, mIdx) => {
+        const memberDiv = document.createElement('div');
+        memberDiv.className = 'modal-member-item';
+
+        const firstLetter = (member.member_name || 'M').charAt(0).toUpperCase();
+
+        const editMemberId = 'editMember_' + mIdx;
+        window[editMemberId] = (e) => {
+          e.stopPropagation();
+          console.log('Edit member:', member.member_name);
+          promptSmartModal('Edit Member', `Edit member name:`, member.member_name).then(newName => {
+            if (newName && newName.trim() !== member.member_name) {
+              console.log('Renaming', member.member_name, 'to', newName);
+            }
+          });
+        };
+
+        const deleteMemberId = 'deleteMember_' + mIdx;
+        window[deleteMemberId] = (e) => {
+          e.stopPropagation();
+          if (confirm(`Delete member "${member.member_name}"?`)) {
+            console.log('Delete member:', member.member_name);
+          }
+        };
+
+        memberDiv.innerHTML = `
       <div class="modal-member-avatar">${firstLetter}</div>
       <div class="modal-member-info">
         <div class="modal-member-name">${member.member_name || 'Unknown'}</div>
@@ -996,426 +1433,426 @@ function showLeaderMembers(leaderName, members) {
         <button onclick="window['${deleteMemberId}'](event)" style="background: rgba(6, 182, 212,0.3); border: none; border-radius: 4px; color: #06b6d4; cursor: pointer; padding: 4px 6px; font-size: 11px; transition: all 0.2s;" title="Delete member">🗑️</button>
       </div>
     `;
-    
-    fragment.appendChild(memberDiv);
-  });
-  
-  membersList.appendChild(fragment);
-  document.getElementById('members-modal').style.display = 'flex';
-}
 
-function closeLeaderModal() {
-  document.getElementById('members-modal').style.display = 'none';
-}
+        fragment.appendChild(memberDiv);
+      });
 
-// Close modal when clicking outside
-document.addEventListener('DOMContentLoaded', () => {
-  const modal = document.getElementById('members-modal');
-  if (modal) {
-    modal.addEventListener('click', (e) => {
-      if (e.target.id === 'members-modal') {
-        closeLeaderModal();
+      membersList.appendChild(fragment);
+      document.getElementById('members-modal').style.display = 'flex';
+    }
+
+    function closeLeaderModal() {
+      document.getElementById('members-modal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside
+    document.addEventListener('DOMContentLoaded', () => {
+      const modal = document.getElementById('members-modal');
+      if (modal) {
+        modal.addEventListener('click', (e) => {
+          if (e.target.id === 'members-modal') {
+            closeLeaderModal();
+          }
+        });
       }
     });
-  }
-});
 
-/**
- * Toggles the visibility of a leader's member list.
- */
-function toggleLeaderGroup(index) {
-  const list = document.getElementById('group_' + index);
-  list.classList.toggle('active');
-}
+    /**
+     * Toggles the visibility of a leader's member list.
+     */
+    function toggleLeaderGroup(index) {
+      const list = document.getElementById('group_' + index);
+      list.classList.toggle('active');
+    }
 
 
-async function quickAddMember(leaderName, type) {
-   const name = await promptSmartModal('Add Member', `Add new member under ${leaderName} (${type}):`, false);
-  if (!name || name.trim() === "") return;
-  
-  const cleanName = name.trim();
-  const cleanLeader = leaderName.trim();
+    async function quickAddMember(leaderName, type) {
+      const name = await promptSmartModal('Add Member', `Add new member under ${leaderName} (${type}):`, false);
+      if (!name || name.trim() === "") return;
 
-  // Check if member already exists in this specific group to prevent duplicates
-  const { data: existing } = await supabaseClient
-    .from('members')
-    .select('id')
-    .eq('member_name', cleanName)
-    .eq('g12_leader', cleanLeader)
-    .eq('leader_type', type);
+      const cleanName = name.trim();
+      const cleanLeader = leaderName.trim();
 
-  if (existing && existing.length > 0) {
-    alert(`${cleanName} is already synced in ${cleanLeader}'s ${type} group.`);
-    return;
-  }
+      // Check if member already exists in this specific group to prevent duplicates
+      const { data: existing } = await supabaseClient
+        .from('members')
+        .select('id')
+        .eq('member_name', cleanName)
+        .eq('g12_leader', cleanLeader)
+        .eq('leader_type', type);
 
-  const { error } = await supabaseClient
-    .from('members')
-    .insert([{ 
-        member_name: cleanName, 
-        g12_leader: cleanLeader, 
-        leader_type: type 
-    }]);
+      if (existing && existing.length > 0) {
+        alert(`${cleanName} is already synced in ${cleanLeader}'s ${type} group.`);
+        return;
+      }
 
-  if (error) {
-    alert("Sync failed: " + error.message);
-  } else {
-    loadAdminData(); // Refresh UI from Supabase
-  }
-}
+      const { error } = await supabaseClient
+        .from('members')
+        .insert([{
+          member_name: cleanName,
+          g12_leader: cleanLeader,
+          leader_type: type
+        }]);
 
-async function showAddModal(type, leaderType) {
-    const name = await promptSmartModal(`Add ${type}`, `Enter the name of the new ${type}:`, type === 'leader');
-    if (!name || name.trim() === "") return;
+      if (error) {
+        alert("Sync failed: " + error.message);
+      } else {
+        loadAdminData(); // Refresh UI from Supabase
+      }
+    }
 
-    const cleanName = name.trim();
-    let leaderName = cleanName;
+    async function showAddModal(type, leaderType) {
+      const name = await promptSmartModal(`Add ${type}`, `Enter the name of the new ${type}:`, type === 'leader');
+      if (!name || name.trim() === "") return;
 
-    // If adding a member, we need to know who their leader is
-    if (type === 'member') {
+      const cleanName = name.trim();
+      let leaderName = cleanName;
+
+      // If adding a member, we need to know who their leader is
+      if (type === 'member') {
         leaderName = await promptSmartModal('Select Leader', `Enter the exact name of the ${leaderType} Leader:`, true);
         if (!leaderName) return;
         leaderName = leaderName.trim();
-    }
+      }
 
-    // Step 1: Check if this specific entry already exists to avoid duplicates
-    const { data: existing } = await supabaseClient
+      // Step 1: Check if this specific entry already exists to avoid duplicates
+      const { data: existing } = await supabaseClient
         .from('members')
         .select('id')
         .eq('member_name', cleanName)
         .eq('g12_leader', leaderName)
         .eq('leader_type', leaderType);
 
-    if (existing && existing.length > 0) {
+      if (existing && existing.length > 0) {
         alert("This record already exists in the database.");
         return;
-    }
-
-    // Step 2: Insert into Supabase
-    const { error } = await supabaseClient
-        .from('members')
-        .insert([{ 
-            member_name: cleanName, 
-            g12_leader: leaderName, 
-            leader_type: leaderType 
-        }]);
-
-    if (error) {
-        console.error("Sync Error:", error.message);
-        alert("Failed to sync to Supabase: " + error.message);
-    } else {
-        alert("Successfully synced to database!");
-        loadAdminData(); // Refresh the list
-    }
-}
-
-async function editMember(id, oldName) {
-  const newName = await promptSmartModal('Rename Member', "Enter new name:", false, oldName);
-  if (!newName || newName === oldName) return;
-
-  const { error } = await supabaseClient
-    .from('members')
-    .update({ member_name: newName })
-    .eq('id', id);
-
-  if (error) { alert("Update failed: " + error.message); } 
-  else { loadAdminData(); }
-}
-
-/**
- * Deletes a member from the Supabase 'members' table.
- * Includes a safety check to ensure leaders are handled via the rename/edit function.
- */
-async function deleteMember(id, name) {
-  // 1. Confirm intention with the user
-  if (!confirm(`Permanently remove ${name} from the database?`)) return;
-
-  // 2. Fetch the specific record to check if it's a 'Leader Row'
-  const { data: record, error: fetchError } = await supabaseClient
-    .from('members')
-    .select('member_name, g12_leader')
-    .eq('id', id)
-    .single(); // Get just the one record
-
-  if (fetchError || !record) {
-    alert("Record not found or already deleted.");
-    return;
-  }
-
-  // 3. Safety Guard: Prevent deleting the 'Folder' (Leader entry)
-  // If the name and leader fields match, this is the row that defines the group.
-  if (record.member_name.trim() === record.g12_leader.trim()) {
-    alert(`Cannot delete "${name}" because they are a Leader. Use the Rename/Edit function to manage Leaders.`);
-    return;
-  }
-
-  // 4. Execution: Delete the member if they are not a leader
-  const { error } = await supabaseClient
-    .from('members')
-    .delete()
-    .eq('id', id);
-
-  // 5. Sync Feedback
-  if (error) {
-    alert("Delete failed to sync: " + error.message);
-  } else {
-    // Refresh the UI to show the updated list
-    loadAdminData();
-  }
-}
-
-async function editLeader(oldName, leaderType) {
-   const newName = await promptSmartModal('Rename Leader', `Rename ${leaderType} Leader "${oldName}" to:`, true, oldName);
-  if (!newName || newName.trim() === "" || newName.trim() === oldName) return;
-
-  const cleanNewName = newName.trim();
-
-  // Step 1: Update the 'g12_leader' field for everyone in that group
-  const { error: groupError } = await supabaseClient
-    .from('members')
-    .update({ g12_leader: cleanNewName })
-    .eq('g12_leader', oldName)
-    .eq('leader_type', leaderType);
-
-  if (groupError) {
-    alert("Group sync failed: " + groupError.message);
-    return;
-  }
-
-  // Step 2: Update the leader's own row (where they were a member of themselves)
-  const { error: selfError } = await supabaseClient
-    .from('members')
-    .update({ member_name: cleanNewName })
-    .eq('member_name', oldName)
-    .eq('leader_type', leaderType);
-
-  if (selfError) {
-    alert("Leader self-row sync failed: " + selfError.message);
-  } else {
-    alert(`${leaderType} Leader successfully renamed and synced.`);
-    loadAdminData();
-  }
-}
-
-// --- DATABASE: LEADER REPORTING OPERATIONS ---
-
-/**
- * Fetches leaders from Supabase filtered by the selected category (DH or G12).
- * This ensures the DH list and G12 list are unique.
- */
-async function populateLeaders() {
-  const sel = document.getElementById('leaderSelect');
-  sel.value = ""; // FIX: Reset the selection value
-  hideErr('errLeader');
-  sel.innerHTML = '<option value="">— Loading Leaders... —</option>';
-  
-  const badge = document.getElementById('catBadge2');
-  badge.textContent = selectedCategory === 'DH' ? '🏠 DH Leader' : '🌿 G12 Leader';
-  badge.className = 'cat-badge ' + (selectedCategory === 'DH' ? 'dh' : 'g12');
-
-  try {
-    if (!window.allLeaders || window.allLeaders.length === 0) {
-      await fetchAllLeaders();
-    }
-
-    // Filter leaders by the selectedCategory (using window.leaderTypes)
-    const filteredLeaders = window.allLeaders.filter(name => {
-      const type = window.leaderTypes[name] || 'G12';
-      return type === selectedCategory;
-    });
-
-    if (filteredLeaders.length === 0) {
-      sel.innerHTML = `<option value="">No ${selectedCategory} leaders found</option>`;
-      return;
-    }
-
-    sel.innerHTML = '<option value="">— Choose your name —</option>';
-    filteredLeaders.forEach(name => {
-      const opt = document.createElement('option');
-      opt.value = name;
-      opt.textContent = name;
-      sel.appendChild(opt);
-    });
-
-  } catch (err) {
-    console.error("Error populating leaders:", err.message);
-    sel.innerHTML = '<option value="">Error loading list</option>';
-  }
-}
-
-/**
- * Admin Utility: Normalize all existing leader names in the database
- * Converts all aliases to canonical names in the members table
- */
-async function cleanupLeaderNames() {
-  if (!confirm("⚠️ This will normalize ALL leader names in your database.\n\nThis will:\n• Convert aliases to canonical names\n• Remove title prefixes (Pastor, Pa, etc.)\n• Merge duplicate entries\n\nContinue?")) return;
-  
-  const statusEl = document.createElement('div');
-  statusEl.style.cssText = "position:fixed;top:20px;right:20px;background:rgba(17, 24, 39, 0.75);border:2px solid var(--gold);padding:20px;border-radius:10px;max-width:350px;z-index:9999;font-size:13px;line-height:1.6;";
-  statusEl.innerHTML = "🔄 Phase 1: Fetching all members...";
-  document.body.appendChild(statusEl);
-  
-  try {
-    // 1. Fetch all members
-    const { data: allMembers, error: fetchError } = await supabaseClient
-      .from('members')
-      .select('id, member_name, g12_leader, leader_type');
-    
-    if (fetchError) throw new Error(`Fetch failed: ${fetchError.message}`);
-    if (!allMembers || allMembers.length === 0) {
-      statusEl.innerHTML = "ℹ️ No members found in database.";
-      setTimeout(() => statusEl.remove(), 2000);
-      return;
-    }
-    
-    statusEl.innerHTML = `🔄 Phase 1: Analyzing ${allMembers.length} members...`;
-    
-    // 2. Identify leaders with different spellings
-    const leaderVariations = {};
-    allMembers.forEach(member => {
-      if (member.g12_leader) {
-        const canonical = normalizeLeaderName(member.g12_leader);
-        if (!leaderVariations[canonical]) {
-          leaderVariations[canonical] = new Set();
-        }
-        leaderVariations[canonical].add(member.g12_leader);
       }
-    });
-    
-    // 3. Find records that need normalization
-    const updates = [];
-    let duplicateCount = 0;
-    
-    allMembers.forEach(member => {
-      if (member.g12_leader) {
-        const normalizedName = normalizeLeaderName(member.g12_leader);
-        if (normalizedName !== member.g12_leader) {
-          updates.push({
-            id: member.id,
-            from: member.g12_leader,
-            to: normalizedName
-          });
-          duplicateCount++;
-        }
-      }
-    });
-    
-    if (updates.length === 0) {
-      statusEl.innerHTML = "✅ No duplicates found!\nDatabase is clean.";
-      statusEl.style.background = 'rgba(76, 175, 124, 0.2)';
-      statusEl.style.borderColor = '#4CAF7C';
-      setTimeout(() => statusEl.remove(), 3000);
-      return;
-    }
-    
-    statusEl.innerHTML = `🔄 Phase 2: Updating ${updates.length} records...<br><span style="font-size:11px;opacity:0.8;">This may take a moment...</span>`;
-    
-    // 4. Perform batch updates
-    let successCount = 0;
-    let errorCount = 0;
-    let failedUpdates = [];
-    
-    for (let i = 0; i < updates.length; i++) {
-      const update = updates[i];
+
+      // Step 2: Insert into Supabase
       const { error } = await supabaseClient
         .from('members')
-        .update({ g12_leader: update.to })
-        .eq('id', update.id);
-      
+        .insert([{
+          member_name: cleanName,
+          g12_leader: leaderName,
+          leader_type: leaderType
+        }]);
+
       if (error) {
-        errorCount++;
-        failedUpdates.push(`${update.from} → ${update.to}`);
+        console.error("Sync Error:", error.message);
+        alert("Failed to sync to Supabase: " + error.message);
       } else {
-        successCount++;
-      }
-      
-      // Show progress every 10 records
-      if ((i + 1) % 10 === 0) {
-        statusEl.innerHTML = `🔄 Phase 2: Updated ${i + 1}/${updates.length} records...`;
+        alert("Successfully synced to database!");
+        loadAdminData(); // Refresh the list
       }
     }
-    
-    // 5. Generate summary
-    const uniqueLeaders = Object.keys(leaderVariations).length;
-    let summary = `✅ Cleanup Complete!\n\n`;
-    summary += `📊 Summary:\n`;
-    summary += `• Unique canonical leaders: ${uniqueLeaders}\n`;
-    summary += `• Records updated: ${successCount}\n`;
-    
-    if (errorCount > 0) {
-      summary += `• Errors: ${errorCount}\n`;
+
+    async function editMember(id, oldName) {
+      const newName = await promptSmartModal('Rename Member', "Enter new name:", false, oldName);
+      if (!newName || newName === oldName) return;
+
+      const { error } = await supabaseClient
+        .from('members')
+        .update({ member_name: newName })
+        .eq('id', id);
+
+      if (error) { alert("Update failed: " + error.message); }
+      else { loadAdminData(); }
     }
-    
-    // Show variations
-    let variationCount = 0;
-    for (let [canonical, variations] of Object.entries(leaderVariations)) {
-      if (variations.size > 1) {
-        variationCount++;
+
+    /**
+     * Deletes a member from the Supabase 'members' table.
+     * Includes a safety check to ensure leaders are handled via the rename/edit function.
+     */
+    async function deleteMember(id, name) {
+      // 1. Confirm intention with the user
+      if (!confirm(`Permanently remove ${name} from the database?`)) return;
+
+      // 2. Fetch the specific record to check if it's a 'Leader Row'
+      const { data: record, error: fetchError } = await supabaseClient
+        .from('members')
+        .select('member_name, g12_leader')
+        .eq('id', id)
+        .single(); // Get just the one record
+
+      if (fetchError || !record) {
+        alert("Record not found or already deleted.");
+        return;
+      }
+
+      // 3. Safety Guard: Prevent deleting the 'Folder' (Leader entry)
+      // If the name and leader fields match, this is the row that defines the group.
+      if (record.member_name.trim() === record.g12_leader.trim()) {
+        alert(`Cannot delete "${name}" because they are a Leader. Use the Rename/Edit function to manage Leaders.`);
+        return;
+      }
+
+      // 4. Execution: Delete the member if they are not a leader
+      const { error } = await supabaseClient
+        .from('members')
+        .delete()
+        .eq('id', id);
+
+      // 5. Sync Feedback
+      if (error) {
+        alert("Delete failed to sync: " + error.message);
+      } else {
+        // Refresh the UI to show the updated list
+        loadAdminData();
       }
     }
-    
-    if (variationCount > 0) {
-      summary += `• Duplicate variations fixed: ${variationCount}`;
+
+    async function editLeader(oldName, leaderType) {
+      const newName = await promptSmartModal('Rename Leader', `Rename ${leaderType} Leader "${oldName}" to:`, true, oldName);
+      if (!newName || newName.trim() === "" || newName.trim() === oldName) return;
+
+      const cleanNewName = newName.trim();
+
+      // Step 1: Update the 'g12_leader' field for everyone in that group
+      const { error: groupError } = await supabaseClient
+        .from('members')
+        .update({ g12_leader: cleanNewName })
+        .eq('g12_leader', oldName)
+        .eq('leader_type', leaderType);
+
+      if (groupError) {
+        alert("Group sync failed: " + groupError.message);
+        return;
+      }
+
+      // Step 2: Update the leader's own row (where they were a member of themselves)
+      const { error: selfError } = await supabaseClient
+        .from('members')
+        .update({ member_name: cleanNewName })
+        .eq('member_name', oldName)
+        .eq('leader_type', leaderType);
+
+      if (selfError) {
+        alert("Leader self-row sync failed: " + selfError.message);
+      } else {
+        alert(`${leaderType} Leader successfully renamed and synced.`);
+        loadAdminData();
+      }
     }
-    
-    statusEl.innerHTML = summary;
-    statusEl.style.background = successCount > 0 ? 'rgba(76, 175, 124, 0.15)' : 'rgba(224, 90, 90, 0.15)';
-    statusEl.style.borderColor = successCount > 0 ? '#4CAF7C' : 'var(--danger)';
-    
-    console.log("Cleanup Details:", { successCount, errorCount, uniqueLeaders, failedUpdates });
-    
-    // Refresh the admin data display
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    loadAdminData();
-    
-    setTimeout(() => statusEl.remove(), 6000);
-    
-  } catch (err) {
-    console.error("Cleanup Error:", err);
-    statusEl.innerHTML = `❌ Error: ${err.message}`;
-    statusEl.style.background = 'rgba(224, 90, 90, 0.15)';
-    statusEl.style.borderColor = 'var(--danger)';
-    setTimeout(() => statusEl.remove(), 5000);
-  }
-}
 
-async function renderAttendance() {
-  const leader = document.getElementById('leaderSelect').value;
-  const list = document.getElementById('memberList');
-  list.innerHTML = '<p style="text-align:center;">Loading members...</p>';
+    // --- DATABASE: LEADER REPORTING OPERATIONS ---
 
-  const { data, error } = await supabaseClient
-    .from('members')
-    .select('id, member_name, g12_leader');
+    /**
+     * Fetches leaders from Supabase filtered by the selected category (DH or G12).
+     * This ensures the DH list and G12 list are unique.
+     */
+    async function populateLeaders() {
+      const sel = document.getElementById('leaderSelect');
+      sel.value = ""; // FIX: Reset the selection value
+      hideErr('errLeader');
+      sel.innerHTML = '<option value="">— Loading Leaders... —</option>';
 
-  if (error) { list.innerHTML = '<p>Error loading.</p>'; return; }
+      const badge = document.getElementById('catBadge2');
+      badge.textContent = selectedCategory === 'DH' ? '🏠 DH Leader' : '🌿 G12 Leader';
+      badge.className = 'cat-badge ' + (selectedCategory === 'DH' ? 'dh' : 'g12');
 
-  const canonicalLeader = normalizeLeaderName(leader);
+      try {
+        if (!window.allLeaders || window.allLeaders.length === 0) {
+          await fetchAllLeaders();
+        }
 
-  // Filter members whose normalized g12_leader matches the selected leader, excluding leader's self row
-  const filteredData = (data || []).filter(m => {
-    if (!m.g12_leader) return false;
-    const mLeaderNorm = normalizeLeaderName(m.g12_leader);
-    const mNameNorm = normalizeLeaderName(m.member_name);
-    return (mLeaderNorm === canonicalLeader || m.g12_leader.trim() === leader.trim()) &&
-           mNameNorm !== canonicalLeader && m.member_name.trim() !== leader.trim();
-  });
+        // Filter leaders by the selectedCategory (using window.leaderTypes)
+        const filteredLeaders = window.allLeaders.filter(name => {
+          const type = window.leaderTypes[name] || 'G12';
+          return type === selectedCategory;
+        });
 
-  currentMembers = [...new Set(filteredData.map(m => m.member_name))];
-  list.innerHTML = ''; 
+        if (filteredLeaders.length === 0) {
+          sel.innerHTML = `<option value="">No ${selectedCategory} leaders found</option>`;
+          return;
+        }
 
-  if (currentMembers.length === 0) {
-    list.innerHTML = '<p style="text-align:center; color:var(--muted);">No members found for this leader.</p>';
-    return;
-  }
+        sel.innerHTML = '<option value="">— Choose your name —</option>';
+        filteredLeaders.forEach(name => {
+          const opt = document.createElement('option');
+          opt.value = name;
+          opt.textContent = name;
+          sel.appendChild(opt);
+        });
 
-  // Clear any error messages when rendering a fresh form
-  hideErr('errAtt');
+      } catch (err) {
+        console.error("Error populating leaders:", err.message);
+        sel.innerHTML = '<option value="">Error loading list</option>';
+      }
+    }
 
-  currentMembers.forEach((name, i) => {
-    const row = document.createElement('div');
-    row.className = 'member-row';
-    row.innerHTML = `
+    /**
+     * Admin Utility: Normalize all existing leader names in the database
+     * Converts all aliases to canonical names in the members table
+     */
+    async function cleanupLeaderNames() {
+      if (!confirm("⚠️ This will normalize ALL leader names in your database.\n\nThis will:\n• Convert aliases to canonical names\n• Remove title prefixes (Pastor, Pa, etc.)\n• Merge duplicate entries\n\nContinue?")) return;
+
+      const statusEl = document.createElement('div');
+      statusEl.style.cssText = "position:fixed;top:20px;right:20px;background:rgba(17, 24, 39, 0.75);border:2px solid var(--gold);padding:20px;border-radius:10px;max-width:350px;z-index:9999;font-size:13px;line-height:1.6;";
+      statusEl.innerHTML = "🔄 Phase 1: Fetching all members...";
+      document.body.appendChild(statusEl);
+
+      try {
+        // 1. Fetch all members
+        const { data: allMembers, error: fetchError } = await supabaseClient
+          .from('members')
+          .select('id, member_name, g12_leader, leader_type');
+
+        if (fetchError) throw new Error(`Fetch failed: ${fetchError.message}`);
+        if (!allMembers || allMembers.length === 0) {
+          statusEl.innerHTML = "ℹ️ No members found in database.";
+          setTimeout(() => statusEl.remove(), 2000);
+          return;
+        }
+
+        statusEl.innerHTML = `🔄 Phase 1: Analyzing ${allMembers.length} members...`;
+
+        // 2. Identify leaders with different spellings
+        const leaderVariations = {};
+        allMembers.forEach(member => {
+          if (member.g12_leader) {
+            const canonical = normalizeLeaderName(member.g12_leader);
+            if (!leaderVariations[canonical]) {
+              leaderVariations[canonical] = new Set();
+            }
+            leaderVariations[canonical].add(member.g12_leader);
+          }
+        });
+
+        // 3. Find records that need normalization
+        const updates = [];
+        let duplicateCount = 0;
+
+        allMembers.forEach(member => {
+          if (member.g12_leader) {
+            const normalizedName = normalizeLeaderName(member.g12_leader);
+            if (normalizedName !== member.g12_leader) {
+              updates.push({
+                id: member.id,
+                from: member.g12_leader,
+                to: normalizedName
+              });
+              duplicateCount++;
+            }
+          }
+        });
+
+        if (updates.length === 0) {
+          statusEl.innerHTML = "✅ No duplicates found!\nDatabase is clean.";
+          statusEl.style.background = 'rgba(76, 175, 124, 0.2)';
+          statusEl.style.borderColor = '#4CAF7C';
+          setTimeout(() => statusEl.remove(), 3000);
+          return;
+        }
+
+        statusEl.innerHTML = `🔄 Phase 2: Updating ${updates.length} records...<br><span style="font-size:11px;opacity:0.8;">This may take a moment...</span>`;
+
+        // 4. Perform batch updates
+        let successCount = 0;
+        let errorCount = 0;
+        let failedUpdates = [];
+
+        for (let i = 0; i < updates.length; i++) {
+          const update = updates[i];
+          const { error } = await supabaseClient
+            .from('members')
+            .update({ g12_leader: update.to })
+            .eq('id', update.id);
+
+          if (error) {
+            errorCount++;
+            failedUpdates.push(`${update.from} → ${update.to}`);
+          } else {
+            successCount++;
+          }
+
+          // Show progress every 10 records
+          if ((i + 1) % 10 === 0) {
+            statusEl.innerHTML = `🔄 Phase 2: Updated ${i + 1}/${updates.length} records...`;
+          }
+        }
+
+        // 5. Generate summary
+        const uniqueLeaders = Object.keys(leaderVariations).length;
+        let summary = `✅ Cleanup Complete!\n\n`;
+        summary += `📊 Summary:\n`;
+        summary += `• Unique canonical leaders: ${uniqueLeaders}\n`;
+        summary += `• Records updated: ${successCount}\n`;
+
+        if (errorCount > 0) {
+          summary += `• Errors: ${errorCount}\n`;
+        }
+
+        // Show variations
+        let variationCount = 0;
+        for (let [canonical, variations] of Object.entries(leaderVariations)) {
+          if (variations.size > 1) {
+            variationCount++;
+          }
+        }
+
+        if (variationCount > 0) {
+          summary += `• Duplicate variations fixed: ${variationCount}`;
+        }
+
+        statusEl.innerHTML = summary;
+        statusEl.style.background = successCount > 0 ? 'rgba(76, 175, 124, 0.15)' : 'rgba(224, 90, 90, 0.15)';
+        statusEl.style.borderColor = successCount > 0 ? '#4CAF7C' : 'var(--danger)';
+
+        console.log("Cleanup Details:", { successCount, errorCount, uniqueLeaders, failedUpdates });
+
+        // Refresh the admin data display
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        loadAdminData();
+
+        setTimeout(() => statusEl.remove(), 6000);
+
+      } catch (err) {
+        console.error("Cleanup Error:", err);
+        statusEl.innerHTML = `❌ Error: ${err.message}`;
+        statusEl.style.background = 'rgba(224, 90, 90, 0.15)';
+        statusEl.style.borderColor = 'var(--danger)';
+        setTimeout(() => statusEl.remove(), 5000);
+      }
+    }
+
+    async function renderAttendance() {
+      const leader = document.getElementById('leaderSelect').value;
+      const list = document.getElementById('memberList');
+      list.innerHTML = '<p style="text-align:center;">Loading members...</p>';
+
+      const { data, error } = await supabaseClient
+        .from('members')
+        .select('id, member_name, g12_leader');
+
+      if (error) { list.innerHTML = '<p>Error loading.</p>'; return; }
+
+      const canonicalLeader = normalizeLeaderName(leader);
+
+      // Filter members whose normalized g12_leader matches the selected leader, excluding leader's self row
+      const filteredData = (data || []).filter(m => {
+        if (!m.g12_leader) return false;
+        const mLeaderNorm = normalizeLeaderName(m.g12_leader);
+        const mNameNorm = normalizeLeaderName(m.member_name);
+        return (mLeaderNorm === canonicalLeader || m.g12_leader.trim() === leader.trim()) &&
+          mNameNorm !== canonicalLeader && m.member_name.trim() !== leader.trim();
+      });
+
+      currentMembers = [...new Set(filteredData.map(m => m.member_name))];
+      list.innerHTML = '';
+
+      if (currentMembers.length === 0) {
+        list.innerHTML = '<p style="text-align:center; color:var(--muted);">No members found for this leader.</p>';
+        return;
+      }
+
+      // Clear any error messages when rendering a fresh form
+      hideErr('errAtt');
+
+      currentMembers.forEach((name, i) => {
+        const row = document.createElement('div');
+        row.className = 'member-row';
+        row.innerHTML = `
       <div class="member-main">
         <span class="member-name">${name}</span>
         <div class="check-cell"><div class="radio-wrap present-wrap">
@@ -1430,185 +1867,186 @@ async function renderAttendance() {
       <div class="absence-reason" id="reason_${i}">
         <input type="text" placeholder="Reason?" id="reasonText_${i}" oninput="clearReasonError(${i})"/>
       </div>`;
-    list.appendChild(row);
-  });
-}
-
-async function submitReport() {
-  const leader = document.getElementById('leaderSelect').value;
-  const date = document.getElementById('serviceDate').value;
-  
-  let validationError = false;
-  
-  // Validate all radios are checked
-  currentMembers.forEach((name, i) => {
-    const radio = document.querySelector(`input[name="att_${i}"]:checked`);
-    if (!radio) validationError = true;
-  });
-
-  if (validationError) {
-    showErr('errAtt');
-    return;
-  }
-
-  // Build the data array
-  const reportsToSubmit = currentMembers.map((name, i) => {
-    const radio = document.querySelector(`input[name="att_${i}"]:checked`);
-    const reasonField = document.getElementById(`reasonText_${i}`);
-    
-    return {
-      report_date: date,
-      leader_name: leader,
-      member_name: name,
-      status: radio.value === 'present' ? 'Present' : 'Absent',
-      notes: reasonField.value || "",
-      zone: selectedCategory,
-      service_type: selectedService // Added this to capture your Step 2 selection
-    };
-  });
-
-  // Send to Supabase
-  const { data, error } = await supabaseClient
-    .from('g12_reports')
-    .insert(reportsToSubmit);
-
-  if (error) {
-    alert("Supabase Error: " + error.message);
-  } else {
-    // Navigate to success screen
-    document.getElementById('step3').classList.remove('active');
-    document.getElementById('successScreen').classList.add('active');
-    document.getElementById('successMsg').textContent = `Report saved for ${leader} on ${formatDate(date)}`;
-  }
-}
-
-// --- UTILITIES ---
-
-function onAttChange(i, val) {
-  const row = document.getElementById('row_' + i);
-  const reason = document.getElementById('reason_' + i);
-  const reasonInput = document.getElementById(`reasonText_${i}`);
-  
-  if (val === 'absent') {
-    // Show the reason field when Absent is selected
-    reason?.classList.add('show');
-    // Auto-focus on the reason field
-    reasonInput?.focus();
-    // Clear any previous error styling
-    reasonInput?.classList.remove('error');
-  } else if (val === 'present') {
-    // Hide the reason field when Present is selected
-    reason?.classList.remove('show');
-    // Clear any error styling and reset the field
-    if (reasonInput) {
-      reasonInput.classList.remove('error');
-      reasonInput.value = ''; // Clear any previous reason text
+        list.appendChild(row);
+      });
     }
-  }
-  
-  // Always clear the general error message when user changes attendance
-  hideErr('errAtt');
-}
 
-function clearReasonError(i) {
-  const reasonInput = document.getElementById(`reasonText_${i}`);
-  reasonInput?.classList.remove('error');
-}
+    async function submitReport() {
+      const leader = document.getElementById('leaderSelect').value;
+      const date = document.getElementById('serviceDate').value;
 
-function restart() {
-  // Reset all steps and screens
-  document.getElementById('adminDashboard').classList.remove('active');
-  document.getElementById('successScreen').classList.remove('active');
-  document.getElementById('progressWrap').style.display = 'flex';
+      let validationError = false;
 
-  // FIX: Explicitly hide all error messages
-  const errorMessages = document.querySelectorAll('.error-msg');
-  errorMessages.forEach(msg => msg.classList.remove('show'));
+      // Validate all radios are checked
+      currentMembers.forEach((name, i) => {
+        const radio = document.querySelector(`input[name="att_${i}"]:checked`);
+        if (!radio) validationError = true;
+      });
 
-  // Reset global variables and UI elements
-  selectedCategory = ''; 
-  selectedService = ''; 
-  currentMembers = [];
-  currentStep = 1;
-  document.getElementById('leaderSelect').value = '';
-  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('selected'));
-  document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
+      if (validationError) {
+        showErr('errAtt');
+        return;
+      }
 
-  updateProgress();
-  document.getElementById('step1').classList.add('active');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+      // Build the data array
+      const reportsToSubmit = currentMembers.map((name, i) => {
+        const radio = document.querySelector(`input[name="att_${i}"]:checked`);
+        const reasonField = document.getElementById(`reasonText_${i}`);
 
-function formatDate(d) {
-  return new Date(d).toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long' });
-}
+        return {
+          report_date: date,
+          leader_name: leader,
+          member_name: name,
+          status: radio.value === 'present' ? 'Present' : 'Absent',
+          notes: reasonField.value || "",
+          zone: selectedCategory,
+          service_type: selectedService // Added this to capture your Step 2 selection
+        };
+      });
 
-function showErr(id) { document.getElementById(id).classList.add('show'); }
-function hideErr(id) { document.getElementById(id).classList.remove('show'); }
+      // Send to Supabase
+      const { data, error } = await supabaseClient
+        .from('g12_reports')
+        .insert(reportsToSubmit);
 
-document.getElementById('serviceDate').valueAsDate = new Date();
-
-const d = new Date();
-const liveDateEl = document.getElementById('live-date');
-if(liveDateEl) {
-    liveDateEl.textContent = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
-}
-
-// Keyboard navigation: Press Enter on Step 1 to move to Step 2
-document.addEventListener('keydown', function(event) {
-  if (event.key === 'Enter') {
-    if (currentStep === 1) {
-      event.preventDefault();
-      goStep(2);
+      if (error) {
+        alert("Supabase Error: " + error.message);
+      } else {
+        // Navigate to success screen
+        document.getElementById('step3').classList.remove('active');
+        document.getElementById('successScreen').classList.add('active');
+        document.getElementById('successMsg').textContent = `Report saved for ${leader} on ${formatDate(date)}`;
+      }
     }
-  }
-});
 
-// URL parameters handler to pre-fill the form
-window.addEventListener('DOMContentLoaded', async () => {
-  await fetchAllLeaders();
-  const urlParams = new URLSearchParams(window.location.search);
-  const paramLeader = urlParams.get('leader');
-  const paramType = urlParams.get('type'); // 'G12' or 'DH'
-  
-  if (paramType && (paramType === 'G12' || paramType === 'DH')) {
-    // 1. Select category
-    selectedCategory = paramType;
-    
-    // Find the corresponding element
-    const tabs = document.querySelectorAll('.cat-tab');
-    let tabEl = null;
-    tabs.forEach(t => {
-      if (t.textContent.toUpperCase().includes(paramType)) {
-        tabEl = t;
+    // --- UTILITIES ---
+
+    function onAttChange(i, val) {
+      const row = document.getElementById('row_' + i);
+      const reason = document.getElementById('reason_' + i);
+      const reasonInput = document.getElementById(`reasonText_${i}`);
+
+      if (val === 'absent') {
+        // Show the reason field when Absent is selected
+        reason?.classList.add('show');
+        // Auto-focus on the reason field
+        reasonInput?.focus();
+        // Clear any previous error styling
+        reasonInput?.classList.remove('error');
+      } else if (val === 'present') {
+        // Hide the reason field when Present is selected
+        reason?.classList.remove('show');
+        // Clear any error styling and reset the field
+        if (reasonInput) {
+          reasonInput.classList.remove('error');
+          reasonInput.value = ''; // Clear any previous reason text
+        }
+      }
+
+      // Always clear the general error message when user changes attendance
+      hideErr('errAtt');
+    }
+
+    function clearReasonError(i) {
+      const reasonInput = document.getElementById(`reasonText_${i}`);
+      reasonInput?.classList.remove('error');
+    }
+
+    function restart() {
+      // Reset all steps and screens
+      document.getElementById('adminDashboard').classList.remove('active');
+      document.getElementById('successScreen').classList.remove('active');
+      document.getElementById('progressWrap').style.display = 'flex';
+
+      // FIX: Explicitly hide all error messages
+      const errorMessages = document.querySelectorAll('.error-msg');
+      errorMessages.forEach(msg => msg.classList.remove('show'));
+
+      // Reset global variables and UI elements
+      selectedCategory = '';
+      selectedService = '';
+      currentMembers = [];
+      currentStep = 1;
+      document.getElementById('leaderSelect').value = '';
+      document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('selected'));
+      document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
+
+      updateProgress();
+      document.getElementById('step1').classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function formatDate(d) {
+      return new Date(d).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    }
+
+    function showErr(id) { document.getElementById(id).classList.add('show'); }
+    function hideErr(id) { document.getElementById(id).classList.remove('show'); }
+
+    document.getElementById('serviceDate').valueAsDate = new Date();
+
+    const d = new Date();
+    const liveDateEl = document.getElementById('live-date');
+    if (liveDateEl) {
+      liveDateEl.textContent = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    // Keyboard navigation: Press Enter on Step 1 to move to Step 2
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        if (currentStep === 1) {
+          event.preventDefault();
+          goStep(2);
+        }
       }
     });
-    
-    if (tabEl) {
-      selectCategory(paramType, tabEl);
-    }
-    
-    // 2. Go to Step 2 (populates leaders list)
-    await populateLeaders();
-    goStep(2);
-    
-    // 3. Pre-select leader
-    if (paramLeader) {
-      const sel = document.getElementById('leaderSelect');
-      const normalizedParamLeader = normalizeLeaderName(paramLeader);
-      
-      // Wait slightly to make sure the options are populated
-      setTimeout(() => {
-        for (let i = 0; i < sel.options.length; i++) {
-          if (normalizeLeaderName(sel.options[i].value) === normalizedParamLeader) {
-            sel.selectedIndex = i;
-            break;
+
+    // URL parameters handler to pre-fill the form
+    window.addEventListener('DOMContentLoaded', async () => {
+      await fetchAllLeaders();
+      const urlParams = new URLSearchParams(window.location.search);
+      const paramLeader = urlParams.get('leader');
+      const paramType = urlParams.get('type'); // 'G12' or 'DH'
+
+      if (paramType && (paramType === 'G12' || paramType === 'DH')) {
+        // 1. Select category
+        selectedCategory = paramType;
+
+        // Find the corresponding element
+        const tabs = document.querySelectorAll('.cat-tab');
+        let tabEl = null;
+        tabs.forEach(t => {
+          if (t.textContent.toUpperCase().includes(paramType)) {
+            tabEl = t;
           }
+        });
+
+        if (tabEl) {
+          selectCategory(paramType, tabEl);
         }
-      }, 200);
-    }
-  }
-});
-</script>
+
+        // 2. Go to Step 2 (populates leaders list)
+        await populateLeaders();
+        goStep(2);
+
+        // 3. Pre-select leader
+        if (paramLeader) {
+          const sel = document.getElementById('leaderSelect');
+          const normalizedParamLeader = normalizeLeaderName(paramLeader);
+
+          // Wait slightly to make sure the options are populated
+          setTimeout(() => {
+            for (let i = 0; i < sel.options.length; i++) {
+              if (normalizeLeaderName(sel.options[i].value) === normalizedParamLeader) {
+                sel.selectedIndex = i;
+                break;
+              }
+            }
+          }, 200);
+        }
+      }
+    });
+  </script>
 </body>
+
 </html>

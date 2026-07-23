@@ -51,17 +51,9 @@
     body::before {
       content: '';
       position: fixed;
-      inset: -20px;
-      background: url('fyf.jpg') center center / cover no-repeat;
-      filter: blur(14px) brightness(0.55);
-      z-index: -2;
-    }
-
-    body::after {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(13, 27, 42, 0.45) 0%, rgba(27, 47, 69, 0.38) 100%);
+      top: -15px; left: -15px; right: -15px; bottom: -15px;
+      background: url('fyf.jpg') center center / cover no-repeat fixed;
+      filter: blur(6px);
       z-index: -1;
     }
 
@@ -1452,14 +1444,14 @@
     .login-brand span {
       font-size: 13px;
       font-weight: 600;
-      color: var(--navy);
+      color: #ffffff;
       letter-spacing: 0.5px;
     }
 
     .login-subtitle-right {
       font-size: 11px;
       font-weight: 500;
-      color: var(--navy);
+      color: rgba(255, 255, 255, 0.85);
       text-transform: uppercase;
       letter-spacing: 1px;
     }
@@ -1475,7 +1467,7 @@
       font-family: 'Playfair Display', serif;
       font-size: 36px;
       font-weight: 600;
-      color: var(--navy);
+      color: #ffffff;
       margin-bottom: 20px;
       line-height: 1.2;
     }
@@ -1486,12 +1478,12 @@
       align-items: center;
       gap: 6px;
       padding: 6px 16px;
-      background: rgba(255, 255, 255, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.6);
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.35);
       border-radius: 20px;
       font-size: 12px;
       font-weight: 600;
-      color: var(--navy);
+      color: #ffffff;
       margin-bottom: 25px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
@@ -1510,27 +1502,27 @@
     .login-input-icon {
       position: absolute;
       left: 18px;
-      color: var(--text-muted);
+      color: rgba(255, 255, 255, 0.7);
       font-size: 16px;
     }
 
     .login-input-field {
       width: 100%;
       padding: 14px 20px 14px 45px !important;
-      background: rgba(255, 255, 255, 0.5) !important;
-      border: 1px solid rgba(255, 255, 255, 0.5) !important;
+      background: rgba(255, 255, 255, 0.2) !important;
+      border: 1px solid rgba(255, 255, 255, 0.35) !important;
       border-radius: 30px !important;
       font-size: 14px !important;
       font-family: 'DM Sans', sans-serif !important;
-      color: var(--navy) !important;
+      color: #ffffff !important;
       outline: none !important;
       transition: all 0.2s;
     }
 
     .login-input-field:focus {
-      background: rgba(255, 255, 255, 0.7) !important;
-      border-color: var(--gold) !important;
-      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1) !important;
+      background: rgba(255, 255, 255, 0.35) !important;
+      border-color: #3b82f6 !important;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.25) !important;
     }
 
     .login-forgot-link {
@@ -1538,17 +1530,17 @@
       right: 18px;
       font-size: 11px;
       font-weight: 600;
-      color: var(--navy);
+      color: #ffffff;
       text-decoration: none;
-      background: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.2);
       padding: 4px 10px;
       border-radius: 12px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
     }
 
     .login-forgot-link:hover {
-      color: #000;
-      background: #fff;
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.35);
     }
 
     .login-action-row {
@@ -1560,7 +1552,7 @@
 
     .login-disclosure-text {
       font-size: 11px;
-      color: var(--text-muted);
+      color: #ffffff;
       line-height: 1.5;
     }
 
@@ -1645,13 +1637,13 @@
 
     .bypass-text span {
       font-size: 10px;
-      color: rgba(255, 255, 255, 0.55);
+      color: rgba(255, 255, 255, 0.75);
     }
 
     .bypass-action {
       font-size: 11px;
       font-weight: 600;
-      color: var(--navy);
+      color: #ffffff;
       display: flex;
       align-items: center;
       gap: 4px;
@@ -1691,12 +1683,12 @@
 
     .social-card-text strong {
       font-size: 13px;
-      color: var(--navy);
+      color: #090e1a;
     }
 
     .social-card-text span {
       font-size: 10px;
-      color: var(--text-muted);
+      color: #374151;
     }
 
     .social-card-links {
@@ -1724,7 +1716,7 @@
     .date-side-day {
       font-size: 40px;
       font-weight: 300;
-      color: var(--navy);
+      color: #ffffff;
       line-height: 1.1;
       font-family: 'DM Sans', sans-serif;
     }
@@ -1732,7 +1724,7 @@
     .date-side-num {
       font-size: 40px;
       font-weight: 500;
-      color: rgba(13, 27, 42, 0.4);
+      color: rgba(255, 255, 255, 0.7);
       line-height: 1.1;
       font-family: 'DM Sans', sans-serif;
     }
@@ -1746,12 +1738,12 @@
     .date-header-title {
       font-size: 14px;
       font-weight: 600;
-      color: var(--navy);
+      color: #ffffff;
     }
 
     .date-header-sub {
       font-size: 11px;
-      color: var(--text-muted);
+      color: rgba(255, 255, 255, 0.75);
     }
 
     /* Overlapping Golden Sun Sphere */
@@ -1799,7 +1791,7 @@
       gap: 8px;
       font-size: 11px;
       font-weight: 600;
-      color: var(--navy);
+      color: #090e1a;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       margin-bottom: 12px;
@@ -1905,14 +1897,14 @@
       font-family: 'Playfair Display', serif;
       font-size: 13.5px;
       font-weight: 700;
-      color: var(--navy);
+      color: #090e1a;
       margin-bottom: 6px;
       line-height: 1.25;
     }
 
     .announcement-slide p {
       font-size: 11px;
-      color: var(--text-muted);
+      color: #1f2937;
       line-height: 1.45;
       font-weight: 500;
       margin: 0;
@@ -1926,7 +1918,7 @@
     .ann-action {
       font-size: 9.5px;
       font-weight: 600;
-      color: var(--navy);
+      color: #090e1a;
       margin-top: 6px;
       display: inline-flex;
       align-items: center;
@@ -2009,25 +2001,34 @@
     }
 
     .social-btn {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--navy);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #fff;
-      display: flex;
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 13px;
       text-decoration: none;
-      transition: all 0.2s;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+      border: none;
+      flex-shrink: 0;
     }
 
     .social-btn:hover {
-      background: var(--gold);
-      border-color: var(--gold);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+      transform: translateY(-3px) scale(1.08);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+    }
+
+    .social-btn.instagram {
+      background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%,#d6249f 60%,#285AEB 90%);
+    }
+
+    .social-btn.whatsapp {
+      background: #25D366;
+    }
+
+    .social-btn.youtube {
+      background: #FF0000;
     }
 
     /* RESPONSIVENESS */
@@ -2688,12 +2689,15 @@
           </div>
 
           <div class="social-card-links">
-            <a href="https://instagram.com/ncfunn_" target="_blank" class="social-btn" title="Follow us on Instagram"><i
-                class="ti ti-brand-instagram"></i></a>
-            <a href="https://youtube.com/@ncf_unn" target="_blank" class="social-btn" title="Subscribe on YouTube"><i
-                class="ti ti-brand-youtube"></i></a>
-            <a href="https://whatsapp.com/channel/0029VabzpPk7YSczozES2p3U" target="_blank" class="social-btn"
-              title="Join WhatsApp Channel"><i class="ti ti-brand-whatsapp"></i></a>
+            <a href="https://instagram.com/ncfunn_" target="_blank" class="social-btn instagram" title="Follow us on Instagram">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+            </a>
+            <a href="https://youtube.com/@ncf_unn" target="_blank" class="social-btn youtube" title="Subscribe on YouTube">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            </a>
+            <a href="https://whatsapp.com/channel/0029VabzpPk7YSczozES2p3U" target="_blank" class="social-btn whatsapp" title="Join WhatsApp Channel">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347z"/></svg>
+            </a>
           </div>
         </div>
       </div>
@@ -3484,44 +3488,54 @@
         deletedLeaders = [];
       }
 
-      const leaders = new Set();
-      const leaderTypes = {};
+      const leaderMap = {};
 
       // Add from static LEADER_DICTIONARY first
-      LEADER_DICTIONARY.forEach(l => {
-        const canonical = normalizeLeaderName(l.name).toLowerCase().trim();
-        const raw = l.name.toLowerCase().trim();
-        if (l.name !== 'Unassigned' && !deletedLeaders.includes(canonical) && !deletedLeaders.includes(raw)) {
-          leaders.add(l.name);
-          leaderTypes[l.name] = 'G12';
+      LEADER_DICTIONARY.forEach(entry => {
+        const canonicalDict = normalizeLeaderName(entry.name).toLowerCase().trim();
+        const rawDict = entry.name.toLowerCase().trim();
+        if (entry.name !== 'Unassigned' && !deletedLeaders.includes(canonicalDict) && !deletedLeaders.includes(rawDict)) {
+          leaderMap[entry.name] = {
+            name: entry.name,
+            type: 'G12'
+          };
         }
       });
 
       // Add from state.members dynamically
       state.members.forEach(m => {
-        if (m.g12_leader) {
-          const canonical = normalizeLeaderName(m.g12_leader);
-          const canonicalLower = canonical.toLowerCase().trim();
-          if (canonical !== 'Unassigned' && !deletedLeaders.includes(canonicalLower) && !deletedLeaders.includes(m.g12_leader.toLowerCase().trim())) {
-            leaders.add(canonical);
-            if (m.leader_type === 'G12' || m.leader_type === 'DH') {
-              leaderTypes[canonical] = m.leader_type;
-            }
-          }
+        const leaderName = m.g12_leader;
+        if (!leaderName) return;
+
+        const canonical = normalizeLeaderName(leaderName);
+        const canonicalLower = canonical.toLowerCase().trim();
+        const rawLower = leaderName.toLowerCase().trim();
+
+        if (canonical === 'Unassigned' || deletedLeaders.includes(canonicalLower) || deletedLeaders.includes(rawLower)) {
+          return;
         }
-        if (m.leader_type === 'G12' || m.leader_type === 'DH') {
-          if (m.member_name) {
-            const canonicalName = normalizeLeaderName(m.member_name);
-            const canonicalLower = canonicalName.toLowerCase().trim();
-            if (!deletedLeaders.includes(canonicalLower) && !deletedLeaders.includes(m.member_name.toLowerCase().trim())) {
-              leaders.add(canonicalName);
-              leaderTypes[canonicalName] = m.leader_type;
-            }
-          }
+
+        if (!leaderMap[canonical]) {
+          leaderMap[canonical] = {
+            name: canonical,
+            type: m.leader_type || 'G12'
+          };
+        }
+
+        if (m.leader_type === 'DH') {
+          leaderMap[canonical].type = 'DH';
         }
       });
 
-      window.allLeaders = [...leaders].sort();
+      const leaders = [];
+      const leaderTypes = {};
+
+      Object.values(leaderMap).forEach(l => {
+        leaders.push(l.name);
+        leaderTypes[l.name] = l.type;
+      });
+
+      window.allLeaders = leaders.sort();
       window.leaderTypes = leaderTypes;
 
       datalist.innerHTML = '';
