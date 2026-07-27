@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DC NSK Member Registration</title>
+  <link rel="icon" type="image/png" href="images.png?v=3">
+<link rel="shortcut icon" type="image/x-icon" href="images.png?v=3">
+<link rel="apple-touch-icon" href="images.png?v=3">
+ 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    // Initialize Supabase exactly like your main site
+    const supabaseUrl = "https://cjbedftdexzcsydwayig.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmVkZnRkZXh6Y3N5ZHdheWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTUwMjgsImV4cCI6MjA5MzYzMTAyOH0.xsvtG5NmI_9TDZQ5-MhcjtX4UIIAiH2kyOlpIPDkCdg";
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+  </script>
+
+  <style>
+    :root {
+      --gold: #3b82f6; --gold-light: #60a5fa;
+      --deep: #090e1a; --ink: #0f172a; --card: rgba(17, 24, 39, 0.75);
+      --text: #E8EDF2; --muted: #A8B2D8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0 0 40px;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: -15px; left: -15px; right: -15px; bottom: -15px;
+      background: url('FYF.jpg') center center / cover no-repeat fixed;
+      filter: blur(6px);
+      z-index: -1;
+    }
+
+    /* --- UNIFIED HEADER --- */
+    header {
+      width: 100%;
+      padding: 1.4rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 1.1rem;
+      border-bottom: 2px solid rgba(59, 130, 246, 0.35);
+      background: #090e1a;
+      margin-bottom: 4vh;
+    }
+    .logo-wrap {
+      width: 58px; height: 58px; border-radius: 50%;
+      background: #FFFFFF; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; border: 2.5px solid var(--gold); overflow: hidden;
+      animation: pulse-ring 3s ease-in-out infinite;
+    }
+    @keyframes pulse-ring {
+      0%, 100% { box-shadow: 0 0 0 0px rgba(59, 130, 246,0.5); }
+      50%       { box-shadow: 0 0 0 8px rgba(59, 130, 246,0); }
+    }
+    .logo-wrap img { width: 50px; height: 50px; object-fit: contain; }
+    .header-text { text-align: left; }
+    .header-text h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.1rem, 3vw, 1.55rem);
+      font-weight: 900; color: #FFFFFF; line-height: 1.15; margin: 0;
+    }
+    .header-text p {
+      font-size: 0.75rem; color: var(--gold-light, var(--gold));
+      font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+      margin-top: 0.2rem; margin-bottom: 0;
+    }
+    .header-date {
+      margin-left: auto; font-size: 0.78rem; color: rgba(255,255,255,0.5);
+    }
+    @media (max-width: 480px) { .header-date { display: none; } }
+    
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(59, 130, 246,0.35);
+      border-radius: 1.25rem;
+      padding: 30px;
+      width: min(100% - 40px, 500px);
+      max-width: 500px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    }
+    
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-light); margin-bottom: 8px; font-weight: 600; }
+    input, select, textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(59, 130, 246,0.25);
+      border-radius: 0.625rem;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    input::placeholder, textarea::placeholder {
+      color: rgba(255, 255, 255, 0.7);
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(59, 130, 246,0.15); background: rgba(255,255,255,0.09); }
+    select option { background: var(--deep); color: white; }
+    textarea { resize: vertical; min-height: 80px; }
+
+    .btn-submit {
+      width: 100%; padding: 14px; border-radius: 0.75rem; border: none;
+      background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 50%, #3b82f6 100%);
+      background-size: 200% 100%; color: #090e1a; font-family: 'DM Sans', sans-serif;
+      font-weight: 700; font-size: 1rem; cursor: pointer; margin-top: 10px;
+      transition: all 0.4s ease; box-shadow: 0 4px 20px rgba(59, 130, 246,0.3);
+    }
+    .btn-submit:hover { background-position: 100% 0; transform: translateY(-2px); box-shadow: 0 6px 28px rgba(59, 130, 246,0.45); }
+    .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+    .success-msg { display: none; text-align: center; padding: 20px; }
+    .success-msg h2 { color: var(--gold-light); font-size: 24px; margin-bottom: 10px; }
+    .success-msg p { color: var(--muted); font-size: 14px; line-height: 1.5; margin-bottom: 20px; }
+  </style>
+  <style>
+    /* Smart Modal Styles */
+      .modal-backdrop { display:none; position:fixed; inset:0; background:rgba(13,27,42,0.85); z-index:999; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+    .modal-box { background:var(--card); border:1px solid var(--gold); border-radius:1.25rem; padding:28px; width:90%; max-width:400px; box-shadow:0 10px 40px rgba(0,0,0,0.5); animation:fadeUp 0.3s ease; }
+    .modal-box .field-label { display:block; font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--gold-light); margin-bottom:8px; font-weight:600; }
+    .smart-suggestions { display:none; position:absolute; top:100%; left:0; right:0; background:var(--card); border:1px solid var(--gold); border-radius:8px; max-height:160px; overflow-y:auto; z-index:10; box-shadow:0 8px 24px rgba(0,0,0,0.4); margin-top:4px; }
+    .smart-suggestion-item { padding:10px 14px; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05); font-size:14px; transition:background 0.2s; color:var(--text); }
+    .smart-suggestion-item:hover { background:rgba(59, 130, 246,0.15); color:var(--gold-light); }
+    .smart-suggestion-item:last-child { border-bottom:none; }
+
+
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-wrap">
+      <img src="images.png?v=3" alt="DC NSK Logo" />
+    </div>
+    <div class="header-text">
+      <h1>Dominion City Nsukka</h1>
+      <p>MEMBER DETAILS FORM</p>
+    </div>
+    <div class="header-date" id="live-date"></div>
+  </header>
+
+  <div class="card" id="registration-form">
+    <div class="form-group">
+      <label>Full Name *</label>
+      <input type="text" id="member_name" placeholder="E.g. John Doe" required>
+    </div>
+    
+    <div class="form-group">
+      <label>Phone Number *</label>
+      <input type="tel" id="member_phone" placeholder="08012345678" required>
+    </div>
+
+    <div class="form-group">
+      <label>Course of Study & Level</label>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="course_of_study" placeholder="E.g. Computer Science" style="flex: 1;">
+        <select id="level" style="width: 120px; flex-shrink: 0;">
+          <option value="">Level</option>
+          <option value="100">100 lvl</option>
+          <option value="200">200 lvl</option>
+          <option value="300">300 lvl</option>
+          <option value="400">400 lvl</option>
+          <option value="500">500 lvl</option>
+          <option value="600">600 lvl</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>School Address</label>
+      <textarea id="school_address" placeholder="Hostel or Lodge name, room number, etc."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Home Address</label>
+      <textarea id="home_address" placeholder="Permanent home address"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Unit in Church</label>
+      <select id="department">
+        <option value="">-- Select (Optional) --</option>
+        <option value="DC NSK Angels">DC NSK Angels</option>
+        <option value="Media Unit">Media Unit</option>
+        <option value="Technical Unit">Technical Unit</option>
+        <option value="Ushers">Ushers</option>
+        <option value="Temple tenders">Temple tenders</option>
+        <option value="Administration">Administration</option>
+        <option value="MVP">MVP</option>
+        <option value="Intercessory">Intercessory</option>
+        <option value="Greeters">Greeters</option>
+        <option value="Evangelism">Evangelism</option>
+        <option value="Deep Oasis">Deep Oasis</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Who is your G12 Leader?</label>
+      <p style="font-size: 0.65rem; color: rgba(232, 205, 122, 0.7); margin-bottom: 6px; margin-top: -4px;">Enter leader name (titles like Pastor, Pa will be removed)</p>
+      <input type="text" id="g12_leader" placeholder="Click to select your g12 leader" readonly onclick="selectG12Leader()">
+    </div>
+
+    <div class="form-group">
+      <label>G12 Leader's Phone No.</label>
+      <input type="tel" id="g12_phone" placeholder="Leader's phone number">
+    </div>
+
+    <button class="btn-submit" id="submit-btn" onclick="submitRegistration()">Submit Details</button>
+  </div>
+
+  <div class="card success-msg" id="success-message">
+    <h2>Thank You! 🎉</h2>
+    <p>Your details have been successfully submitted and synced with the DC NSK database.</p>
+    <button class="btn-submit" onclick="location.reload()" style="max-width: 200px; margin: 0 auto;">Submit Another</button>
+  </div>
+
+  <!-- Smart Autocomplete Modal -->
+  <div class="modal-backdrop" id="smartModal">
+    <div class="modal-box">
+      <h2 id="smartModalTitle" style="font-family:'Playfair Display',serif; font-size:20px; margin-bottom:15px; color: var(--gold-light);">Enter Details</h2>
+      <label class="field-label" id="smartModalLabel">Name</label>
+      <div style="position:relative; margin-bottom:20px;">
+        <input type="text" id="smartModalInput" placeholder="Start typing..." autocomplete="off">
+        <div id="smartSuggestions" class="smart-suggestions"></div>
+      </div>
+      <div style="display:flex; gap:10px; margin-top:24px; justify-content:flex-end;">
+        <button class="btn-submit" id="smartModalCancel" style="background:transparent; border:1.5px solid rgba(168,178,216,0.25); color:var(--muted); box-shadow:none; flex:1;">Cancel</button>
+        <button class="btn-submit" id="smartModalSubmit" style="flex:1;">Save</button>
+      </div>
+    </div>
+
+
+  </div>
+
+  <script>
+    const d = new Date();
+    const liveDateEl = document.getElementById('live-date');
+    if(liveDateEl) {
+        liveDateEl.textContent = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
+    }
+
+    // --- SMART AUTOCOMPLETE LOGIC ---
+    window.allLeaders = [];
+
+    const LEADER_DICTIONARY = [
+      { name: "Ukamaka Augustine", keywords: ["ukamaka", "ukay", "p.ukay", "pa ukay", "pst ukay", "pastor ukay", "ma ukay", "augusta", "augustine", "brother ukamaka", "sister ukamaka"] },
+      { name: "Royal Eroh", keywords: ["royal", "eroh", "brother royal", "pastor royal", "pa royal", "pst royal", "mr royal", "mr eroh", "pastor eroh"] },
+      { name: "Promise Okeke", keywords: ["promise", "okeke", "promise okeke", "pa promise", "pst promise", "pastor promise", "pastor promise okeke", "brother promise"] },
+      { name: "Francis Ogbozor", keywords: ["francis", "ogbozor", "brother francis", "pastor francis", "pa francis", "pst francis", "fr francis", "frank", "frankline", "fancis"] },
+      { name: "Ebuka Aziekwe", keywords: ["ebuka", "aziekwe", "pa ebuka", "pst ebuka", "pastor ebuka", "brother ebuka", "aziek"] },
+      { name: "Winner Richards", keywords: ["winner", "richards", "pa winner", "pst winner", "pastor winner", "brother winner", "mr winner", "mr richards"] },
+      { name: "Kene Offiah", keywords: ["kene", "offiah", "pa kene", "pst kene", "pastor kene", "brother kene", "kenny", "kenneth"] },
+      { name: "Noble Onwuka", keywords: ["noble", "onwuka", "pa noble", "pst noble", "pastor noble", "brother noble", "mr noble", "mr onwuka"] },
+      { name: "Mmesoma Ozor", keywords: ["mmesoma", "ozor", "mmesoma ozor", "pa mmesoma", "pst mmesoma", "pastor mmesoma", "brother mmesoma", "mama mmesoma", "sis mmesoma"] },
+      { name: "Ogbamba Onyinye", keywords: ["ogbamba", "onyinye", "onyinye ogbambwa", "pa onyinye", "pst onyinye", "pastor onyinye", "brother onyinye", "sister onyinye", "mama onyinye"] },
+      { name: "Nkechi Ohazulike", keywords: ["nkechi", "ohazulike", "pa nkechi", "pst nkechi", "pastor nkechi", "pastor mkechi", "mkechi", "sister nkechi", "mama nkechi", "nkechikwu"] },
+      { name: "Precious Ubani", keywords: ["precious", "ubani", "precious ubani", "pastor precious", "pa precious", "pst precious", "pastor precious ubani", "brother precious", "sister precious", "mama precious", "priceless"] },
+      { name: "Nuel Azubuike", keywords: ["nuel", "azubuike", "pa nuel", "pst nuel", "pastor nuel", "brother nuel", "muel", "mr nuel"] },
+      { name: "Emmanuella Okonkwo", keywords: ["emmanuella", "okonkwo", "pa emmanuella", "pst emmanuella", "pastor emmanuella", "sister emmanuella", "mama emmanuella", "sis emma", "emma"] },
+      { name: "Kosi Mbamalu", keywords: ["kosi", "mbamalu", "pa kosi", "pst kosi", "pastor kosi", "brother kosi", "mr kosi", "mr mbamalu"] },
+      { name: "Faithfulness Onuh", keywords: ["faithfulness", "onuh", "faith", "faithful", "pa faithfulness", "pst faithfulness", "pastor faithfulness", "brother faithfulness", "mr onuh"] },
+      { name: "Vivian Nwolisa", keywords: ["vivian", "nwolisa", "vivian nwolisa", "pa vivian", "pst vivian", "pastor vivian", "sister vivian", "mama vivian", "viv", "vivienne"] },
+      { name: "Odinaka Onugha", keywords: ["odinaka", "onugha", "pa odinaka", "pst odinaka", "pastor odinaka", "brother odinaka", "mr odinaka", "dinaka", "mr onugha"] },
+      { name: "Udochukwu Aneke", keywords: ["udochukwu", "aneke", "pa udochukwu", "pst udochukwu", "pastor udochukwu", "brother udochukwu", "udu", "mr aneke", "mr udochukwu", "udo"] },
+      { name: "Janefrancis Igwilo", keywords: ["janefrancis", "igwilo", "jane francis", "jane-francis", "pa janefrancis", "pst janefrancis", "pastor janefrancis", "sister janefrancis", "mama janefrancis", "jane"] },
+      { name: "Nsoke Favour", keywords: ["nsoke", "favour", "nsoke favour", "pa nsoke", "pst nsoke", "pastor nsoke", "brother nsoke", "mr favour", "mr nsoke"] },
+      { name: "Kosi Onyibor", keywords: ["kosi onyibor", "onyibor", "pa kosi onyibor", "pst kosi onyibor", "pastor kosi onyibor", "brother kosi onyibor", "mr onyibor"] },
+      { name: "Ifeyinwa Umeadi", keywords: ["ifeyinwa", "umeadi", "ifeyinwa umeadi", "pa ifeyinwa", "pst ifeyinwa", "pastor ifeyinwa", "sister ifeyinwa", "mama ifeyinwa", "ify"] },
+      { name: "Lovina Wilfred", keywords: ["lovina", "wilfred", "lovina wilfred", "pa lovina", "pst lovina", "pastor lovina", "sister lovina", "mama lovina", "mrs wilfred"] },
+      { name: "Wilfred Ebube", keywords: ["wilfred", "ebube", "wilfred ebube", "pa wilfred", "pst wilfred", "pastor wilfred", "brother wilfred", "mr ebube", "mr wilfred", "willy"] },
+      { name: "Chioma meniru", keywords: ["chioma", "meniru", "chioma meniru", "pa chioma", "pst chioma", "pastor chioma", "sister chioma", "mama chioma", "chi", "mrs meniru"] },
+      { name: "Joshua ohanugo", keywords: ["joshua", "ohanugo", "joshua ohanugo", "pa joshua", "pst joshua", "pastor joshua", "brother joshua", "mr joshua", "mr ohanugo", "josh"] }
+    ];
+
+    /**
+     * Normalize leader name by converting aliases to canonical names
+     */
+    function findClosestActiveLeader(dictName) {
+      const leadersList = window.allLeaders;
+      if (!leadersList || leadersList.length === 0) return dictName;
+      if (leadersList.includes(dictName)) return dictName;
+      
+      const lowerDict = dictName.toLowerCase();
+      const exactMatch = leadersList.find(l => l.toLowerCase() === lowerDict);
+      if (exactMatch) return exactMatch;
+      
+      const partialMatch = leadersList.find(l => {
+        const lowerL = l.toLowerCase();
+        return lowerL.includes(lowerDict) || lowerDict.includes(lowerL);
+      });
+      if (partialMatch) return partialMatch;
+      
+      return dictName;
+    }
+
+    function normalizeLeaderName(name) {
+      if (!name || name.trim() === "") return "Unassigned";
+      
+      const normalized = name.trim().toLowerCase();
+      
+      // Try exact match in active leaders first
+      const leadersList = window.allLeaders;
+      if (leadersList) {
+        const activeMatch = leadersList.find(l => l.toLowerCase() === normalized);
+        if (activeMatch) return activeMatch;
+      }
+
+      // Try exact match first in dictionary
+      for (let entry of LEADER_DICTIONARY) {
+        if (entry.name.toLowerCase() === normalized) {
+          return findClosestActiveLeader(entry.name);
+        }
+      }
+      
+      // Try keyword matching
+      for (let entry of LEADER_DICTIONARY) {
+        if (entry.keywords.some(kw => kw.toLowerCase() === normalized)) {
+          return findClosestActiveLeader(entry.name);
+        }
+      }
+      
+      // Try partial keyword matching (for multi-word variations)
+      for (let entry of LEADER_DICTIONARY) {
+        for (let kw of entry.keywords) {
+          if (normalized.includes(kw.toLowerCase()) || kw.toLowerCase().includes(normalized)) {
+            return findClosestActiveLeader(entry.name);
+          }
+        }
+      }
+      
+      // If not found in dictionary, return original name with proper trim and title removal
+      let clean = name.trim();
+      
+      // Remove common titles
+      const titles = ["pastor", "pa", "pst", "mr", "mrs", "ms", "miss", "dr", "prof", "brother", "sister", "mama", "sis", "fr"];
+      for (let title of titles) {
+        const regex = new RegExp(`^${title}\\s+`, "i");
+        clean = clean.replace(regex, "");
+      }
+      
+      const cleanedName = clean.trim().replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+      
+      // Try to find if this cleaned name matches any active leader
+      if (leadersList) {
+        const activeCleanMatch = leadersList.find(l => l.toLowerCase() === cleanedName.toLowerCase());
+        if (activeCleanMatch) return activeCleanMatch;
+      }
+      
+      return cleanedName;
+    }
+
+    async function fetchAllLeaders() {
+      try {
+        const { data, error } = await supabaseClient
+            .from('members')
+            .select('member_name, g12_leader, leader_type');
+
+        if (error) throw error;
+        
+        const leaders = new Set();
+        const leaderTypes = {};
+
+        // 1. Add static leaders from LEADER_DICTIONARY
+        LEADER_DICTIONARY.forEach(l => {
+          if (l.name !== 'Unassigned') {
+            leaders.add(l.name);
+            leaderTypes[l.name] = 'G12'; // default
+          }
+        });
+
+        // 2. Add dynamic leaders from database
+        if (data) {
+          data.forEach(m => {
+            if (m.g12_leader) {
+              const canonical = normalizeLeaderName(m.g12_leader);
+              if (canonical !== 'Unassigned') {
+                leaders.add(canonical);
+                if (m.leader_type === 'G12' || m.leader_type === 'DH') {
+                  leaderTypes[canonical] = m.leader_type;
+                }
+              }
+            }
+          });
+        }
+
+        window.allLeaders = [...leaders].sort();
+        window.leaderTypes = leaderTypes;
+      } catch (err) {
+        console.error("Error fetching leaders:", err.message);
+        // Fallback: just use LEADER_DICTIONARY
+        const leaders = new Set();
+        const leaderTypes = {};
+        LEADER_DICTIONARY.forEach(l => {
+          if (l.name !== 'Unassigned') {
+            leaders.add(l.name);
+            leaderTypes[l.name] = 'G12';
+          }
+        });
+        window.allLeaders = [...leaders].sort();
+        window.leaderTypes = leaderTypes;
+      }
+    }
+
+    function promptSmartModal(title, label, useLeaderSuggestions = false, defaultValue = '') {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('smartModal');
+        document.getElementById('smartModalTitle').textContent = title;
+        document.getElementById('smartModalLabel').textContent = label;
+        const input = document.getElementById('smartModalInput');
+        const sugBox = document.getElementById('smartSuggestions');
+        
+        input.value = defaultValue;
+        sugBox.style.display = 'none';
+        modal.style.display = 'flex';
+        input.focus();
+
+        const submitBtn = document.getElementById('smartModalSubmit');
+        const cancelBtn = document.getElementById('smartModalCancel');
+
+        const cleanup = () => { submitBtn.onclick = null; cancelBtn.onclick = null; input.oninput = null; modal.style.display = 'none'; };
+        submitBtn.onclick = () => { const val = input.value.trim(); if (val) { cleanup(); resolve(val); } };
+        cancelBtn.onclick = () => { cleanup(); resolve(null); };
+
+        input.oninput = (e) => {
+          const val = e.target.value.toLowerCase().trim();
+          sugBox.innerHTML = '';
+          if (!val) { sugBox.style.display = 'none'; return; }
+
+          let matches = new Set();
+          LEADER_DICTIONARY.forEach(item => { if (item.name.toLowerCase().includes(val) || item.keywords.some(k => k.toLowerCase().includes(val))) matches.add(item.name); });
+          window.allLeaders.forEach(leader => { if (leader.toLowerCase().includes(val)) matches.add(leader); });
+
+          if (matches.size > 0) {
+            sugBox.style.display = 'block';
+            matches.forEach(match => {
+              const div = document.createElement('div');
+              div.className = 'smart-suggestion-item'; div.textContent = match;
+              div.onclick = () => { input.value = match; sugBox.style.display = 'none'; };
+              sugBox.appendChild(div);
+            });
+          } else { sugBox.style.display = 'none'; }
+        };
+      });
+    }
+
+    async function selectG12Leader() {
+        const leaderInput = document.getElementById('g12_leader');
+        const selectedLeader = await promptSmartModal('Select G12 Leader', 'Start typing leader name...', true, leaderInput.value);
+        if (selectedLeader) {
+            leaderInput.value = selectedLeader;
+        }
+
+
+      }
+
+    async function submitRegistration() {
+      // Gather input values
+      const member_name = document.getElementById('member_name').value.trim();
+      const member_phone = document.getElementById('member_phone').value.trim();
+      const course_of_study = document.getElementById('course_of_study').value.trim();
+      const level = document.getElementById('level').value;
+      const school_address = document.getElementById('school_address').value.trim();
+      const home_address = document.getElementById('home_address').value.trim();
+      const department = document.getElementById('department').value;
+      let g12_leader = document.getElementById('g12_leader').value.trim();
+      const g12_phone = document.getElementById('g12_phone').value.trim();
+
+      // NORMALIZE G12 LEADER NAME - Convert aliases to canonical names
+      g12_leader = normalizeLeaderName(g12_leader);
+
+      // Determine leader type dynamically based on leader name
+      let leader_type = 'G12'; // Default fallback
+      if (g12_leader && g12_leader !== 'Unassigned') {
+        const canonical = normalizeLeaderName(g12_leader);
+        if (window.leaderTypes && window.leaderTypes[canonical]) {
+          leader_type = window.leaderTypes[canonical];
+        }
+      }
+
+      // Basic validation
+      if (!member_name || !member_phone) {
+        alert("Please provide at least your Full Name and Phone Number.");
+        return;
+      }
+
+      const btn = document.getElementById('submit-btn');
+      btn.textContent = "Submitting...";
+      btn.disabled = true;
+
+      // 1. Check if member already exists (case-insensitive search by name)
+      const { data: existingData, error: searchError } = await supabaseClient
+        .from('members')
+        .select('*')
+        .ilike('member_name', member_name);
+
+      if (searchError) {
+        console.error("Search Error:", searchError.message);
+        alert("Error checking database: " + searchError.message);
+        btn.textContent = "Submit Details";
+        btn.disabled = false;
+        return;
+      }
+
+      let dbError = null;
+
+      if (existingData && existingData.length > 0) {
+        // 2. Member exists! Update their record instead of creating a new one.
+        const existingMember = existingData[0];
+        const updatePayload = {};
+        
+        // Only update fields that the user actually filled in on the form
+        if (member_phone) updatePayload.member_phone = member_phone;
+        if (course_of_study) updatePayload.course_of_study = course_of_study;
+        if (level) updatePayload.level = level;
+        if (school_address) updatePayload.School_Address = school_address;
+        if (home_address) updatePayload.Home_Address = home_address;
+        if (department) updatePayload.department = department;
+        if (g12_leader) {
+          updatePayload.g12_leader = g12_leader;
+          const isSelfLeader = normalizeLeaderName(existingMember.member_name) === normalizeLeaderName(existingMember.g12_leader);
+          if (!isSelfLeader) {
+            updatePayload.leader_type = leader_type;
+          }
+        }
+        if (g12_phone) updatePayload.g12_phone = g12_phone;
+
+        const { error } = await supabaseClient.from('members').update(updatePayload).eq('id', existingMember.id);
+        dbError = error;
+      } else {
+        // 3. New Member! Insert them into the database.
+        const insertPayload = {
+          member_name: member_name, member_phone: member_phone, course_of_study: course_of_study || null,
+          level: level || null, School_Address: school_address || null, Home_Address: home_address || null,
+          department: department || null, g12_leader: g12_leader || null, g12_phone: g12_phone || null, leader_type: leader_type
+        };
+        const { error } = await supabaseClient.from('members').insert([insertPayload]);
+        dbError = error;
+      }
+
+      if (dbError) {
+        console.error("Database Error:", dbError.message);
+        alert("Something went wrong. Please try again. Error: " + dbError.message);
+        btn.textContent = "Submit Details";
+        btn.disabled = false;
+      } else {
+        // Hide form and show success
+        document.getElementById('registration-form').style.display = 'none';
+        document.getElementById('success-message').style.display = 'block';
+      }
+    }
+
+    // Fetch leaders when the page loads
+
+
+    document.addEventListener('DOMContentLoaded', fetchAllLeaders);
+  </script>
+</body>
+</html>

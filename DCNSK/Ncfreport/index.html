@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DC NSK — Report Submission</title>
+  <link rel="icon" type="image/png" href="images.png?v=3">
+  <link rel="shortcut icon" type="image/x-icon" href="images.png?v=3">
+  <link rel="apple-touch-icon" href="images.png?v=3">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body::before {
+      content: "";
+      position: fixed;
+      top: -15px; left: -15px; right: -15px; bottom: -15px;
+      background: url('FYF.jpg') center center / cover no-repeat fixed;
+      filter: blur(6px);
+      z-index: -1;
+    }
+    body, .bg { background: none !important; backdrop-filter: none !important; }
+    header { background: rgba(15, 23, 42, 0.8) !important; backdrop-filter: blur(20px) !important; border-bottom: 2px solid rgba(59, 130, 246, 0.3) !important; }
+    .card { background: rgba(17, 24, 39, 0.75) !important; backdrop-filter: blur(25px) !important; -webkit-backdrop-filter: blur(25px) !important; border: 1px solid rgba(59, 130, 246, 0.25) !important; border-radius: 20px !important; box-shadow: 0 10px 40px rgba(0,0,0,0.5) !important; }
+    .hero { background: transparent !important; backdrop-filter: none !important; }
+    h1, h2, h3, p, .section-label { color: #F3F4F6 !important; }
+    .card-icon { background: rgba(59, 130, 246, 0.15) !important; color: #60a5fa !important; border: none !important; }
+    
+    /* Alert Card Styling */
+    .alert-card {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(17, 24, 39, 0.8) 100%) !important;
+      border: 1px solid rgba(59, 130, 246, 0.25) !important;
+      border-left: 5px solid #3b82f6 !important;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 25px;
+      color: #F3F4F6;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+    .alert-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #60a5fa;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .alert-desc {
+      font-size: 0.85rem;
+      color: #94A3B8;
+      margin-bottom: 15px;
+    }
+    .pending-tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .pending-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 14px;
+      background: rgba(59, 130, 246, 0.15);
+      border: 1.5px solid rgba(59, 130, 246, 0.4);
+      color: #60a5fa !important;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+    .pending-tag:hover {
+      background: #3b82f6;
+      color: #FFFFFF !important;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    .pending-tag.dh-tag {
+      background: rgba(59, 130, 246, 0.15);
+      border: 1.5px solid rgba(59, 130, 246, 0.4);
+      color: #60a5fa !important;
+    }
+    .pending-tag.dh-tag:hover {
+      background: #3b82f6;
+      color: #ffffff !important;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+    
+
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+</head>
+<body>
+<div class="bg">
+
+  <header>
+    <div class="logo-wrap">
+      <img src="images.png" alt="DC NSK Logo" />
+    </div>
+    <div class="header-text">
+      <h1>Dominion City Nsukka, UNN</h1>
+      <p>Report Submission Portal</p>
+    </div>
+    <div class="header-date" id="live-date"></div>
+  </header>
+
+  <div class="hero">
+    <h2>Submission Hub</h2>
+    <p>"Be diligent to know the state of your flocks, And attend to your herds;"</p>
+    <div class="gold-line"></div>
+    <p>Select a section below to submit your report.</p>
+  </div>
+
+  <main class="main">
+    <!-- PENDING REPORTS ALERT -->
+    <div id="pending-reports-alert-container" style="display:none; margin-bottom: 2rem; width:100%;">
+      <div class="alert-card">
+        <div class="alert-title">⚠️ Missing Reports Alert (Last Service: <span id="alert-service-date">...</span>)</div>
+        <div class="alert-desc">The G12 / DH leaders listed below have not submitted their reports yet. If your name is here, please click on it to submit your report.</div>
+        <div id="pending-leaders-list" class="pending-tags-container"></div>
+      </div>
+    </div>
+
+
+
+    <div class="section-label">Choose a report to submit</div>
+    <div class="cards-grid">
+
+      <a class="card card-g12" href="G12report.html">
+        <div class="card-icon">📋</div>
+        <h3>G12 Report</h3>
+        <p>Submit your weekly G12 group report.</p>
+        <div class="card-btn">Submit Report <span>→</span></div>
+      </a>
+
+      <a class="card card-cg" href="connect.html">
+        <div class="card-icon">🔗</div>
+        <h3>Connect Group Report</h3>
+        <p>Submit connect group report.</p>
+        <div class="card-btn">Submit Report <span>→</span></div>
+      </a>
+
+      <a class="card card-dept" href="Department.html">
+        <div class="card-icon">🏛️</div>
+        <h3>Departmental Report</h3>
+        <p>Submit your department's activity report.</p>
+        <div class="card-btn">Submit Report <span>→</span></div>
+      </a>
+
+      <a class="card card-member" href="mvp.html">
+        <div class="card-icon">✨</div>
+        <h3>New Member Registration</h3>
+        <p>Register a new member joining the family.</p>
+        <div class="card-btn">Register Member <span>→</span></div>
+      </a>
+
+      <a class="card card-service" href="servicereport.html">
+        <div class="card-icon">⛪</div>
+        <h3>Service Report</h3>
+        <p>Submit overall service attendance and finance.</p>
+        <div class="card-btn">Submit Report <span>→</span></div>
+      </a>
+
+    </div>
+  </main>
+
+  <footer>
+    &copy; <span>Dominion City Nsukka, UNN</span> — All rights reserved.
+  </footer>
+
+</div>
+<script>
+  const d = new Date();
+  document.getElementById('live-date').textContent =
+    d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+
+  // Supabase Configuration
+  const supabaseUrl = "https://cjbedftdexzcsydwayig.supabase.co";
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmVkZnRkZXh6Y3N5ZHdheWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTUwMjgsImV4cCI6MjA5MzYzMTAyOH0.xsvtG5NmI_9TDZQ5-MhcjtX4UIIAiH2kyOlpIPDkCdg";
+  const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+  // Leader name normalization - identical to G12report.html
+  const LEADER_DICTIONARY = [
+    { name: "Ukamaka Augustine", keywords: ["ukamaka", "ukay", "p.ukay", "pa ukay", "pst ukay", "pastor ukay", "ma ukay", "augusta", "augustine", "brother ukamaka", "sister ukamaka"] },
+    { name: "Royal Eroh", keywords: ["royal", "eroh", "brother royal", "pastor royal", "pa royal", "pst royal", "mr royal", "mr eroh", "pastor eroh"] },
+    { name: "Promise Okeke", keywords: ["promise", "okeke", "promise okeke", "pa promise", "pst promise", "pastor promise", "pastor promise okeke", "brother promise"] },
+    { name: "Francis Ogbozor", keywords: ["francis", "ogbozor", "brother francis", "pastor francis", "pa francis", "pst francis", "fr francis", "frank", "frankline", "fancis"] },
+    { name: "Ebuka Aziekwe", keywords: ["ebuka", "aziekwe", "pa ebuka", "pst ebuka", "pastor ebuka", "brother ebuka", "aziek"] },
+    { name: "Winner Richards", keywords: ["winner", "richards", "pa winner", "pst winner", "pastor winner", "brother winner", "mr winner", "mr richards"] },
+    { name: "Kene Offiah", keywords: ["kene", "offiah", "pa kene", "pst kene", "pastor kene", "brother kene", "kenny", "kenneth"] },
+    { name: "Mmesoma Ozor", keywords: ["mmesoma", "ozor", "mmesoma ozor", "pa mmesoma", "pst mmesoma", "pastor mmesoma", "brother mmesoma", "mama mmesoma", "sis mmesoma"] },
+    { name: "Onyinye Ogbamba", keywords: ["ogbamba", "onyinye", "onyinye ogbambwa", "pa onyinye", "pst onyinye", "pastor onyinye", "brother onyinye", "sister onyinye", "mama onyinye"] },
+    { name: "Nkechi Ohazulike", keywords: ["nkechi", "ohazulike", "pa nkechi", "pst nkechi", "pastor nkechi", "pastor mkechi", "mkechi", "sister nkechi", "mama nkechi", "nkechikwu"] },
+    { name: "Precious Ubani", keywords: ["precious", "ubani", "precious ubani", "pastor precious", "pa precious", "pst precious", "pastor precious ubani", "brother precious", "sister precious", "mama precious", "priceless"] },
+    { name: "Nuel Azubuike", keywords: ["nuel", "azubuike", "pa nuel", "pst nuel", "pastor nuel", "brother nuel", "muel", "mr nuel"] },
+    { name: "Emmanuella Okonkwo", keywords: ["emmanuella", "okonkwo", "pa emmanuella", "pst emmanuella", "pastor emmanuella", "sister emmanuella", "mama emmanuella", "sis emma", "emma"] },
+    { name: "Kosi Mbamalu", keywords: ["kosi", "mbamalu", "pa kosi", "pst kosi", "pastor kosi", "brother kosi", "mr kosi", "mr mbamalu"] },
+    { name: "Faithfulness Onuh", keywords: ["faithfulness", "onuh", "faith", "faithful", "pa faithfulness", "pst faithfulness", "pastor faithfulness", "brother faithfulness", "mr onuh"] },
+    { name: "Vivian Nwolisa", keywords: ["vivian", "nwolisa", "vivian nwolisa", "pa vivian", "pst vivian", "pastor vivian", "sister vivian", "mama vivian", "viv", "vivienne"] },
+    { name: "Odinaka Onugha", keywords: ["odinaka", "onugha", "pa odinaka", "pst odinaka", "pastor odinaka", "brother odinaka", "mr odinaka", "dinaka", "mr onugha"] },
+    { name: "Udochukwu Aneke", keywords: ["udochukwu", "aneke", "pa udochukwu", "pst udochukwu", "pastor udochukwu", "brother udochukwu", "udu", "mr aneke", "mr udochukwu", "udo"] },
+    { name: "Janefrancis Igwilo", keywords: ["janefrancis", "igwilo", "jane francis", "jane-francis", "pa janefrancis", "pst janefrancis", "pastor janefrancis", "sister janefrancis", "mama janefrancis", "jane"] },
+    { name: "Favour Nsoke", keywords: ["nsoke", "favour", "nsoke favour", "pa nsoke", "pst nsoke", "pastor nsoke", "brother nsoke", "mr favour", "mr nsoke"] },
+    { name: "Kosi Onyibor", keywords: ["kosi onyxbor", "onyibor", "pa kosi onyibor", "pst kosi onyibor", "pastor kosi onyibor", "brother kosi onyibor", "mr onyibor"] },
+    { name: "Ifeyinwa Umeadi", keywords: ["ifeyinwa", "umeadi", "ifeyinwa umeadi", "pa ifeyinwa", "pst ifeyinwa", "pastor ifeyinwa", "sister ifeyinwa", "mama ifeyinwa", "ify"] },
+    { name: "Lovina Wilfred", keywords: ["lovina", "wilfred", "lovina wilfred", "pa lovina", "pst lovina", "pastor lovina", "sister lovina", "mama lovina", "mrs wilfred"] },
+    { name: "Ebube wilfred", keywords: ["wilfred", "ebube", "wilfred ebube", "pa wilfred", "pst wilfred", "pastor wilfred", "brother wilfred", "mr ebube", "mr wilfred", "willy"] },
+    { name: "Chioma meniru", keywords: ["chioma", "meniru", "chioma meniru", "pa chioma", "pst chioma", "pastor chioma", "sister chioma", "mama chioma", "chi", "mrs meniru"] },
+    { name: "Joshua ohanugo", keywords: ["joshua", "ohanugo", "joshua ohanugo", "pa joshua", "pst joshua", "pastor joshua", "brother joshua", "mr joshua", "mr ohanugo", "josh"] }
+  ];
+
+  window.allLeaders = [];
+  window.leaderTypes = {};
+
+  function normalizeLeaderName(name) {
+    if (!name || name.trim() === "") return "Unassigned";
+    const normalized = name.trim().toLowerCase();
+    
+    // Try exact match in active leaders first
+    const leadersList = window.allLeaders;
+    if (leadersList && leadersList.length > 0) {
+      const activeMatch = leadersList.find(l => l.toLowerCase() === normalized);
+      if (activeMatch) return activeMatch;
+    }
+
+    // Try exact match first in dictionary
+    for (let entry of LEADER_DICTIONARY) {
+      if (entry.name.toLowerCase() === normalized) {
+        return entry.name;
+      }
+    }
+    
+    // Try keyword matching
+    for (let entry of LEADER_DICTIONARY) {
+      if (entry.keywords.some(kw => kw.toLowerCase() === normalized)) {
+        return entry.name;
+      }
+    }
+    
+    // Try partial keyword matching
+    for (let entry of LEADER_DICTIONARY) {
+      for (let kw of entry.keywords) {
+        if (normalized.includes(kw.toLowerCase()) || kw.toLowerCase().includes(normalized)) {
+          return entry.name;
+        }
+      }
+    }
+    
+    // Remove common titles and return proper Title Case
+    let clean = name.trim();
+    const titles = ["pastor", "pa", "pst", "mr", "mrs", "ms", "miss", "dr", "prof", "brother", "sister", "mama", "sis", "fr"];
+    for (let title of titles) {
+      const regex = new RegExp(`^${title}\\s+`, "i");
+      clean = clean.replace(regex, "");
+    }
+    
+    const cleanedName = clean.trim().replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+    
+    if (leadersList && leadersList.length > 0) {
+      const activeCleanMatch = leadersList.find(l => l.toLowerCase() === cleanedName.toLowerCase());
+      if (activeCleanMatch) return activeCleanMatch;
+    }
+    
+    return cleanedName;
+  }
+
+  function getServiceDate(reportDate) {
+    if (!reportDate) return 'Unknown Date';
+    const date = new Date(reportDate);
+    if (isNaN(date.getTime())) return 'Unknown Date';
+    const dayOfWeek = date.getDay();
+    let serviceDate;
+    if (dayOfWeek === 0 || dayOfWeek === 1) {
+      serviceDate = new Date(date);
+      if (dayOfWeek === 1) serviceDate.setDate(serviceDate.getDate() - 1);
+    } else if (dayOfWeek === 3 || dayOfWeek === 4) {
+      serviceDate = new Date(date);
+      if (dayOfWeek === 4) serviceDate.setDate(serviceDate.getDate() - 1);
+    } else {
+      serviceDate = new Date(date);
+    }
+    return serviceDate.toISOString().split('T')[0];
+  }
+
+  function formatServiceDate(dateStr) {
+    if (dateStr === 'Unknown Date') return 'Unknown Date';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    const dayOfWeek = date.getDay();
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return `${dayNames[dayOfWeek]}, ${date.toLocaleDateString('en-GB', {month: 'short', day: 'numeric', year: 'numeric'})}`;
+  }
+
+  async function loadPendingReportsAlert() {
+    try {
+      // Run both queries in parallel for speed
+      const [membersResult, reportsResult] = await Promise.allSettled([
+        supabaseClient
+          .from('members')
+          .select('member_name, g12_leader, leader_type'),
+        supabaseClient
+          .from('g12_reports')
+          .select('leader_name, campus: 'DC_NSK', report_date, meeting_date')
+      ]);
+      
+      // Handle results with timeouts to prevent hanging
+      if (membersResult.status === 'rejected' || reportsResult.status === 'rejected') {
+        console.warn('Pending alerts data fetch failed, skipping');
+        return;
+      }
+      
+      const members = membersResult.value.data;
+      const reports = reportsResult.value.data;
+      
+      if (!members || !reports || reports.length === 0) return;
+      
+      // Build window.allLeaders dynamically
+      const rawLeaders = new Set();
+      LEADER_DICTIONARY.forEach(l => {
+        if (l.name !== 'Unassigned') rawLeaders.add(l.name);
+      });
+      members.forEach(m => {
+        if (m.g12_leader) {
+          const canonical = normalizeLeaderName(m.g12_leader);
+          if (canonical !== 'Unassigned') {
+            rawLeaders.add(canonical);
+          }
+        }
+      });
+      
+      window.allLeaders = [...rawLeaders].sort();
+
+      const leaderTypes = {};
+      LEADER_DICTIONARY.forEach(l => {
+        if (l.name !== 'Unassigned') leaderTypes[l.name] = 'G12';
+      });
+      members.forEach(m => {
+        if (m.g12_leader) {
+          const canonical = normalizeLeaderName(m.g12_leader);
+          if (canonical !== 'Unassigned' && (m.leader_type === 'G12' || m.leader_type === 'DH')) {
+            leaderTypes[canonical] = m.leader_type;
+          }
+        }
+      });
+      window.leaderTypes = leaderTypes;
+
+      // 3. Find the latest service date
+      const allServiceDates = reports
+        .map(r => getServiceDate(r.report_date || r.meeting_date))
+        .filter(d => d !== 'Unknown Date');
+        
+      if (allServiceDates.length === 0) return;
+      allServiceDates.sort((a, b) => new Date(b) - new Date(a));
+      const targetServiceDate = allServiceDates[0];
+      
+      // 4. Find who submitted reports for this service date
+      const submittedLeaders = new Set();
+      reports.forEach(r => {
+        const sDate = getServiceDate(r.report_date || r.meeting_date);
+        if (sDate === targetServiceDate && r.leader_name) {
+          submittedLeaders.add(normalizeLeaderName(r.leader_name).toLowerCase().trim());
+        }
+      });
+      
+      // 5. Gather all expected leaders
+      const expectedG12 = new Set();
+      const expectedDH = new Set();
+      members.forEach(m => {
+        if (m.g12_leader) {
+          const canonical = normalizeLeaderName(m.g12_leader);
+          if (canonical && canonical !== 'Unassigned') {
+            const type = window.leaderTypes[canonical] || m.leader_type || 'G12';
+            if (type === 'G12') expectedG12.add(canonical);
+            else if (type === 'DH') expectedDH.add(canonical);
+          }
+        }
+      });
+      
+      // 6. Find pending G12 and DH leaders
+      const pendingG12 = [...expectedG12].filter(l => !submittedLeaders.has(l.toLowerCase().trim())).sort();
+      const pendingDH = [...expectedDH].filter(l => !submittedLeaders.has(l.toLowerCase().trim())).sort();
+      
+      const totalPending = pendingG12.length + pendingDH.length;
+      if (totalPending === 0) {
+        document.getElementById('pending-reports-alert-container').style.display = 'none';
+        return;
+      }
+      
+      // 7. Render using DocumentFragment for faster DOM insertion
+      document.getElementById('alert-service-date').textContent = formatServiceDate(targetServiceDate);
+      const listEl = document.getElementById('pending-leaders-list');
+      const fragment = document.createDocumentFragment();
+      
+      pendingG12.forEach(leader => {
+        const a = document.createElement('a');
+        a.className = 'pending-tag g12-tag';
+        a.href = `G12report.html?leader=${encodeURIComponent(leader)}&type=G12`;
+        a.innerHTML = `🌿 ${leader}`;
+        fragment.appendChild(a);
+      });
+      
+      pendingDH.forEach(leader => {
+        const a = document.createElement('a');
+        a.className = 'pending-tag dh-tag';
+        a.href = `G12report.html?leader=${encodeURIComponent(leader)}&type=DH`;
+        a.innerHTML = `🏠 ${leader}`;
+        fragment.appendChild(a);
+      });
+      
+      listEl.innerHTML = '';
+      listEl.appendChild(fragment);
+      document.getElementById('pending-reports-alert-container').style.display = 'block';
+    } catch (err) {
+      console.error('Error loading pending reports alert:', err.message);
+    }
+  }
+
+
+
+  // Load in background without blocking page
+  loadPendingReportsAlert();
+</script>
+</body>
+</html>
+

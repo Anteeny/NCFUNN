@@ -8,34 +8,7 @@
   const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
   // Leader name normalization - converts aliases to canonical names
-  const LEADER_DICTIONARY = [
-    { name: "Ukamaka Augustine", keywords: ["ukamaka", "ukay", "p.ukay", "pa ukay", "pst ukay", "pastor ukay", "ma ukay", "augusta", "augustine", "brother ukamaka", "sister ukamaka"] },
-    { name: "Royal Eroh", keywords: ["royal", "eroh", "brother royal", "pastor royal", "pa royal", "pst royal", "mr royal", "mr eroh", "pastor eroh"] },
-    { name: "Promise Okeke", keywords: ["promise", "okeke", "promise okeke", "pa promise", "pst promise", "pastor promise", "pastor promise okeke", "brother promise"] },
-    { name: "Francis Ogbozor", keywords: ["francis", "ogbozor", "brother francis", "pastor francis", "pa francis", "pst francis", "fr francis", "frank", "frankline", "fancis"] },
-    { name: "Ebuka Aziekwe", keywords: ["ebuka", "aziekwe", "pa ebuka", "pst ebuka", "pastor ebuka", "brother ebuka", "aziek"] },
-    { name: "Winner Richards", keywords: ["winner", "richards", "pa winner", "pst winner", "pastor winner", "brother winner", "mr winner", "mr richards"] },
-    { name: "Kene Offiah", keywords: ["kene", "offiah", "pa kene", "pst kene", "pastor kene", "brother kene", "kenny", "kenneth"] },
-    { name: "Mmesoma Ozor", keywords: ["mmesoma", "ozor", "mmesoma ozor", "pa mmesoma", "pst mmesoma", "pastor mmesoma", "brother mmesoma", "mama mmesoma", "sis mmesoma"] },
-    { name: "Onyinye Ogbamba", keywords: ["ogbamba", "onyinye", "onyinye ogbambwa", "pa onyinye", "pst onyinye", "pastor onyinye", "brother onyinye", "sister onyinye", "mama onyinye"] },
-    { name: "Nkechi Ohazulike", keywords: ["nkechi", "ohazulike", "pa nkechi", "pst nkechi", "pastor nkechi", "pastor mkechi", "mkechi", "sister nkechi", "mama nkechi", "nkechikwu"] },
-    { name: "Precious Ubani", keywords: ["precious", "ubani", "precious ubani", "pastor precious", "pa precious", "pst precious", "pastor precious ubani", "brother precious", "sister precious", "mama precious", "priceless"] },
-    { name: "Nuel Azubuike", keywords: ["nuel", "azubuike", "pa nuel", "pst nuel", "pastor nuel", "brother nuel", "muel", "mr nuel"] },
-    { name: "Emmanuella Okonkwo", keywords: ["emmanuella", "okonkwo", "pa emmanuella", "pst emmanuella", "pastor emmanuella", "sister emmanuella", "mama emmanuella", "sis emma", "emma"] },
-    { name: "Kosi Mbamalu", keywords: ["kosi", "mbamalu", "pa kosi", "pst kosi", "pastor kosi", "brother kosi", "mr kosi", "mr mbamalu"] },
-    { name: "Faithfulness Onuh", keywords: ["faithfulness", "onuh", "faith", "faithful", "pa faithfulness", "pst faithfulness", "pastor faithfulness", "brother faithfulness", "mr onuh"] },
-    { name: "Vivian Nwolisa", keywords: ["vivian", "nwolisa", "vivian nwolisa", "pa vivian", "pst vivian", "pastor vivian", "sister vivian", "mama vivian", "viv", "vivienne"] },
-    { name: "Odinaka Onugha", keywords: ["odinaka", "onugha", "pa odinaka", "pst odinaka", "pastor odinaka", "brother odinaka", "mr odinaka", "dinaka", "mr onugha"] },
-    { name: "Udochukwu Aneke", keywords: ["udochukwu", "aneke", "pa udochukwu", "pst udochukwu", "pastor udochukwu", "brother udochukwu", "udu", "mr aneke", "mr udochukwu", "udo"] },
-    { name: "Janefrancis Igwilo", keywords: ["janefrancis", "igwilo", "jane francis", "jane-francis", "pa janefrancis", "pst janefrancis", "pastor janefrancis", "sister janefrancis", "mama janefrancis", "jane"] },
-    { name: "Favour Nsoke", keywords: ["nsoke", "favour", "nsoke favour", "pa nsoke", "pst nsoke", "pastor nsoke", "brother nsoke", "mr favour", "mr nsoke"] },
-    { name: "Kosi Onyibor", keywords: ["kosi onyibor", "onyibor", "pa kosi onyibor", "pst kosi onyibor", "pastor kosi onyibor", "brother kosi onyibor", "mr onyibor"] },
-    { name: "Ifeyinwa Umeadi", keywords: ["ifeyinwa", "umeadi", "ifeyinwa umeadi", "pa ifeyinwa", "pst ifeyinwa", "pastor ifeyinwa", "sister ifeyinwa", "mama ifeyinwa", "ify"] },
-    { name: "Lovina Wilfred", keywords: ["lovina", "wilfred", "lovina wilfred", "pa lovina", "pst lovina", "pastor lovina", "sister lovina", "mama lovina", "mrs wilfred"] },
-    { name: "Ebube wilfred", keywords: ["wilfred", "ebube", "wilfred ebube", "pa wilfred", "pst wilfred", "pastor wilfred", "brother wilfred", "mr ebube", "mr wilfred", "willy"] },
-    { name: "Chioma meniru", keywords: ["chioma", "meniru", "chioma meniru", "pa chioma", "pst chioma", "pastor chioma", "sister chioma", "mama chioma", "chi", "mrs meniru"] },
-    { name: "Joshua ohanugo", keywords: ["joshua", "ohanugo", "joshua ohanugo", "pa joshua", "pst joshua", "pastor joshua", "brother joshua", "mr joshua", "mr ohanugo", "josh"] }
-  ];
+  const LEADER_DICTIONARY = [];
 
   // Fetch active leaders from DB on load to prevent 0-member dynamic leaders from disappearing
   window.allLeaders = [];
@@ -186,7 +159,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NCF Accountability System</title>
+  <title>DC NSK Accountability System</title>
   <link rel="icon" type="image/png" href="images.png?v=3">
   <link rel="shortcut icon" type="image/x-icon" href="images.png?v=3">
   <link rel="apple-touch-icon" href="images.png?v=3">
@@ -1051,10 +1024,10 @@
 
   <header>
     <div class="logo-wrap">
-      <img src="images.png?v=3" alt="NCF UNN Logo" />
+      <img src="images.png?v=3" alt="DC NSK Logo" />
     </div>
     <div class="header-text">
-      <h1>New Covenant Family</h1>
+      <h1>Dominion City Nsukka</h1>
       <p>Leader Accountability System</p>
     </div>
     <div class="header-date" id="live-date"></div>
@@ -1173,10 +1146,10 @@
   <div style="margin: 25px auto 10px; text-align: center; max-width: 480px; padding: 14px 20px; background: rgba(10, 16, 27, 0.65); backdrop-filter: blur(14px); border-radius: 18px; border: 1px solid rgba(255, 255, 255, 0.15); display: flex; align-items: center; justify-content: space-between; box-shadow: 0 8px 25px rgba(0,0,0,0.25);">
     <div style="text-align: left;">
       <strong style="display: block; font-size: 12px; color: #ffffff;">Stay Connected</strong>
-      <span style="font-size: 10px; color: rgba(255, 255, 255, 0.8);">Follow NCF UNN on IG, YT, WA & TG</span>
+      <span style="font-size: 10px; color: rgba(255, 255, 255, 0.8);">Follow DC NSK on IG, YT, WA & TG</span>
     </div>
     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-      <a href="https://instagram.com/ncfunn_" target="_blank" style="width:32px; height:32px; border-radius:9px; background:radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%,#d6249f 60%,#285AEB 90%); display:flex; align-items:center; justify-content:center; text-decoration:none; box-shadow: 0 2px 8px rgba(0,0,0,0.2);" title="Follow us on Instagram">
+      <a href="https://instagram.com/dcnsk_" target="_blank" style="width:32px; height:32px; border-radius:9px; background:radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%,#d6249f 60%,#285AEB 90%); display:flex; align-items:center; justify-content:center; text-decoration:none; box-shadow: 0 2px 8px rgba(0,0,0,0.2);" title="Follow us on Instagram">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
       </a>
       <a href="https://youtube.com/@ncf_unn" target="_blank" style="width:32px; height:32px; border-radius:9px; background:transparent; display:flex; align-items:center; justify-content:center; text-decoration:none;" title="Subscribe on YouTube">
