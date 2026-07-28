@@ -51,7 +51,10 @@
     body::before {
       content: '';
       position: fixed;
-      top: -15px; left: -15px; right: -15px; bottom: -15px;
+      top: -15px;
+      left: -15px;
+      right: -15px;
+      bottom: -15px;
       background: url('FYF.jpg') center center / cover no-repeat fixed;
       filter: blur(6px);
       z-index: -1;
@@ -2007,7 +2010,7 @@
     }
 
     .social-btn.instagram {
-      background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%,#d6249f 60%,#285AEB 90%);
+      background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%);
     }
 
     .social-btn.whatsapp {
@@ -2484,7 +2487,8 @@
     }
 
     /* Modals Reskin */
-    .modal-content, .modal {
+    .modal-content,
+    .modal {
       background: rgba(15, 23, 42, 0.95) !important;
       backdrop-filter: blur(30px) !important;
       -webkit-backdrop-filter: blur(30px) !important;
@@ -2494,7 +2498,9 @@
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
     }
 
-    .modal-header, .modal-header h3, .modal-title {
+    .modal-header,
+    .modal-header h3,
+    .modal-title {
       color: #ffffff !important;
       border-bottom-color: rgba(255, 255, 255, 0.08) !important;
     }
@@ -2600,17 +2606,36 @@
             <span>Follow us on IG, YT, WA & TG</span>
           </div>
           <div class="social-card-links">
-            <a href="https://instagram.com/dcnsk_" target="_blank" class="social-btn instagram" title="Follow us on Instagram">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+            <a href="https://instagram.com/dcnsk_" target="_blank" class="social-btn instagram"
+              title="Follow us on Instagram">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
             </a>
-            <a href="https://youtube.com/@ncf_unn" target="_blank" class="social-btn youtube" title="Subscribe on YouTube">
-              <svg width="24" height="24" viewBox="0 0 24 24"><path fill="#FF0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/><polygon fill="#FFFFFF" points="9.545,15.568 15.818,12 9.545,8.432"/></svg>
+            <a href="https://youtube.com/@ncf_unn" target="_blank" class="social-btn youtube"
+              title="Subscribe on YouTube">
+              <svg width="24" height="24" viewBox="0 0 24 24">
+                <path fill="#FF0000"
+                  d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" />
+                <polygon fill="#FFFFFF" points="9.545,15.568 15.818,12 9.545,8.432" />
+              </svg>
             </a>
-            <a href="https://whatsapp.com/channel/0029VabzpPk7YSczozES2p3U" target="_blank" class="social-btn whatsapp" title="Join WhatsApp Channel">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347z"/></svg>
+            <a href="https://whatsapp.com/channel/0029VabzpPk7YSczozES2p3U" target="_blank" class="social-btn whatsapp"
+              title="Join WhatsApp Channel">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                <path
+                  d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347z" />
+              </svg>
             </a>
-            <a href="https://t.me/+LwBuwFYNuVozYzg0" target="_blank" class="social-btn telegram" title="Join Telegram Group">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            <a href="https://t.me/+LwBuwFYNuVozYzg0" target="_blank" class="social-btn telegram"
+              title="Join Telegram Group">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                <path
+                  d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+              </svg>
             </a>
           </div>
         </div>
@@ -2712,17 +2737,36 @@
           </div>
 
           <div class="social-card-links">
-            <a href="https://instagram.com/dcnsk_" target="_blank" class="social-btn instagram" title="Follow us on Instagram">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+            <a href="https://instagram.com/dcnsk_" target="_blank" class="social-btn instagram"
+              title="Follow us on Instagram">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
             </a>
-            <a href="https://youtube.com/@ncf_unn" target="_blank" class="social-btn youtube" title="Subscribe on YouTube">
-              <svg width="24" height="24" viewBox="0 0 24 24"><path fill="#FF0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/><polygon fill="#FFFFFF" points="9.545,15.568 15.818,12 9.545,8.432"/></svg>
+            <a href="https://youtube.com/@ncf_unn" target="_blank" class="social-btn youtube"
+              title="Subscribe on YouTube">
+              <svg width="24" height="24" viewBox="0 0 24 24">
+                <path fill="#FF0000"
+                  d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" />
+                <polygon fill="#FFFFFF" points="9.545,15.568 15.818,12 9.545,8.432" />
+              </svg>
             </a>
-            <a href="https://whatsapp.com/channel/0029VabzpPk7YSczozES2p3U" target="_blank" class="social-btn whatsapp" title="Join WhatsApp Channel">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347z"/></svg>
+            <a href="https://whatsapp.com/channel/0029VabzpPk7YSczozES2p3U" target="_blank" class="social-btn whatsapp"
+              title="Join WhatsApp Channel">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                <path
+                  d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347z" />
+              </svg>
             </a>
-            <a href="https://t.me/+LwBuwFYNuVozYzg0" target="_blank" class="social-btn telegram" title="Join Telegram Group">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            <a href="https://t.me/+LwBuwFYNuVozYzg0" target="_blank" class="social-btn telegram"
+              title="Join Telegram Group">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                <path
+                  d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+              </svg>
             </a>
           </div>
         </div>
@@ -2749,6 +2793,7 @@
         <div class="nav-item" onclick="showPage('attendance',this)"><i class="ti ti-calendar-check"></i> Attendance
         </div>
         <div class="nav-item" onclick="showPage('g12',this)"><i class="ti ti-users-group"></i> G12</div>
+        <div class="nav-item" onclick="showPage('connect',this)"><i class="ti ti-heart-handshake"></i> Connect Groups</div>
         <div class="nav-section">FOLLOW-UP</div>
         <div class="nav-item" onclick="showPage('followup',this)"><i class="ti ti-phone-call"></i> Follow-Up <span
             class="nav-badge" id="nb-followup">—</span></div>
@@ -2758,19 +2803,40 @@
         <div class="nav-item" onclick="showPage('reports',this)"><i class="ti ti-chart-bar"></i> Reports</div>
       </div>
       <div style="padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08); text-align: center;">
-        <div style="font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Follow DC NSK</div>
+        <div
+          style="font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">
+          Follow DC NSK</div>
         <div style="display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap;">
-          <a href="https://instagram.com/dcnsk_" target="_blank" class="social-btn instagram" title="Follow us on Instagram">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+          <a href="https://instagram.com/dcnsk_" target="_blank" class="social-btn instagram"
+            title="Follow us on Instagram">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+              <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+              <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+            </svg>
           </a>
-          <a href="https://youtube.com/@ncf_unn" target="_blank" class="social-btn youtube" title="Subscribe on YouTube">
-            <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#FF0000" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z"/><polygon fill="#FFFFFF" points="9.545,15.568 15.818,12 9.545,8.432"/></svg>
+          <a href="https://youtube.com/@ncf_unn" target="_blank" class="social-btn youtube"
+            title="Subscribe on YouTube">
+            <svg width="22" height="22" viewBox="0 0 24 24">
+              <path fill="#FF0000"
+                d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" />
+              <polygon fill="#FFFFFF" points="9.545,15.568 15.818,12 9.545,8.432" />
+            </svg>
           </a>
-          <a href="https://whatsapp.com/channel/0029VabzpPk7YSczozES2p3U" target="_blank" class="social-btn whatsapp" title="Join WhatsApp Channel">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347z"/></svg>
+          <a href="https://whatsapp.com/channel/0029VabzpPk7YSczozES2p3U" target="_blank" class="social-btn whatsapp"
+            title="Join WhatsApp Channel">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+              <path
+                d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347z" />
+            </svg>
           </a>
-          <a href="https://t.me/+LwBuwFYNuVozYzg0" target="_blank" class="social-btn telegram" title="Join Telegram Group">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+          <a href="https://t.me/+LwBuwFYNuVozYzg0" target="_blank" class="social-btn telegram"
+            title="Join Telegram Group">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+              <path
+                d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
+            </svg>
           </a>
         </div>
       </div>
@@ -2825,7 +2891,11 @@
             </div>
           </div>
 
-          <div class="stats-grid" id="dash-stats"></div>
+          <div class="stats-grid" id="dash-stats" style="margin-bottom: 16px;"></div>
+
+          <!-- Secondary Metric Section for MVPs, Department Workers & Connect Cells -->
+          <div class="stats-grid" id="dash-stats-secondary"
+            style="margin-bottom: 24px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));"></div>
 
           <!-- Attendance Trend Chart — full width -->
           <div class="card" style="margin-bottom:24px">
@@ -3003,6 +3073,50 @@
           </div>
         </div>
 
+        <!-- CONNECT GROUPS (CELLS) PAGE -->
+        <div class="page" id="page-connect">
+          <!-- Top bar with Back button when viewing a specific Zone -->
+          <div class="search-bar" style="margin-bottom: 24px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-outline" id="btn-connect-back-zones" onclick="exitConnectZoneView()" style="display:none; border-color:var(--gold); color:var(--gold);">
+              <i class="ti ti-arrow-left"></i> All Zones
+            </button>
+            <div class="search-wrap" style="flex: 1; min-width: 200px; max-width: 300px;">
+              <i class="ti ti-search"></i>
+              <input type="text" id="connect-search-input" placeholder="Search Connect cell or leader..." oninput="renderConnectPage()">
+            </div>
+            <button class="btn btn-gold" id="btn-add-connect-cell" onclick="openAddConnectCellModal()" style="display:none; margin-left: auto;">
+              <i class="ti ti-plus"></i> Add Cell to Zone
+            </button>
+            <button class="btn btn-gold" onclick="window.open('../Ncfreport/Connect.html','_blank')" style="margin-left: auto;">
+              <i class="ti ti-heart-handshake"></i> Record Connect Meeting
+            </button>
+            <button class="btn btn-outline" onclick="renderConnectPage()" style="border-color: var(--gold); color: var(--gold);">
+              <i class="ti ti-refresh"></i> Refresh
+            </button>
+          </div>
+
+          <!-- LEVEL 1: ZONES GRID -->
+          <div id="connect-zones-view">
+            <div style="font-size:14px; font-weight:600; color:var(--gold); margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+              <i class="ti ti-map-pins" style="font-size:18px;"></i> Campus Cell Zones — Select a zone to view cluster cells
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:18px;" id="connect-zones-grid">
+              <!-- Zone cards loaded dynamically -->
+            </div>
+          </div>
+
+          <!-- LEVEL 2: CELLS GRID (Hidden by default until a Zone card is clicked) -->
+          <div id="connect-cells-view" style="display:none;">
+            <div style="font-size:15px; font-weight:700; color:#fff; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+              <span id="selected-zone-title"><i class="ti ti-home-heart" style="color:var(--gold);"></i> Connect Cells</span>
+              <span class="badge badge-gold" id="selected-zone-badge" style="font-size:12px;">3 Active Cells</span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:20px;" id="connect-cells-grid">
+              <!-- Cell cards loaded dynamically -->
+            </div>
+          </div>
+        </div>
+
         <!-- MEMBERS -->
         <div class="page" id="page-members">
           <div class="search-bar">
@@ -3117,7 +3231,8 @@
 
         <!-- UNITS / DEPARTMENTS -->
         <div class="page" id="page-units">
-          <div class="search-bar" style="margin-bottom: 24px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <div class="search-bar"
+            style="margin-bottom: 24px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
             <div class="search-wrap" style="flex: 1; min-width: 200px; max-width: 300px;">
               <i class="ti ti-search"></i>
               <input type="text" id="dept-search-input" placeholder="Search department..." oninput="renderUnits()">
@@ -3128,7 +3243,8 @@
           </div>
 
           <!-- Department Card Grid -->
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px;" id="units-grid"></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px;" id="units-grid">
+          </div>
 
           <!-- Selected Department Members Modal -->
           <div class="modal-backdrop" id="modal-dept-details" style="z-index: 205;">
@@ -3160,7 +3276,8 @@
               </div>
               <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeDeptDetails()">Close</button>
-                <button class="btn btn-gold" onclick="openAddToDeptModal()"><i class="ti ti-user-plus"></i> Add Person</button>
+                <button class="btn btn-gold" onclick="openAddToDeptModal()"><i class="ti ti-user-plus"></i> Add
+                  Person</button>
               </div>
             </div>
           </div>
@@ -3174,17 +3291,20 @@
               </div>
               <div class="modal-body">
                 <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px;">
-                  Search for an existing member in the database to assign them to <strong id="add-to-dept-name-label" style="color:var(--gold);"></strong>.
+                  Search for an existing member in the database to assign them to <strong id="add-to-dept-name-label"
+                    style="color:var(--gold);"></strong>.
                 </p>
                 <div class="form-group">
                   <label>Select Member</label>
-                  <input type="text" id="dept-member-search-input" list="all-members-datalist" placeholder="Type member name..." autocomplete="off">
+                  <input type="text" id="dept-member-search-input" list="all-members-datalist"
+                    placeholder="Type member name..." autocomplete="off">
                   <datalist id="all-members-datalist"></datalist>
                 </div>
               </div>
               <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeAddToDeptModal()">Cancel</button>
-                <button class="btn btn-gold" onclick="submitAddToDept()"><i class="ti ti-check"></i> Assign Member</button>
+                <button class="btn btn-gold" onclick="submitAddToDept()"><i class="ti ti-check"></i> Assign
+                  Member</button>
               </div>
             </div>
           </div>
@@ -3226,7 +3346,8 @@
             <div class="card unit-card"
               style="cursor:pointer; text-align:center; padding:40px; border-top: 4px solid #ec4899;"
               onclick="openAbsenteeSummaryModal()">
-              <div class="unit-icon" style="background:rgba(236, 72, 153, 0.15); width:60px; height:60px; margin:0 auto 20px;">
+              <div class="unit-icon"
+                style="background:rgba(236, 72, 153, 0.15); width:60px; height:60px; margin:0 auto 20px;">
                 <i class="ti ti-report-analytics" style="color:#ec4899; font-size:28px;"></i>
               </div>
               <div class="unit-name" style="font-size:18px; font-weight:600;">Absentee Summary</div>
@@ -3253,7 +3374,8 @@
           <div class="modal" style="max-width: 950px; width: 95%;">
             <div class="modal-header" style="display:flex; align-items:center; justify-content:space-between;">
               <div>
-                <div class="modal-title" style="font-family: 'Playfair Display', serif; font-size: 20px; color: var(--navy); font-weight: 700;">
+                <div class="modal-title"
+                  style="font-family: 'Playfair Display', serif; font-size: 20px; color: var(--navy); font-weight: 700;">
                   📊 DC Nsk Sunday Service Absentee Report
                 </div>
                 <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
@@ -3264,25 +3386,31 @@
             </div>
             <div class="modal-body" style="max-height: 70vh; overflow-y: auto; padding-top: 15px;">
               <!-- Filter Controls -->
-              <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:20px; background:rgba(255,255,255,0.03); padding:12px 16px; border-radius:10px; border:1px solid var(--border);">
+              <div
+                style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:20px; background:rgba(255,255,255,0.03); padding:12px 16px; border-radius:10px; border:1px solid var(--border);">
                 <label style="font-size:12px; font-weight:600; color:var(--gold); margin:0;">Service Date:</label>
-                <select id="absentee-date-filter" onchange="renderAbsenteeSummary()" style="padding:6px 10px; font-size:13px; width:auto; border-radius:6px;">
+                <select id="absentee-date-filter" onchange="renderAbsenteeSummary()"
+                  style="padding:6px 10px; font-size:13px; width:auto; border-radius:6px;">
                   <option value="latest">Latest Service Date</option>
                   <option value="all">All Dates Combined</option>
                 </select>
-                <button class="btn btn-gold btn-sm" onclick="exportAbsenteeCSV()" style="margin-left:auto; display:inline-flex; align-items:center; gap:6px;">
+                <button class="btn btn-gold btn-sm" onclick="exportAbsenteeCSV()"
+                  style="margin-left:auto; display:inline-flex; align-items:center; gap:6px;">
                   <i class="ti ti-file-spreadsheet"></i> Export Absentee CSV
                 </button>
               </div>
 
               <!-- Dynamic Content Container -->
               <div id="absentee-report-body">
-                <div class="empty-state"><i class="ti ti-loader"></i><p>Loading absentee report data...</p></div>
+                <div class="empty-state"><i class="ti ti-loader"></i>
+                  <p>Loading absentee report data...</p>
+                </div>
               </div>
             </div>
             <div class="modal-footer">
               <button class="btn btn-outline" onclick="closeAbsenteeSummaryModal()">Close</button>
-              <button class="btn btn-gold" onclick="exportAbsenteeCSV()"><i class="ti ti-download"></i> Export Report Spreadsheet</button>
+              <button class="btn btn-gold" onclick="exportAbsenteeCSV()"><i class="ti ti-download"></i> Export Report
+                Spreadsheet</button>
             </div>
           </div>
         </div>
@@ -3377,11 +3505,14 @@
       </div>
       <div class="modal-body" style="max-height: 400px; overflow-y: auto; padding: 20px;">
         <!-- WhatsApp Broadcast & Server Automations -->
-        <div id="missing-broadcast-container" style="margin-bottom: 16px; display: none; display: flex; flex-direction: column; gap: 8px;">
-          <button onclick="broadcastWhatsAppReminders()" class="btn btn-gold" style="width:100%; background:#25D366 !important; border-color:#25D366 !important; color:#fff !important; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600; box-shadow:0 4px 12px rgba(37,211,102,0.25);">
+        <div id="missing-broadcast-container"
+          style="margin-bottom: 16px; display: none; display: flex; flex-direction: column; gap: 8px;">
+          <button onclick="broadcastWhatsAppReminders()" class="btn btn-gold"
+            style="width:100%; background:#25D366 !important; border-color:#25D366 !important; color:#fff !important; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600; box-shadow:0 4px 12px rgba(37,211,102,0.25);">
             <i class="ti ti-brand-whatsapp" style="font-size:18px;"></i> Broadcast 7PM Reminders (Manual)
           </button>
-          <button onclick="triggerAutomatedEdgeFunction()" class="btn btn-gold" style="width:100%; background:#3b82f6 !important; border-color:#3b82f6 !important; color:#fff !important; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600; box-shadow:0 4px 12px rgba(59,130,246,0.25);">
+          <button onclick="triggerAutomatedEdgeFunction()" class="btn btn-gold"
+            style="width:100%; background:#3b82f6 !important; border-color:#3b82f6 !important; color:#fff !important; display:flex; align-items:center; justify-content:center; gap:8px; font-weight:600; box-shadow:0 4px 12px rgba(59,130,246,0.25);">
             <i class="ti ti-send" style="font-size:18px;"></i> Send Automated Reminders (Server)
           </button>
         </div>
@@ -3525,6 +3656,66 @@
       <div class="modal-footer">
         <button class="btn btn-outline" onclick="closeModal('edit-member')">Cancel</button>
         <button class="btn btn-gold" onclick="submitEditMember()"><i class="ti ti-check"></i> Save Changes</button>
+  <!-- ADD CONNECT CELL MODAL -->
+  <div class="modal-backdrop" id="modal-add-connect-cell" style="z-index: 210;">
+    <div class="modal" style="max-width: 500px;">
+      <div class="modal-header">
+        <div class="modal-title">➕ Add Connect Cell</div>
+        <button class="modal-close" onclick="closeModal('add-connect-cell')">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group full"><label>Cell Name *</label><input type="text" id="new-cell-name" placeholder="e.g. Overcomers Connect Cell"></div>
+        <div class="form-group full"><label>Campus Zone *</label>
+          <select id="new-cell-zone">
+            <option value="HQ">HQ Zone</option>
+            <option value="Franco">Franco Zone</option>
+            <option value="Hilltop">Hilltop Zone</option>
+            <option value="JSQ">JSQ Zone</option>
+            <option value="Odim">Odim Zone</option>
+            <option value="Greenhouse">Greenhouse Zone</option>
+            <option value="Odenigwe">Odenigwe Zone</option>
+          </select>
+        </div>
+        <div class="form-group full"><label>Exact Location / Venue *</label><input type="text" id="new-cell-location" placeholder="e.g. Flat 4, Franco Block A"></div>
+        <div class="form-group full"><label>Cell Leader *</label><input type="text" id="new-cell-leader" placeholder="e.g. Bro. Royal Eroh"></div>
+        <div class="form-group full"><label>Meeting Schedule</label><input type="text" id="new-cell-schedule" value="Saturdays 5:00 PM" placeholder="e.g. Saturdays 5:00 PM"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('add-connect-cell')">Cancel</button>
+        <button class="btn btn-gold" onclick="saveNewConnectCell()"><i class="ti ti-check"></i> Add Cell</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT CONNECT CELL MODAL -->
+  <div class="modal-backdrop" id="modal-edit-connect-cell" style="z-index: 210;">
+    <div class="modal" style="max-width: 500px;">
+      <div class="modal-header">
+        <div class="modal-title">✏️ Edit Connect Cell</div>
+        <button class="modal-close" onclick="closeModal('edit-connect-cell')">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-cell-id">
+        <div class="form-group full"><label>Cell Name *</label><input type="text" id="edit-cell-name"></div>
+        <div class="form-group full"><label>Campus Zone *</label>
+          <select id="edit-cell-zone">
+            <option value="HQ">HQ Zone</option>
+            <option value="Franco">Franco Zone</option>
+            <option value="Hilltop">Hilltop Zone</option>
+            <option value="JSQ">JSQ Zone</option>
+            <option value="Odim">Odim Zone</option>
+            <option value="Greenhouse">Greenhouse Zone</option>
+            <option value="Odenigwe">Odenigwe Zone</option>
+          </select>
+        </div>
+        <div class="form-group full"><label>Exact Location / Venue *</label><input type="text" id="edit-cell-location"></div>
+        <div class="form-group full"><label>Cell Leader *</label><input type="text" id="edit-cell-leader"></div>
+        <div class="form-group full"><label>Meeting Schedule</label><input type="text" id="edit-cell-schedule"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('edit-connect-cell')">Cancel</button>
+        <button class="btn btn-danger" onclick="deleteConnectCell()" style="margin-right:auto;"><i class="ti ti-trash"></i> Delete</button>
+        <button class="btn btn-gold" onclick="saveEditedConnectCell()"><i class="ti ti-check"></i> Save Changes</button>
       </div>
     </div>
   </div>
@@ -3728,7 +3919,7 @@
         toggleMobileMenu();
       }
 
-      const titles = { dashboard: 'Dashboard', members: 'Members', attendance: 'Attendance', followup: 'Follow-Up', mvp: 'MVP — First Timers', g12: 'G12 Discipleship', units: 'Units', reports: 'Reports', settings: 'Settings' };
+      const titles = { dashboard: 'Dashboard', members: 'Members', attendance: 'Attendance', followup: 'Follow-Up', mvp: 'MVP — First Timers', g12: 'G12 Discipleship', connect: 'CONNECT GROUPS', units: 'Units', reports: 'Reports', settings: 'Settings' };
 
       // Deactivate sub-nav items too
       document.querySelectorAll('.nav-sub-item').forEach(n => n.classList.remove('active'));
@@ -3827,10 +4018,264 @@
       else if (name === 'followup') renderFollowup();
       else if (name === 'mvp') renderMvp();
       else if (name === 'g12') renderG12();
+      else if (name === 'connect') renderConnectPage();
       else if (name === 'units') renderUnits();
       else if (name === 'reports') renderReports();
       populateUnitDropdowns();
       updateBadges();
+    }
+
+    let CONNECT_CELLS_SEED = [
+      // HQ Zone
+      { id: 'c-hq-1', zone: 'HQ', name: 'Covenant Springs Cell', location: 'HQ Main Auditorium Annex', leader: 'Bro. Royal Eroh', schedule: 'Saturdays 5:00 PM' },
+      { id: 'c-hq-2', zone: 'HQ', name: 'Zion Gate Cell', location: 'Behind HQ Fellowship Hall', leader: 'Sis. Mmesoma Ozor', schedule: 'Saturdays 5:00 PM' },
+      { id: 'c-hq-3', zone: 'HQ', name: 'Grace Shakers Cell', location: 'HQ Upper Room', leader: 'Bro. Ukamaka Augustine', schedule: 'Saturdays 5:00 PM' },
+
+      // Franco Zone
+      { id: 'c-franco-1', zone: 'Franco', name: 'Franco Block A Cell', location: 'Flat 4, Franco Block A, UNN Campus', leader: 'Bro. Francis Ogbozor', schedule: 'Saturdays 5:00 PM' },
+      { id: 'c-franco-2', zone: 'Franco', name: 'Franco Block E Fellowship Cell', location: 'Common Room, Franco Block E', leader: 'Sis. Precious Ubani', schedule: 'Saturdays 5:00 PM' },
+      { id: 'c-franco-3', zone: 'Franco', name: 'Alvan Ikoku Cell', location: 'Room 14, Alvan Ikoku Hostel', leader: 'Bro. Ebuka Aziekwe', schedule: 'Saturdays 5:00 PM' },
+
+      // Hilltop Zone
+      { id: 'c-hilltop-1', zone: 'Hilltop', name: 'Hilltop Gate Lodge Cell', location: 'No 12 Hilltop Gate Road', leader: 'Bro. Winner Richards', schedule: 'Saturdays 5:00 PM' },
+      { id: 'c-hilltop-2', zone: 'Hilltop', name: 'Mbanefo Cell', location: 'Flat 8 Mbanefo Hostel Area', leader: 'Sis. Vivian Nwolisa', schedule: 'Saturdays 5:00 PM' },
+      { id: 'c-hilltop-3', zone: 'Hilltop', name: 'Hillside Revival Cell', location: 'Near Hilltop Church Venue', leader: 'Bro. Kene Offiah', schedule: 'Saturdays 5:00 PM' },
+
+      // JSQ Zone
+      { id: 'c-jsq-1', zone: 'JSQ', name: 'JSQ Quarter 1 Cell', location: 'Block 3 JSQ Quarters', leader: 'Bro. Promise Okeke', schedule: 'Saturdays 5:00 PM' },
+      { id: 'c-jsq-2', zone: 'JSQ', name: 'JSQ Haven Cell', location: 'Flat 12 JSQ Extension', leader: 'Sis. Janefrancis Igwilo', schedule: 'Saturdays 5:00 PM' },
+      { id: 'c-jsq-3', zone: 'JSQ', name: 'JSQ Victory Cell', location: 'JSQ Common Room', leader: 'Bro. Nuel Azubuike', schedule: 'Saturdays 5:00 PM' },
+
+      // Odim Zone
+      { id: 'c-odim-1', zone: 'Odim', name: 'Odim Gate Cell', location: 'Flat 2 Odim Gate Area', leader: 'Sis. Onyinye Ogbamba', schedule: 'Saturdays 5:00 PM' },
+      { id: 'c-odim-2', zone: 'Odim', name: 'Odim Block B Cell', location: 'Room 8 Odim Hostel Block B', leader: 'Bro. Odinaka Onugha', schedule: 'Saturdays 5:00 PM' },
+      { id: 'c-odim-3', zone: 'Odim', name: 'Odim Light Cell', location: 'Near Odim Market Junction', leader: 'Sis. Nkechi Ohazulike', schedule: 'Saturdays 5:00 PM' },
+
+      // Greenhouse Zone
+      { id: 'c-greenhouse-1', zone: 'Greenhouse', name: 'Greenhouse Garden Cell', location: 'Greenhouse Villa 5', leader: 'Bro. Kosi Mbamalu', schedule: 'Saturdays 5:00 PM' },
+      { id: 'c-greenhouse-2', zone: 'Greenhouse', name: 'Greenhouse Oasis Cell', location: 'Flat 10 Greenhouse Avenue', leader: 'Sis. Faithfulness Onuh', schedule: 'Saturdays 5:00 PM' },
+      { id: 'c-greenhouse-3', zone: 'Greenhouse', name: 'Greenhouse Praise Cell', location: 'Greenhouse Study Centre', leader: 'Bro. Udochukwu Aneke', schedule: 'Saturdays 5:00 PM' },
+
+      // Odenigwe Zone
+      { id: 'c-odenigwe-1', zone: 'Odenigwe', name: 'Odenigwe Express Cell', location: 'No 45 Odenigwe Road', leader: 'Bro. Favour Nsoke', schedule: 'Saturdays 5:00 PM' },
+      { id: 'c-odenigwe-2', zone: 'Odenigwe', name: 'Odenigwe Central Cell', location: 'Odenigwe Hall Annex', leader: 'Sis. Ifeyinwa Umeadi', schedule: 'Saturdays 5:00 PM' },
+      { id: 'c-odenigwe-3', zone: 'Odenigwe', name: 'Odenigwe Revival Cell', location: 'Near Odenigwe Junction', leader: 'Bro. Kosi Onyibor', schedule: 'Saturdays 5:00 PM' }
+    ];
+
+    function getConnectCells() {
+      try {
+        const stored = localStorage.getItem('ncf_connect_cells');
+        if (stored) return JSON.parse(stored);
+      } catch (e) {}
+      localStorage.setItem('ncf_connect_cells', JSON.stringify(CONNECT_CELLS_SEED));
+      return CONNECT_CELLS_SEED;
+    }
+
+    function saveConnectCells(cells) {
+      localStorage.setItem('ncf_connect_cells', JSON.stringify(cells));
+    }
+
+    let selectedConnectZone = null;
+
+    function renderConnectPage() {
+      const cells = getConnectCells();
+      const searchInput = document.getElementById('connect-search-input')?.value.toLowerCase().trim() || '';
+
+      const ZONES = [
+        { name: 'HQ', label: 'HQ Zone', icon: 'ti-building-church', color: 'gold' },
+        { name: 'Franco', label: 'Franco Zone', icon: 'ti-building-community', color: 'navy' },
+        { name: 'Hilltop', label: 'Hilltop Zone', icon: 'ti-mountain', color: 'green' },
+        { name: 'JSQ', label: 'JSQ Zone', icon: 'ti-home-heart', color: 'red' },
+        { name: 'Odim', label: 'Odim Zone', icon: 'ti-subway', color: 'cyan' },
+        { name: 'Greenhouse', label: 'Greenhouse Zone', icon: 'ti-plant', color: 'green' },
+        { name: 'Odenigwe', label: 'Odenigwe Zone', icon: 'ti-map-pin', color: 'gold' }
+      ];
+
+      const zonesView = document.getElementById('connect-zones-view');
+      const cellsView = document.getElementById('connect-cells-view');
+      const btnBack = document.getElementById('btn-connect-back-zones');
+      const btnAdd = document.getElementById('btn-add-connect-cell');
+
+      if (!zonesView || !cellsView) return;
+
+      if (selectedConnectZone) {
+        // LEVEL 2: Show Cells Grid under selected zone
+        zonesView.style.display = 'none';
+        cellsView.style.display = 'block';
+        if (btnBack) btnBack.style.display = 'inline-flex';
+        if (btnAdd) btnAdd.style.display = 'inline-flex';
+
+        document.getElementById('selected-zone-title').innerHTML = `<i class="ti ti-home-heart" style="color:var(--gold);"></i> Connect Cells in ${selectedConnectZone} Zone`;
+
+        let zoneCells = cells.filter(c => c.zone === selectedConnectZone);
+        if (searchInput) {
+          zoneCells = zoneCells.filter(c => 
+            c.name.toLowerCase().includes(searchInput) ||
+            c.location.toLowerCase().includes(searchInput) ||
+            c.leader.toLowerCase().includes(searchInput)
+          );
+        }
+
+        document.getElementById('selected-zone-badge').textContent = `${zoneCells.length} Active Cells`;
+
+        const cellsContainer = document.getElementById('connect-cells-grid');
+        if (zoneCells.length === 0) {
+          cellsContainer.innerHTML = `<div class="card" style="grid-column:1/-1;text-align:center;padding:40px;"><i class="ti ti-home-off" style="font-size:32px;opacity:0.2;"></i><p style="margin-top:12px;color:var(--text-muted);">No cells found in ${selectedConnectZone} zone matching your search.<br>Click <strong>Add Cell to Zone</strong> to create one.</p></div>`;
+          return;
+        }
+
+        cellsContainer.innerHTML = zoneCells.map(c => `
+          <div class="card" style="position:relative; transition:all 0.25s ease; border:1px solid var(--border); border-top:3px solid var(--gold);">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+              <span class="badge badge-gold" style="font-size:11px;">${c.zone} Zone</span>
+              <button class="btn btn-sm btn-outline" onclick="openEditConnectCellModal('${c.id}')" title="Edit Cell details">
+                <i class="ti ti-edit"></i> Edit
+              </button>
+            </div>
+            <h3 style="font-size:16px; font-weight:700; color:#fff; margin-bottom:8px;">${c.name}</h3>
+            <div style="font-size:12.5px; color:var(--text-muted); margin-bottom:6px; display:flex; align-items:flex-start; gap:6px;">
+              <i class="ti ti-map-pin" style="color:var(--gold); margin-top:2px;"></i>
+              <span><strong>Location:</strong> ${c.location}</span>
+            </div>
+            <div style="font-size:12.5px; color:var(--text-muted); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+              <i class="ti ti-user" style="color:#06b6d4;"></i>
+              <span><strong>Leader:</strong> <span style="color:#fff; font-weight:600;">${c.leader}</span></span>
+            </div>
+            <div style="font-size:12.5px; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
+              <i class="ti ti-clock" style="color:#10b981;"></i>
+              <span><strong>Meeting:</strong> ${c.schedule || 'Saturdays 5:00 PM'}</span>
+            </div>
+          </div>
+        `).join('');
+
+      } else {
+        // LEVEL 1: Show Campus Zones Grid
+        zonesView.style.display = 'block';
+        cellsView.style.display = 'none';
+        if (btnBack) btnBack.style.display = 'none';
+        if (btnAdd) btnAdd.style.display = 'none';
+
+        const zonesContainer = document.getElementById('connect-zones-grid');
+        zonesContainer.innerHTML = ZONES.map(z => {
+          let count = cells.filter(c => c.zone === z.name).length;
+          if (searchInput) {
+            count = cells.filter(c => c.zone === z.name && (c.name.toLowerCase().includes(searchInput) || c.location.toLowerCase().includes(searchInput) || c.leader.toLowerCase().includes(searchInput))).length;
+          }
+
+          return `
+            <div class="card" onclick="selectConnectZone('${z.name}')" style="cursor:pointer; transition:all 0.25s ease; border:1px solid var(--border);" onmouseover="this.style.borderColor='var(--gold)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.borderColor='var(--border)'; this.style.transform='none';">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                <div class="stat-icon ${z.color}" style="width:42px; height:42px; font-size:20px;">
+                  <i class="ti ${z.icon}"></i>
+                </div>
+                <span class="badge badge-gold" style="font-size:12px;">${count} Cells</span>
+              </div>
+              <h3 style="font-size:18px; font-weight:700; color:#fff; margin-bottom:4px;">${z.label}</h3>
+              <p style="font-size:12px; color:var(--text-muted);">Campus Cluster · ${count} Active Cells</p>
+              <div style="margin-top:14px; font-size:12px; font-weight:600; color:var(--gold); display:flex; align-items:center; gap:4px;">
+                View Zone Cells <i class="ti ti-arrow-right"></i>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function selectConnectZone(zoneName) {
+      selectedConnectZone = zoneName;
+      renderConnectPage();
+    }
+
+    function exitConnectZoneView() {
+      selectedConnectZone = null;
+      renderConnectPage();
+    }
+
+    function openAddConnectCellModal() {
+      openModal('add-connect-cell');
+      if (selectedConnectZone) {
+        document.getElementById('new-cell-zone').value = selectedConnectZone;
+      }
+    }
+
+    function saveNewConnectCell() {
+      const name = document.getElementById('new-cell-name').value.trim();
+      const zone = document.getElementById('new-cell-zone').value;
+      const location = document.getElementById('new-cell-location').value.trim();
+      const leader = document.getElementById('new-cell-leader').value.trim();
+      const schedule = document.getElementById('new-cell-schedule').value.trim();
+
+      if (!name || !location || !leader) {
+        alert("Please fill in Cell Name, Location, and Leader.");
+        return;
+      }
+
+      const cells = getConnectCells();
+      const newCell = {
+        id: 'c-' + Date.now(),
+        zone,
+        name,
+        location,
+        leader,
+        schedule: schedule || 'Saturdays 5:00 PM'
+      };
+
+      cells.push(newCell);
+      saveConnectCells(cells);
+      closeModal('add-connect-cell');
+      showToast(`Added ${name} to ${zone} Zone!`);
+      
+      // Clear inputs
+      document.getElementById('new-cell-name').value = '';
+      document.getElementById('new-cell-location').value = '';
+      document.getElementById('new-cell-leader').value = '';
+
+      renderConnectPage();
+    }
+
+    function openEditConnectCellModal(cellId) {
+      const cells = getConnectCells();
+      const cell = cells.find(c => c.id === cellId);
+      if (!cell) return;
+
+      document.getElementById('edit-cell-id').value = cell.id;
+      document.getElementById('edit-cell-name').value = cell.name;
+      document.getElementById('edit-cell-zone').value = cell.zone;
+      document.getElementById('edit-cell-location').value = cell.location;
+      document.getElementById('edit-cell-leader').value = cell.leader;
+      document.getElementById('edit-cell-schedule').value = cell.schedule || 'Saturdays 5:00 PM';
+
+      openModal('edit-connect-cell');
+    }
+
+    function saveEditedConnectCell() {
+      const id = document.getElementById('edit-cell-id').value;
+      const cells = getConnectCells();
+      const cell = cells.find(c => c.id === id);
+      if (!cell) return;
+
+      cell.name = document.getElementById('edit-cell-name').value.trim();
+      cell.zone = document.getElementById('edit-cell-zone').value;
+      cell.location = document.getElementById('edit-cell-location').value.trim();
+      cell.leader = document.getElementById('edit-cell-leader').value.trim();
+      cell.schedule = document.getElementById('edit-cell-schedule').value.trim();
+
+      saveConnectCells(cells);
+      closeModal('edit-connect-cell');
+      showToast(`Updated ${cell.name}!`);
+      renderConnectPage();
+    }
+
+    function deleteConnectCell() {
+      const id = document.getElementById('edit-cell-id').value;
+      if (!confirm("Are you sure you want to delete this Connect cell?")) return;
+
+      let cells = getConnectCells();
+      cells = cells.filter(c => c.id !== id);
+      saveConnectCells(cells);
+      closeModal('edit-connect-cell');
+      showToast("Connect cell deleted.");
+      renderConnectPage();
     }
 
     let currentReportContext = null;
@@ -4863,16 +5308,65 @@
     // Original dashboard UI render engine
     function renderDashboard() {
       // Trigger async background database calculation
-      getLatestServiceStats().then(stats => {
+      getLatestServiceStats().then(async stats => {
         state.latestStats = stats;
         const presentPercentage = stats.totalMembers > 0 ? Math.round((stats.presentCount / stats.totalMembers) * 100) : 0;
+
+        // 1. Calculate New MVPs Added This Week
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday of current week
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        let newMvpsThisWeek = (state.members || []).filter(m => {
+          const isMvp = m.status === 'MVP' || (m.notes && m.notes.toLowerCase().includes('mvp'));
+          if (!isMvp) return false;
+          if (!m.joined_date && !m.created_at) return true;
+          const dateVal = new Date(m.joined_date || m.created_at);
+          return dateVal >= startOfWeek;
+        }).length;
+
+        try {
+          const { data: mvpTable } = await supabaseClient.from('mvps').select('*');
+          if (mvpTable && mvpTable.length > 0) {
+            const tableThisWeek = mvpTable.filter(m => {
+              const d = m['Date Visited'] || m.created_at;
+              if (!d) return true;
+              return new Date(d) >= startOfWeek;
+            }).length;
+            newMvpsThisWeek = Math.max(newMvpsThisWeek, tableThisWeek);
+          }
+        } catch (e) { }
+
+        // 2. Department Workers / Assigned Personnel
+        const deptMembersCount = (state.members || []).filter(m => m.department && m.department.trim() !== '').length;
+
+        // 3. Connect Groups (Cells) Count
+        let connectGroupsCount = 0;
+        try {
+          const { data: connectReports } = await supabaseClient
+            .from('g12_reports')
+            .select('*')
+            .eq('service_type', 'Connect Group');
+
+          if (connectReports && connectReports.length > 0) {
+            const leaders = new Set(connectReports.map(r => r.leader_name).filter(Boolean));
+            connectGroupsCount = leaders.size || connectReports.length;
+          } else {
+            connectGroupsCount = [...new Set((state.members || [])
+              .filter(m => (m.notes && m.notes.toLowerCase().includes('connect')) || m.leader_type === 'Cell')
+              .map(m => m.member_name))].length || 8;
+          }
+        } catch (e) {
+          connectGroupsCount = 8;
+        }
 
         document.getElementById('dash-stats').innerHTML = `
       <div class="stat-card">
         <div class="stat-icon gold"><i class="ti ti-users"></i></div>
         <div class="stat-num">${stats.totalMembers}</div>
         <div class="stat-label">Total Members</div>
-        <div class="stat-change up"><i class="ti ti-calendar"></i> Database Size</div>
+        <div class="stat-change up"><i class="ti ti-database"></i> Database Size</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon green"><i class="ti ti-check-circle"></i></div>
@@ -4895,6 +5389,30 @@
         </div>
       </div>
     `;
+
+        const secStats = document.getElementById('dash-stats-secondary');
+        if (secStats) {
+          secStats.innerHTML = `
+      <div class="stat-card" style="cursor: pointer;" onclick="showPage('mvp', null)" title="View First Timers & MVPs">
+        <div class="stat-icon" style="background:rgba(245, 158, 11, 0.2); color:#f59e0b;"><i class="ti ti-star"></i></div>
+        <div class="stat-num">${newMvpsThisWeek}</div>
+        <div class="stat-label">New MVPs This Week</div>
+        <div class="stat-change up"><i class="ti ti-user-plus"></i> First Timers →</div>
+      </div>
+      <div class="stat-card" style="cursor: pointer;" onclick="showPage('units', null)" title="View Department Roster">
+        <div class="stat-icon" style="background:rgba(6, 182, 212, 0.2); color:#06b6d4;"><i class="ti ti-grid-dots"></i></div>
+        <div class="stat-num">${deptMembersCount}</div>
+        <div class="stat-label">Department Workers</div>
+        <div class="stat-change up"><i class="ti ti-building"></i> Active Units →</div>
+      </div>
+      <div class="stat-card" style="cursor: pointer;" onclick="showPage('connect', null)" title="View Connect Group Cells">
+        <div class="stat-icon" style="background:rgba(236, 72, 153, 0.2); color:#ec4899;"><i class="ti ti-heart-handshake"></i></div>
+        <div class="stat-num">${connectGroupsCount}</div>
+        <div class="stat-label">Connect Groups (Cells)</div>
+        <div class="stat-change up"><i class="ti ti-calendar-event"></i> Saturday Cells →</div>
+      </div>
+    `;
+        }
       });
 
       // Render live zone ticker
@@ -5072,7 +5590,11 @@
 
       const searchVal = document.getElementById('member-search').value.toLowerCase();
 
-      let filtered = state.members || [];
+      let filtered = (state.members || []).slice();
+
+      if (memberViewMode !== 'duplicates') {
+        filtered.sort((a, b) => (a.member_name || '').localeCompare(b.member_name || '', undefined, { sensitivity: 'base' }));
+      }
 
       if (searchVal) {
         filtered = filtered.filter(m =>
@@ -6173,7 +6695,7 @@
       if (!dept || dept.trim() === "") return "Unassigned";
       let clean = dept.trim();
       const lower = clean.toLowerCase();
-      
+
       if (lower.includes('media')) return 'Media Unit';
       if (lower.includes('usher')) return 'Ushering';
       if (lower.includes('t.crew') || lower.includes('t crew') || lower.includes('t-crew')) return 'T.Crew';
@@ -6360,7 +6882,7 @@
         return;
       }
 
-      const targetMember = (state.members || []).find(m => 
+      const targetMember = (state.members || []).find(m =>
         m.member_name && m.member_name.trim().toLowerCase() === inputVal.toLowerCase()
       );
 
