@@ -253,8 +253,18 @@
         <button class="btn-submit" id="smartModalSubmit" style="flex:1;">Save</button>
       </div>
     </div>
+  </div>
 
-
+  <!-- Custom In-Page Duplicate Alert Modal -->
+  <div class="modal-backdrop" id="dupAlertModal" style="display: none;">
+    <div class="modal-box" style="text-align: center; max-width: 380px;">
+      <div style="font-size: 42px; margin-bottom: 8px;">⚠️</div>
+      <h2 style="font-family:'Playfair Display',serif; font-size:22px; margin-bottom:12px; color: var(--gold-light);">Already Registered</h2>
+      <p style="font-size:14px; color: #e2e8f0; line-height: 1.5; margin-bottom:24px; background: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.3); padding: 14px; border-radius: 12px;">
+        User already exist. Contact admin for changes.
+      </p>
+      <button class="btn-submit" onclick="closeDupAlertModal()" style="width: 100%;">OK, Understood</button>
+    </div>
   </div>
 
   <script>
@@ -468,6 +478,16 @@
       });
     }
 
+    function showDupAlertModal() {
+      const modal = document.getElementById('dupAlertModal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeDupAlertModal() {
+      const modal = document.getElementById('dupAlertModal');
+      if (modal) modal.style.display = 'none';
+    }
+
     async function selectG12Leader() {
         const leaderInput = document.getElementById('g12_leader');
         const selectedLeader = await promptSmartModal('Select G12 Leader', 'Start typing leader name...', true, leaderInput.value);
@@ -514,31 +534,60 @@
       btn.textContent = "Submitting...";
       btn.disabled = true;
 
-      // 1. Check if member already exists (search by name or phone)
-      const { data: existingData, error: searchError } = await supabaseClient
-        .from('members')
-        .select('*')
-        .or(`member_name.ilike.${member_name},member_phone.eq.${member_phone}`);
-
-      if (searchError) {
-        console.error("Search Error:", searchError.message);
-        // Fallback search by name if .or fails
-        const { data: nameMatch } = await supabaseClient
+      // 1. Check if member already exists (smart check by name, swapped words, or phone)
+      try {
+        const { data: allMembers, error: fetchErr } = await supabaseClient
           .from('members')
-          .select('*')
-          .ilike('member_name', member_name);
-          
-        if (nameMatch && nameMatch.length > 0) {
-          alert("User already exist. Contact admin for changes.");
+          .select('member_name, member_phone');
+
+        if (fetchErr) {
+          console.error("Duplicate check fetch error:", fetchErr.message);
+        }
+
+        const membersList = allMembers || [];
+        const cleanInputPhone = member_phone.replace(/\D/g, '');
+        const cleanInputName = member_name.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim();
+        const inputWords = cleanInputName.split(/\s+/).filter(w => w.length > 1);
+
+        const titles = ["pastor", "pa", "pst", "mr", "mrs", "ms", "miss", "dr", "prof", "brother", "sister", "mama", "sis", "fr"];
+        const filteredInputWords = inputWords.filter(w => !titles.includes(w));
+
+        const isDup = membersList.some(m => {
+          // A. Check phone match
+          const dbPhone = (m.member_phone || '').replace(/\D/g, '');
+          if (cleanInputPhone && dbPhone && cleanInputPhone.length >= 7 && cleanInputPhone === dbPhone) {
+            return true;
+          }
+
+          // B. Check name match
+          if (!m.member_name) return false;
+          const cleanDbName = m.member_name.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim();
+          if (cleanInputName === cleanDbName) return true;
+
+          // C. Check word set match (handles swapped first/last name like "Uche Onyekachi" vs "Onyekachi Uche")
+          const dbWords = cleanDbName.split(/\s+/).filter(w => w.length > 1 && !titles.includes(w));
+          if (filteredInputWords.length > 0 && dbWords.length > 0) {
+            const commonWords = filteredInputWords.filter(w => dbWords.includes(w));
+            if (filteredInputWords.length <= 2 && dbWords.length <= 2) {
+              if (commonWords.length === filteredInputWords.length && commonWords.length === dbWords.length) {
+                return true; // Exact same name words in swapped order!
+              }
+            }
+            if (commonWords.length >= 2) {
+              return true; // Shared 2+ name words
+            }
+          }
+          return false;
+        });
+
+        if (isDup) {
+          showDupAlertModal();
           btn.textContent = "Submit Details";
           btn.disabled = false;
           return;
         }
-      } else if (existingData && existingData.length > 0) {
-        alert("User already exist. Contact admin for changes.");
-        btn.textContent = "Submit Details";
-        btn.disabled = false;
-        return;
+      } catch (checkErr) {
+        console.error("Duplicate check error:", checkErr);
       }
 
       let dbError = null;
