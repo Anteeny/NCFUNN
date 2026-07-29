@@ -6026,18 +6026,20 @@
             renderGrowthPage();
           }
 
-          async function renderGrowthPage() {
+          async function renderGrowthPage(forceRefresh = false) {
             const tbody = document.getElementById('growth-tbody');
             const statsContainer = document.getElementById('growth-summary-stats');
             if (!tbody) return;
 
-            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:40px;"><i class="ti ti-loader" style="font-size:20px; opacity:0.3"></i></td></tr>';
-
             try {
-              const { data: dbMembers, error } = await supabaseClient.from('members').select('*');
-              if (error) console.warn("Error fetching growth page members:", error);
+              if (forceRefresh || !state.members || state.members.length === 0) {
+                const { data: dbMembers } = await supabaseClient.from('members').select('*');
+                if (dbMembers && dbMembers.length > 0) {
+                  state.members = dbMembers;
+                }
+              }
 
-              const members = (dbMembers && dbMembers.length > 0) ? dbMembers : (state.members || []);
+              const members = state.members || [];
 
               const stages = { 'Core': 0, 'Committed': 0, 'Congregation': 0, 'Crowd': 0, 'Community': 0 };
               members.forEach(m => {
@@ -6317,10 +6319,10 @@
               });
             }
 
-            tbody.innerHTML = '';
+            let html = '';
 
             if (filtered.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:30px; color:var(--text-muted);">No members found</td></tr>';
+              html = '<tr><td colspan="11" style="text-align:center; padding:30px; color:var(--text-muted);">No members found</td></tr>';
             } else if (memberViewMode === 'by-department') {
               const grouped = {};
               filtered.forEach(m => {
@@ -6331,12 +6333,12 @@
 
               let rowNum = 1;
               Object.keys(grouped).sort().forEach(dept => {
-                tbody.innerHTML += `<tr style="background: rgba(59, 130, 246,0.1); font-weight: 600;"><td colspan="11" style="padding: 12px; color: var(--gold);">📁 ${dept} (${grouped[dept].length})</td></tr>`;
+                html += `<tr style="background: rgba(59, 130, 246,0.1); font-weight: 600;"><td colspan="11" style="padding: 12px; color: var(--gold);">📁 ${dept} (${grouped[dept].length})</td></tr>`;
                 grouped[dept].forEach(m => {
                   const realIndex = state.members.indexOf(m);
                   const safeName = m.member_name || 'Unnamed';
                   const phone = m.member_phone || m.phone || '—';
-                  tbody.innerHTML += `
+                  html += `
           <tr>
             <td style="font-weight: 600; color: var(--gold);">${rowNum++}</td>
             <td><div style="cursor: pointer; color: var(--gold);" onclick="openEditMemberModal(${realIndex})" title="Click to edit">${safeName}</div></td>
@@ -6363,12 +6365,12 @@
 
               let rowNum = 1;
               Object.keys(grouped).sort().forEach(leader => {
-                tbody.innerHTML += `<tr style="background: rgba(59, 130, 246,0.1); font-weight: 600;"><td colspan="11" style="padding: 12px; color: var(--gold);">👤 ${leader} (${grouped[leader].length})</td></tr>`;
+                html += `<tr style="background: rgba(59, 130, 246,0.1); font-weight: 600;"><td colspan="11" style="padding: 12px; color: var(--gold);">👤 ${leader} (${grouped[leader].length})</td></tr>`;
                 grouped[leader].forEach(m => {
                   const realIndex = state.members.indexOf(m);
                   const safeName = m.member_name || 'Unnamed';
                   const phone = m.member_phone || m.phone || '—';
-                  tbody.innerHTML += `
+                  html += `
           <tr>
             <td style="font-weight: 600; color: var(--gold);">${rowNum++}</td>
             <td><div style="cursor: pointer; color: var(--gold);" onclick="openEditMemberModal(${realIndex})" title="Click to edit">${safeName}</div></td>
@@ -6395,12 +6397,12 @@
 
               let rowNum = 1;
               Object.keys(grouped).sort().forEach(zone => {
-                tbody.innerHTML += `<tr style="background: rgba(59, 130, 246,0.1); font-weight: 600;"><td colspan="11" style="padding: 12px; color: var(--gold);">📍 Zone: ${zone} (${grouped[zone].length})</td></tr>`;
+                html += `<tr style="background: rgba(59, 130, 246,0.1); font-weight: 600;"><td colspan="11" style="padding: 12px; color: var(--gold);">📍 Zone: ${zone} (${grouped[zone].length})</td></tr>`;
                 grouped[zone].forEach(m => {
                   const realIndex = state.members.indexOf(m);
                   const safeName = m.member_name || 'Unnamed';
                   const phone = m.member_phone || m.phone || '—';
-                  tbody.innerHTML += `
+                  html += `
           <tr>
             <td style="font-weight: 600; color: var(--gold);">${rowNum++}</td>
             <td><div style="cursor: pointer; color: var(--gold);" onclick="openEditMemberModal(${realIndex})" title="Click to edit">${safeName}</div></td>
@@ -6422,7 +6424,7 @@
                 const realIndex = state.members.indexOf(m);
                 const safeName = m.member_name || 'Unnamed';
                 const phone = m.member_phone || m.phone || '—';
-                tbody.innerHTML += `
+                html += `
         <tr>
           <td style="font-weight: 600; color: var(--gold);">${idx + 1}</td>
           <td>
@@ -6444,6 +6446,8 @@
         </tr>`;
               });
             }
+
+            tbody.innerHTML = html;
           }
 
           function filterMembers() {
