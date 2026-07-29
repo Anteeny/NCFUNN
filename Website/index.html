@@ -3360,6 +3360,10 @@
               style="border-color: var(--danger); color: var(--danger);">
               <i class="ti ti-copy"></i> Duplicates
             </button>
+            <button class="btn btn-sm btn-outline" onclick="exportMembersToCSV()" title="Export Members roster to CSV"
+              style="border-color: var(--gold); color: var(--gold); background: transparent;">
+              <i class="ti ti-download"></i> Export CSV
+            </button>
             <button class="btn btn-gold" onclick="openModal('add-member')"><i class="ti ti-plus"></i> Add
               Member</button>
           </div>
@@ -3394,7 +3398,8 @@
             style="margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));"></div>
 
           <!-- Tabbed Stage Navbar -->
-          <div class="search-bar" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          <div class="search-bar"
+            style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
             <button class="btn" id="btn-growth-Community" onclick="switchGrowthTab('Community')"
               style="background: #8b5cf6; color: #ffffff; border: 1.5px solid #8b5cf6; font-weight: 700; box-shadow: 0 4px 14px rgba(139,92,246,0.4);">
               🟣 Community <span style="font-size:11px; color:#ffffff;">(Database)</span>
@@ -3422,7 +3427,8 @@
             style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
             <div>
               <div class="ann-title" id="growth-banner-title">All Spiritual Growth Stages</div>
-              <div class="ann-sub" id="growth-banner-sub">Tracking congregants from initial mobilization (Community) to pastoral leadership (Core)</div>
+              <div class="ann-sub" id="growth-banner-sub">Tracking congregants from initial mobilization (Community) to
+                pastoral leadership (Core)</div>
             </div>
             <div class="ann-badge" id="growth-banner-badge">5 Growth Levels</div>
           </div>
@@ -3431,7 +3437,8 @@
           <div class="search-bar" style="margin-bottom: 16px;">
             <div class="search-wrap" style="flex: 1;">
               <i class="ti ti-search"></i>
-              <input type="text" id="growth-search-input" placeholder="Search member by name, phone, department or leader..." oninput="filterGrowthMembers()">
+              <input type="text" id="growth-search-input"
+                placeholder="Search member by name, phone, department or leader..." oninput="filterGrowthMembers()">
             </div>
             <button class="btn btn-gold" onclick="renderGrowthPage()"><i class="ti ti-refresh"></i> Refresh</button>
           </div>
@@ -3455,7 +3462,8 @@
                 </thead>
                 <tbody id="growth-tbody">
                   <tr>
-                    <td colspan="9" style="text-align:center; padding:40px;"><i class="ti ti-loader" style="font-size:20px; opacity:0.3"></i></td>
+                    <td colspan="9" style="text-align:center; padding:40px;"><i class="ti ti-loader"
+                        style="font-size:20px; opacity:0.3"></i></td>
                   </tr>
                 </tbody>
               </table>
@@ -6454,6 +6462,63 @@
             document.getElementById('member-search').value = '';
             memberViewMode = 'all';
             renderMembers();
+          }
+
+          function exportMembersToCSV() {
+            const membersList = state.members || [];
+            if (membersList.length === 0) {
+              showToast("No members available to export.");
+              return;
+            }
+
+            const headers = [
+              "S/N",
+              "Full Name",
+              "Phone Number",
+              "Department",
+              "G12 Leader",
+              "Leader Type",
+              "School Address",
+              "Home Address",
+              "G12 Phone",
+              "Growth Stage"
+            ];
+
+            const escapeCSV = (val) => {
+              if (val === null || val === undefined) return '""';
+              const str = String(val).replace(/"/g, '""');
+              return `"${str}"`;
+            };
+
+            const rows = membersList.map((m, idx) => {
+              const stage = m.growth_stage || inferGrowthStage(m);
+              return [
+                idx + 1,
+                escapeCSV(m.member_name || ''),
+                escapeCSV(m.member_phone || m.phone || ''),
+                escapeCSV(m.department || ''),
+                escapeCSV(m.g12_leader || ''),
+                escapeCSV(m.leader_type || ''),
+                escapeCSV(m.school_address || m.School_Address || ''),
+                escapeCSV(m.home_address || m.Home_Address || ''),
+                escapeCSV(m.g12_phone || ''),
+                escapeCSV(stage)
+              ].join(",");
+            });
+
+            const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            const dateStr = new Date().toISOString().split('T')[0];
+
+            link.setAttribute("href", url);
+            link.setAttribute("download", `NCF_Members_Export_${dateStr}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast("Exported members roster to CSV!");
           }
 
           function getMemberZone(m) {
