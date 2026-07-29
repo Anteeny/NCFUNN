@@ -2977,6 +2977,7 @@
         <div class="nav-section">CONGREGATION</div>
         <div class="nav-item" onclick="showPage('members',this)"><i class="ti ti-users"></i> Members <span
             class="nav-badge" id="nb-members">—</span></div>
+        <div class="nav-item" onclick="showPage('growth',this)"><i class="ti ti-chart-dots"></i> Growth Stages</div>
         <div class="nav-item" onclick="showPage('attendance',this)"><i class="ti ti-calendar-check"></i> Attendance
         </div>
         <div class="nav-item" onclick="showPage('g12',this)"><i class="ti ti-users-group"></i> G12</div>
@@ -3117,9 +3118,23 @@
             </div>
           </div>
 
+          <!-- Spiritual Growth Journey Overview -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-title" style="display:flex; align-items:center; justify-content:space-between;">
+              <span>🌱 Spiritual Growth Journey (5 Levels of Growth)</span>
+              <span onclick="showPage('followup',null)"
+                style="cursor:pointer; font-size:12px; color:var(--gold);">Manage Journey →</span>
+            </div>
+            <div id="dash-growth-journey"
+              style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-top: 14px;">
+              <!-- Dynamic Growth Stage Cards -->
+            </div>
+          </div>
+
           <div class="grid-2">
             <div class="card">
-              <div class="card-title">Recent Follow-Ups <span onclick="showPage('followup',null)">View all →</span>
+              <div class="card-title">People Needing Follow-Up <span onclick="showPage('followup',null)">View all
+                  →</span>
               </div>
               <div id="recent-followups"></div>
             </div>
@@ -3362,10 +3377,87 @@
                     <th>School Address</th>
                     <th>Home Address</th>
                     <th>G12 Phone</th>
+                    <th>Growth Level</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="members-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- STAGES OF GROWTH PAGE -->
+        <div class="page" id="page-growth">
+          <!-- Top Summary Stat Grid across 5 Stages -->
+          <div class="stats-grid" id="growth-summary-stats"
+            style="margin-bottom: 20px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));"></div>
+
+          <!-- Tabbed Stage Navbar -->
+          <div class="search-bar" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <button class="btn" id="btn-growth-Community" onclick="switchGrowthTab('Community')"
+              style="background: #8b5cf6; color: #ffffff; border: 1.5px solid #8b5cf6; font-weight: 700; box-shadow: 0 4px 14px rgba(139,92,246,0.4);">
+              🟣 Community <span style="font-size:11px; color:#ffffff;">(Database)</span>
+            </button>
+            <button class="btn" id="btn-growth-Crowd" onclick="switchGrowthTab('Crowd')"
+              style="border: 1.5px solid #3b82f6; color: #ffffff; background: rgba(15, 23, 42, 0.85); font-weight: 600;">
+              🔵 Crowd <span style="font-size:11px; color:#93c5fd;">(MVPs/Occasional)</span>
+            </button>
+            <button class="btn" id="btn-growth-Congregation" onclick="switchGrowthTab('Congregation')"
+              style="border: 1.5px solid #06b6d4; color: #ffffff; background: rgba(15, 23, 42, 0.85); font-weight: 600;">
+              🟢 Congregation <span style="font-size:11px; color:#67e8f9;">(Regulars)</span>
+            </button>
+            <button class="btn" id="btn-growth-Committed" onclick="switchGrowthTab('Committed')"
+              style="border: 1.5px solid #10b981; color: #ffffff; background: rgba(15, 23, 42, 0.85); font-weight: 600;">
+              🟡 Committed <span style="font-size:11px; color:#6ee7b7;">(Workers)</span>
+            </button>
+            <button class="btn" id="btn-growth-Core" onclick="switchGrowthTab('Core')"
+              style="border: 1.5px solid #f59e0b; color: #ffffff; background: rgba(15, 23, 42, 0.85); font-weight: 600;">
+              👑 Core <span style="font-size:11px; color:#fde047;">(Leaders/Pastors)</span>
+            </button>
+          </div>
+
+          <!-- Stage Banner & Description -->
+          <div class="announcement-banner" id="growth-stage-banner"
+            style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div class="ann-title" id="growth-banner-title">All Spiritual Growth Stages</div>
+              <div class="ann-sub" id="growth-banner-sub">Tracking congregants from initial mobilization (Community) to pastoral leadership (Core)</div>
+            </div>
+            <div class="ann-badge" id="growth-banner-badge">5 Growth Levels</div>
+          </div>
+
+          <!-- Search & Controls Bar -->
+          <div class="search-bar" style="margin-bottom: 16px;">
+            <div class="search-wrap" style="flex: 1;">
+              <i class="ti ti-search"></i>
+              <input type="text" id="growth-search-input" placeholder="Search member by name, phone, department or leader..." oninput="filterGrowthMembers()">
+            </div>
+            <button class="btn btn-gold" onclick="renderGrowthPage()"><i class="ti ti-refresh"></i> Refresh</button>
+          </div>
+
+          <!-- Members Table Filtered by Growth Stage -->
+          <div class="card" style="padding:0">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Current Stage</th>
+                    <th>Department</th>
+                    <th>G12 Leader</th>
+                    <th>Leader Type</th>
+                    <th>School Address</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="growth-tbody">
+                  <tr>
+                    <td colspan="9" style="text-align:center; padding:40px;"><i class="ti ti-loader" style="font-size:20px; opacity:0.3"></i></td>
+                  </tr>
+                </tbody>
               </table>
             </div>
           </div>
@@ -4127,7 +4219,7 @@
               toggleMobileMenu();
             }
 
-            const titles = { dashboard: 'DASHBOARD', members: 'MEMBERS', attendance: 'ATTENDANCE', followup: 'Follow-Up', mvp: 'MVP — First Timers', g12: 'G12 DISCIPLESHIP', connect: 'CONNECT GROUPS', units: 'Units', reports: 'Reports', settings: 'Settings' };
+            const titles = { dashboard: 'DASHBOARD', members: 'MEMBERS', growth: 'STAGES OF GROWTH', attendance: 'ATTENDANCE', followup: 'Follow-Up', mvp: 'MVP — First Timers', g12: 'G12 DISCIPLESHIP', connect: 'CONNECT GROUPS', units: 'Units', reports: 'Reports', settings: 'Settings' };
 
             // Deactivate sub-nav items too
             document.querySelectorAll('.nav-sub-item').forEach(n => n.classList.remove('active'));
@@ -4222,6 +4314,7 @@
           function renderPage(name) {
             if (name === 'dashboard') renderDashboard();
             else if (name === 'members') renderMembers();
+            else if (name === 'growth') renderGrowthPage();
             else if (name === 'attendance') renderAttendance();
             else if (name === 'followup') renderFollowup();
             else if (name === 'mvp') renderMvp();
@@ -5741,9 +5834,347 @@
 
             // Render Dynamic Recent Activity
             renderRecentActivity();
+
+            // Render 5-Level Spiritual Growth Journey
+            renderSpiritualGrowthJourney();
+          }
+
+          function inferGrowthStage(m) {
+            if (!m) return 'Congregation';
+            if (m.growth_stage && m.growth_stage.trim() !== '') {
+              return m.growth_stage.trim();
+            }
+
+            const dept = (m.department || '').trim();
+            const lType = (m.leader_type || '').trim();
+            const name = (m.member_name || '').toLowerCase();
+
+            // Core: Explicit Pastors, DH (Department Heads), Executive Leaders
+            if (lType === 'DH' || dept === 'Administration' || name.includes('pastor') || name.startsWith('pst') || name.startsWith('pa ')) {
+              return 'Core';
+            }
+
+            // Committed: Active Department Workers
+            if (dept !== '' && dept !== 'MVP' && dept !== 'No Department' && dept !== 'None') {
+              return 'Committed';
+            }
+
+            // Community: New signups, MVPs, outreach database contacts
+            if (m.is_mvp || m.status === 'MVP' || m.needs_followup) {
+              return 'Community';
+            }
+
+            // Crowd: Occasional attenders / non-discipled visitors
+            if (m.g12_leader === 'Unassigned' || !m.g12_leader) {
+              return 'Crowd';
+            }
+
+            // Congregation: Regular attenders in G12 / Connect groups (Default for Members database)
+            return 'Congregation';
+          }
+
+          async function renderSpiritualGrowthJourney() {
+            const container = document.getElementById('dash-growth-journey');
+            if (!container) return;
+
+            try {
+              const { data: members, error } = await supabaseClient.from('members').select('*');
+              if (error) console.warn("Growth journey query fallback to local state:", error);
+
+              const memberList = (members && members.length > 0) ? members : (state.members || []);
+
+              const stages = {
+                'Core': 0,
+                'Committed': 0,
+                'Congregation': 0,
+                'Crowd': 0,
+                'Community': 0
+              };
+
+              memberList.forEach(m => {
+                const stage = inferGrowthStage(m);
+                if (stages.hasOwnProperty(stage)) {
+                  stages[stage]++;
+                } else {
+                  stages['Congregation']++;
+                }
+              });
+
+              const total = Object.values(stages).reduce((a, b) => a + b, 0) || 1;
+
+              const STAGE_CONFIG = [
+                { name: 'Core', color: '#f59e0b', bg: 'rgba(15, 23, 42, 0.9)', icon: 'ti-crown', label: 'Pastors & Leaders' },
+                { name: 'Committed', color: '#10b981', bg: 'rgba(15, 23, 42, 0.9)', icon: 'ti-user-check', label: 'Workers' },
+                { name: 'Congregation', color: '#06b6d4', bg: 'rgba(15, 23, 42, 0.9)', icon: 'ti-users', label: 'Regular Attenders' },
+                { name: 'Crowd', color: '#3b82f6', bg: 'rgba(15, 23, 42, 0.9)', icon: 'ti-friends', label: 'MVPs/Occasional' },
+                { name: 'Community', color: '#8b5cf6', bg: 'rgba(15, 23, 42, 0.9)', icon: 'ti-sparkles', label: 'Mobilized Database' }
+              ];
+
+              container.innerHTML = STAGE_CONFIG.map(cfg => {
+                const cnt = stages[cfg.name] || 0;
+                const pct = Math.round((cnt / total) * 100);
+                return `
+                  <div style="background:${cfg.bg}; border: 1.5px solid ${cfg.color}; border-radius:12px; padding:14px; transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+                      <span style="font-size:11px; font-weight:800; color:${cfg.color}; text-transform:uppercase; letter-spacing:0.05em;">${cfg.name}</span>
+                      <i class="ti ${cfg.icon}" style="color:${cfg.color}; font-size:16px;"></i>
+                    </div>
+                    <div style="font-size:24px; font-weight:800; color:#ffffff; line-height:1.2;">${cnt}</div>
+                    <div style="font-size:11px; font-weight:600; color:${cfg.color}; margin-top:2px;">${cfg.label} (${pct}%)</div>
+                    <div style="width:100%; background:rgba(255,255,255,0.1); height:4px; border-radius:2px; margin-top:8px; overflow:hidden;">
+                      <div style="width:${pct}%; height:100%; background:${cfg.color}; border-radius:2px;"></div>
+                    </div>
+                  </div>
+                `;
+              }).join('');
+
+            } catch (e) {
+              console.error("Error rendering growth journey:", e);
+            }
+          }
+
+          async function updateMemberGrowthStage(memberId, newStage) {
+            try {
+              const { error } = await supabaseClient
+                .from('members')
+                .update({ growth_stage: newStage })
+                .eq('id', memberId);
+
+              if (error) {
+                showToast("Error updating stage: " + error.message);
+                return;
+              }
+
+              const member = (state.members || []).find(m => m.id === memberId);
+              if (member) member.growth_stage = newStage;
+
+              showToast(`Updated growth level to ${newStage}!`);
+              logActivity(`Updated member growth stage to ${newStage}`, 'gold', 'ti-trending-up');
+              renderSpiritualGrowthJourney();
+              if (document.getElementById('page-growth')?.classList.contains('active')) {
+                renderGrowthPage();
+              }
+              renderMembers();
+            } catch (err) {
+              console.error("Update stage error:", err);
+            }
+          }
+
+          let currentGrowthTab = 'Community';
+
+          function switchGrowthTab(tab) {
+            currentGrowthTab = tab || 'Community';
+            const tabs = ['Community', 'Crowd', 'Congregation', 'Committed', 'Core'];
+            const COLORS = {
+              Community: '#8b5cf6',
+              Crowd: '#3b82f6',
+              Congregation: '#06b6d4',
+              Committed: '#10b981',
+              Core: '#f59e0b'
+            };
+            const SUB_COLORS = {
+              Community: '#d8b4fe',
+              Crowd: '#93c5fd',
+              Congregation: '#67e8f9',
+              Committed: '#6ee7b7',
+              Core: '#fde047'
+            };
+
+            tabs.forEach(t => {
+              const btn = document.getElementById(`btn-growth-${t}`);
+              if (btn) {
+                const color = COLORS[t] || '#3b82f6';
+                if (t === tab) {
+                  btn.className = 'btn';
+                  btn.style.cssText = `background: ${color} !important; color: #ffffff !important; border: 1.5px solid ${color} !important; font-weight: 700 !important; box-shadow: 0 4px 14px ${color}66;`;
+                  const subSpan = btn.querySelector('span');
+                  if (subSpan) subSpan.style.color = '#ffffff';
+                } else {
+                  btn.className = 'btn';
+                  btn.style.cssText = `background: rgba(15, 23, 42, 0.85) !important; color: #ffffff !important; border: 1.5px solid ${color} !important; font-weight: 600 !important; box-shadow: none;`;
+                  const subSpan = btn.querySelector('span');
+                  if (subSpan && SUB_COLORS[t]) subSpan.style.color = SUB_COLORS[t];
+                }
+              }
+            });
+
+            const bannerTitle = document.getElementById('growth-banner-title');
+            const bannerSub = document.getElementById('growth-banner-sub');
+            const bannerBadge = document.getElementById('growth-banner-badge');
+
+            const BANNERS = {
+              'Community': { title: '🟣 Community Stage (Mobilized Database)', sub: 'Initial database contacts, new signups, and first-time outreach contacts', badge: 'Level 1 · Community' },
+              'Crowd': { title: '🔵 Crowd Stage (MVPs & Occasional Attenders)', sub: 'First-time visitors (MVPs), second-timers, and occasional service attenders requiring follow-up', badge: 'Level 2 · Crowd' },
+              'Congregation': { title: '🟢 Congregation Stage (Regular Attenders)', sub: 'Regular service attenders integrated into Connect Cells and G12 discipleship groups', badge: 'Level 3 · Congregation' },
+              'Committed': { title: '🟡 Committed Stage (Ministry Workers)', sub: 'Active department workers and ministry team personnel serving across church units', badge: 'Level 4 · Committed' },
+              'Core': { title: '👑 Core Stage (Pastors & Leaders)', sub: 'G12 leaders, department heads (DH), cell leaders, and executive church leadership', badge: 'Level 5 · Core' }
+            };
+
+            const info = BANNERS[tab] || BANNERS['Community'];
+            if (bannerTitle) bannerTitle.textContent = info.title;
+            if (bannerSub) bannerSub.textContent = info.sub;
+            if (bannerBadge) bannerBadge.textContent = info.badge;
+
+            renderGrowthPage();
+          }
+
+          async function renderGrowthPage() {
+            const tbody = document.getElementById('growth-tbody');
+            const statsContainer = document.getElementById('growth-summary-stats');
+            if (!tbody) return;
+
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:40px;"><i class="ti ti-loader" style="font-size:20px; opacity:0.3"></i></td></tr>';
+
+            try {
+              const { data: dbMembers, error } = await supabaseClient.from('members').select('*');
+              if (error) console.warn("Error fetching growth page members:", error);
+
+              const members = (dbMembers && dbMembers.length > 0) ? dbMembers : (state.members || []);
+
+              const stages = { 'Core': 0, 'Committed': 0, 'Congregation': 0, 'Crowd': 0, 'Community': 0 };
+              members.forEach(m => {
+                const stage = inferGrowthStage(m);
+                m._inferredStage = stage;
+                if (stages.hasOwnProperty(stage)) stages[stage]++;
+                else stages['Congregation']++;
+              });
+
+              if (statsContainer) {
+                const total = members.length || 1;
+                const STAGE_CARDS = [
+                  { name: 'Community', level: 1, label: 'Mobilized Database', color: '#8b5cf6', icon: 'ti-sparkles' },
+                  { name: 'Crowd', level: 2, label: 'MVPs / Occasional', color: '#3b82f6', icon: 'ti-friends' },
+                  { name: 'Congregation', level: 3, label: 'Regular Attenders', color: '#06b6d4', icon: 'ti-users' },
+                  { name: 'Committed', level: 4, label: 'Ministry Workers', color: '#10b981', icon: 'ti-user-check' },
+                  { name: 'Core', level: 5, label: 'Pastors & Leaders', color: '#f59e0b', icon: 'ti-crown' }
+                ];
+                statsContainer.innerHTML = STAGE_CARDS.map(sc => {
+                  const cnt = stages[sc.name] || 0;
+                  const pct = Math.round((cnt / total) * 100);
+                  const isActive = currentGrowthTab === sc.name;
+                  return `
+                    <div class="stat-card" onclick="switchGrowthTab('${sc.name}')" style="cursor:pointer; background:${isActive ? 'rgba(15,23,42,0.95)' : 'rgba(15,23,42,0.85)'}; border:2px solid ${sc.color}; box-shadow:${isActive ? '0 8px 24px ' + sc.color + '44' : '0 4px 12px rgba(0,0,0,0.3)'}; border-radius:14px; padding:16px; transition:all 0.2s;">
+                      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                        <div class="stat-icon" style="background:${sc.color}22; color:${sc.color}; font-size:18px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:8px;">
+                          <i class="ti ${sc.icon}"></i>
+                        </div>
+                        <span style="font-size:10px; font-weight:800; background:${sc.color}25; color:${sc.color}; border:1px solid ${sc.color}55; padding:2px 8px; border-radius:20px;">L${sc.level}</span>
+                      </div>
+                      <div style="font-size:32px; font-weight:800; color:#ffffff; line-height:1.1; margin-bottom:4px;">${cnt}</div>
+                      <div style="font-size:14px; font-weight:700; color:#ffffff; margin-bottom:6px;">${sc.name}</div>
+                      <div style="font-size:11px; font-weight:600; color:${sc.color}; display:flex; align-items:center; gap:4px;">
+                        <i class="ti ti-chart-line"></i> ${sc.label} (${pct}%)
+                      </div>
+                    </div>
+                  `;
+                }).join('');
+              }
+
+              const searchVal = (document.getElementById('growth-search-input')?.value || '').toLowerCase().trim();
+              let filtered = members.slice();
+
+              if (currentGrowthTab !== 'all') {
+                filtered = filtered.filter(m => m._inferredStage === currentGrowthTab);
+              }
+
+              if (searchVal) {
+                filtered = filtered.filter(m =>
+                  (m.member_name && m.member_name.toLowerCase().includes(searchVal)) ||
+                  (m.phone || m.member_phone || '').toLowerCase().includes(searchVal) ||
+                  (m.department || '').toLowerCase().includes(searchVal) ||
+                  (m.g12_leader || '').toLowerCase().includes(searchVal)
+                );
+              }
+
+              filtered.sort((a, b) => (a.member_name || '').localeCompare(b.member_name || ''));
+
+              if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:40px; color:var(--text-muted);">No members found in this growth stage</td></tr>';
+                return;
+              }
+
+              tbody.innerHTML = filtered.map((m, idx) => {
+                const safeName = m.member_name || 'Unnamed';
+                const phone = m.phone || m.member_phone || '—';
+                const dept = m.department || '—';
+                const g12 = m.g12_leader || '—';
+                const lType = m.leader_type || '—';
+                const school = m.school_address || m.School_Address || '—';
+
+                return `
+                  <tr>
+                    <td style="font-weight:600; color:var(--gold);">${idx + 1}</td>
+                    <td><strong style="color:var(--gold); cursor:pointer;" onclick="openEditMemberModalByData(${JSON.stringify(m).replace(/"/g, '&quot;')})" title="Click to edit member">${safeName}</strong></td>
+                    <td>${phone}</td>
+                    <td>${renderGrowthStageSelect(m)}</td>
+                    <td>${dept !== '—' ? `<span class="badge badge-green">${dept}</span>` : '—'}</td>
+                    <td>${g12 !== '—' ? `<span class="badge badge-blue">${g12}</span>` : '—'}</td>
+                    <td><span class="badge ${lType === 'G12' ? 'badge-blue' : 'badge-gold'}">${lType}</span></td>
+                    <td>${school}</td>
+                    <td>
+                      <button class="btn btn-sm btn-danger" onclick="deleteMemberByData(${JSON.stringify(m).replace(/"/g, '&quot;')})" title="Delete Member">
+                        <i class="ti ti-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                `;
+              }).join('');
+
+            } catch (err) {
+              console.error("Error rendering growth page:", err);
+              tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:40px; color:var(--danger);">Error loading growth page data</td></tr>';
+            }
+          }
+
+          function filterGrowthMembers() {
+            renderGrowthPage();
+          }
+
+          function openEditMemberModalByData(member) {
+            const index = (state.members || []).findIndex(m => m.id === member.id);
+            if (index !== -1) {
+              openEditMemberModal(index);
+            } else {
+              alert(`Editing member: ${member.member_name}`);
+            }
+          }
+
+          function deleteMemberByData(member) {
+            const index = (state.members || []).findIndex(m => m.id === member.id);
+            if (index !== -1) {
+              deleteMember(index);
+            } else {
+              alert(`Member ${member.member_name} not found in state.`);
+            }
           }
 
 
+
+          function renderGrowthStageSelect(m) {
+            if (!m) return '—';
+            let current = m.growth_stage || '';
+            if (!current) {
+              if (m.leader_type === 'G12' || m.leader_type === 'DH') {
+                current = 'Core';
+              } else if (m.department && m.department.trim() !== '' && m.department !== 'MVP') {
+                current = 'Committed';
+              } else if (m.is_mvp || m.status === 'MVP' || m.needs_followup) {
+                current = 'Community';
+              } else {
+                current = 'Congregation';
+              }
+            }
+
+            return `
+              <select onchange="updateMemberGrowthStage(${m.id}, this.value)" onclick="event.stopPropagation()" style="min-width: 140px; width: 100%; padding: 4px 8px; font-size: 11.5px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(15,23,42,0.9); color: #ffffff; font-weight: 600; cursor: pointer;">
+                <option value="Community" ${current === 'Community' ? 'selected' : ''}>🟣 Community</option>
+                <option value="Crowd" ${current === 'Crowd' ? 'selected' : ''}>🔵 Crowd</option>
+                <option value="Congregation" ${current === 'Congregation' ? 'selected' : ''}>🟢 Congregation</option>
+                <option value="Committed" ${current === 'Committed' ? 'selected' : ''}>🟡 Committed</option>
+                <option value="Core" ${current === 'Core' ? 'selected' : ''}>👑 Core</option>
+              </select>
+            `;
+          }
 
           function updateMemberFilterButtons() {
             const btnAll = document.getElementById('btn-filter-all');
@@ -5807,7 +6238,7 @@
             if (searchVal) {
               filtered = filtered.filter(m =>
                 (m.member_name && m.member_name.toLowerCase().includes(searchVal)) ||
-                (m.phone && m.phone.toLowerCase().includes(searchVal)) ||
+                ((m.member_phone || m.phone || '').toLowerCase().includes(searchVal)) ||
                 (m.g12_leader && m.g12_leader.toLowerCase().includes(searchVal))
               );
             }
@@ -5819,15 +6250,17 @@
               function isDuplicate(m1, m2) {
                 if (m1.id === m2.id) return false;
 
+                const p1 = (m1.member_phone || m1.phone || '').trim();
+                const p2 = (m2.member_phone || m2.phone || '').trim();
+
                 // 1. Phone match
-                if (m1.phone && m2.phone && m1.phone.trim() !== '' && m1.phone.trim() === m2.phone.trim()) {
+                if (p1 && p2 && p1 === p2) {
                   return true;
                 }
 
                 // 2. Name match
                 if (!m1.member_name || !m2.member_name) return false;
 
-                // Strip punctuation and normalize
                 const name1 = m1.member_name.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim();
                 const name2 = m2.member_name.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim();
 
@@ -5838,15 +6271,12 @@
 
                 if (words1.length === 0 || words2.length === 0) return false;
 
-                // Filter out common titles to avoid matching everyone with e.g. "pastor" or "brother"
                 const titles = ["pastor", "pa", "pst", "mr", "mrs", "ms", "miss", "dr", "prof", "brother", "sister", "mama", "sis", "fr"];
                 const filteredWords1 = words1.filter(w => !titles.includes(w));
                 const filteredWords2 = words2.filter(w => !titles.includes(w));
 
                 if (filteredWords1.length === 0 || filteredWords2.length === 0) return false;
 
-                // If they are single-word names, they must be exact matches.
-                // For multi-word names, they are duplicates if they share at least 2 words.
                 const intersection = filteredWords1.filter(w => filteredWords2.includes(w));
                 if (filteredWords1.length === 1 && filteredWords2.length === 1) {
                   return filteredWords1[0] === filteredWords2[0];
@@ -5858,7 +6288,6 @@
                 return false;
               }
 
-              // Check all pairs
               for (let i = 0; i < membersList.length; i++) {
                 for (let j = i + 1; j < membersList.length; j++) {
                   if (isDuplicate(membersList[i], membersList[j])) {
@@ -5870,7 +6299,6 @@
 
               filtered = filtered.filter(m => dupIds.has(m.id));
 
-              // Sort by first 2 alphabetically sorted words of their name to keep groups adjacent
               const titles = ["pastor", "pa", "pst", "mr", "mrs", "ms", "miss", "dr", "prof", "brother", "sister", "mama", "sis", "fr"];
               filtered.sort((a, b) => {
                 const cleanA = (a.member_name || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').trim();
@@ -5884,9 +6312,8 @@
             tbody.innerHTML = '';
 
             if (filtered.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; padding:30px; color:var(--text-muted);">No members found</td></tr>';
+              tbody.innerHTML = '<tr><td colspan="11" style="text-align:center; padding:30px; color:var(--text-muted);">No members found</td></tr>';
             } else if (memberViewMode === 'by-department') {
-              // Group by department
               const grouped = {};
               filtered.forEach(m => {
                 const dept = m.department || 'No Department';
@@ -5896,28 +6323,29 @@
 
               let rowNum = 1;
               Object.keys(grouped).sort().forEach(dept => {
-                tbody.innerHTML += `<tr style="background: rgba(59, 130, 246,0.1); font-weight: 600;"><td colspan="10" style="padding: 12px; color: var(--gold);">📁 ${dept} (${grouped[dept].length})</td></tr>`;
+                tbody.innerHTML += `<tr style="background: rgba(59, 130, 246,0.1); font-weight: 600;"><td colspan="11" style="padding: 12px; color: var(--gold);">📁 ${dept} (${grouped[dept].length})</td></tr>`;
                 grouped[dept].forEach(m => {
                   const realIndex = state.members.indexOf(m);
                   const safeName = m.member_name || 'Unnamed';
+                  const phone = m.member_phone || m.phone || '—';
                   tbody.innerHTML += `
           <tr>
             <td style="font-weight: 600; color: var(--gold);">${rowNum++}</td>
             <td><div style="cursor: pointer; color: var(--gold);" onclick="openEditMemberModal(${realIndex})" title="Click to edit">${safeName}</div></td>
-            <td>${m.phone || '—'}</td>
+            <td>${phone}</td>
             <td>${m.department || '—'}</td>
             <td>${m.g12_leader || '—'}</td>
             <td><span class="badge ${m.leader_type === 'G12' ? 'badge-blue' : 'badge-gold'}">${m.leader_type || '—'}</span></td>
-            <td>${m.school_address || '—'}</td>
-            <td>${m.home_address || '—'}</td>
+            <td>${m.school_address || m.School_Address || '—'}</td>
+            <td>${m.home_address || m.Home_Address || '—'}</td>
             <td>${m.g12_phone || '—'}</td>
-            <td><button class="btn btn-sm" onclick="openEditMemberModal(${realIndex})"><i class="ti ti-edit"></i></button><button class="btn btn-sm btn-danger" onclick="deleteMember(${realIndex})"><i class="ti ti-trash"></i></button></td>
+            <td>${renderGrowthStageSelect(m)}</td>
+            <td><button class="btn btn-sm btn-danger" onclick="deleteMember(${realIndex})" title="Delete Member"><i class="ti ti-trash"></i></button></td>
           </tr>
         `;
                 });
               });
             } else if (memberViewMode === 'by-leader') {
-              // Group by G12 Leader
               const grouped = {};
               filtered.forEach(m => {
                 const leader = m.g12_leader || 'Unassigned';
@@ -5927,28 +6355,29 @@
 
               let rowNum = 1;
               Object.keys(grouped).sort().forEach(leader => {
-                tbody.innerHTML += `<tr style="background: rgba(59, 130, 246,0.1); font-weight: 600;"><td colspan="10" style="padding: 12px; color: var(--gold);">👤 ${leader} (${grouped[leader].length})</td></tr>`;
+                tbody.innerHTML += `<tr style="background: rgba(59, 130, 246,0.1); font-weight: 600;"><td colspan="11" style="padding: 12px; color: var(--gold);">👤 ${leader} (${grouped[leader].length})</td></tr>`;
                 grouped[leader].forEach(m => {
                   const realIndex = state.members.indexOf(m);
                   const safeName = m.member_name || 'Unnamed';
+                  const phone = m.member_phone || m.phone || '—';
                   tbody.innerHTML += `
           <tr>
             <td style="font-weight: 600; color: var(--gold);">${rowNum++}</td>
             <td><div style="cursor: pointer; color: var(--gold);" onclick="openEditMemberModal(${realIndex})" title="Click to edit">${safeName}</div></td>
-            <td>${m.phone || '—'}</td>
+            <td>${phone}</td>
             <td>${m.department || '—'}</td>
             <td>${m.g12_leader || '—'}</td>
             <td><span class="badge ${m.leader_type === 'G12' ? 'badge-blue' : 'badge-gold'}">${m.leader_type || '—'}</span></td>
-            <td>${m.school_address || '—'}</td>
-            <td>${m.home_address || '—'}</td>
+            <td>${m.school_address || m.School_Address || '—'}</td>
+            <td>${m.home_address || m.Home_Address || '—'}</td>
             <td>${m.g12_phone || '—'}</td>
-            <td><button class="btn btn-sm" onclick="openEditMemberModal(${realIndex})"><i class="ti ti-edit"></i></button><button class="btn btn-sm btn-danger" onclick="deleteMember(${realIndex})"><i class="ti ti-trash"></i></button></td>
+            <td>${renderGrowthStageSelect(m)}</td>
+            <td><button class="btn btn-sm btn-danger" onclick="deleteMember(${realIndex})" title="Delete Member"><i class="ti ti-trash"></i></button></td>
           </tr>
         `;
                 });
               });
             } else if (memberViewMode === 'by-zone') {
-              // Group by Zone (using address heuristics)
               const grouped = {};
               filtered.forEach(m => {
                 const zone = getMemberZone(m);
@@ -5958,31 +6387,33 @@
 
               let rowNum = 1;
               Object.keys(grouped).sort().forEach(zone => {
-                tbody.innerHTML += `<tr style="background: rgba(59, 130, 246,0.1); font-weight: 600;"><td colspan="10" style="padding: 12px; color: var(--gold);">📍 Zone: ${zone} (${grouped[zone].length})</td></tr>`;
+                tbody.innerHTML += `<tr style="background: rgba(59, 130, 246,0.1); font-weight: 600;"><td colspan="11" style="padding: 12px; color: var(--gold);">📍 Zone: ${zone} (${grouped[zone].length})</td></tr>`;
                 grouped[zone].forEach(m => {
                   const realIndex = state.members.indexOf(m);
                   const safeName = m.member_name || 'Unnamed';
+                  const phone = m.member_phone || m.phone || '—';
                   tbody.innerHTML += `
           <tr>
             <td style="font-weight: 600; color: var(--gold);">${rowNum++}</td>
             <td><div style="cursor: pointer; color: var(--gold);" onclick="openEditMemberModal(${realIndex})" title="Click to edit">${safeName}</div></td>
-            <td>${m.phone || '—'}</td>
+            <td>${phone}</td>
             <td>${m.department || '—'}</td>
             <td>${m.g12_leader || '—'}</td>
             <td><span class="badge ${m.leader_type === 'G12' ? 'badge-blue' : 'badge-gold'}">${m.leader_type || '—'}</span></td>
             <td>${m.school_address || m.School_Address || '—'}</td>
             <td>${m.home_address || m.Home_Address || '—'}</td>
             <td>${m.g12_phone || '—'}</td>
-            <td><button class="btn btn-sm" onclick="openEditMemberModal(${realIndex})"><i class="ti ti-edit"></i></button><button class="btn btn-sm btn-danger" onclick="deleteMember(${realIndex})"><i class="ti ti-trash"></i></button></td>
+            <td>${renderGrowthStageSelect(m)}</td>
+            <td><button class="btn btn-sm btn-danger" onclick="deleteMember(${realIndex})" title="Delete Member"><i class="ti ti-trash"></i></button></td>
           </tr>
         `;
                 });
               });
             } else {
-              // Regular list view (all members)
               filtered.forEach((m, idx) => {
                 const realIndex = state.members.indexOf(m);
                 const safeName = m.member_name || 'Unnamed';
+                const phone = m.member_phone || m.phone || '—';
                 tbody.innerHTML += `
         <tr>
           <td style="font-weight: 600; color: var(--gold);">${idx + 1}</td>
@@ -5991,19 +6422,18 @@
               ${safeName}
             </div>
           </td>
-          <td>${m.phone || '—'}</td>
+          <td>${phone}</td>
           <td>${m.department || '—'}</td>
           <td>${m.g12_leader || '—'}</td>
           <td><span class="badge ${m.leader_type === 'G12' ? 'badge-blue' : 'badge-gold'}">${m.leader_type || '—'}</span></td>
-          <td>${m.school_address || '—'}</td>
-          <td>${m.home_address || '—'}</td>
+          <td>${m.school_address || m.School_Address || '—'}</td>
+          <td>${m.home_address || m.Home_Address || '—'}</td>
           <td>${m.g12_phone || '—'}</td>
+          <td>${renderGrowthStageSelect(m)}</td>
           <td>
-            <button class="btn btn-sm" onclick="openEditMemberModal(${realIndex})"><i class="ti ti-edit"></i></button>
-            <button class="btn btn-sm btn-danger" onclick="deleteMember(${realIndex})"><i class="ti ti-trash"></i></button>
+            <button class="btn btn-sm btn-danger" onclick="deleteMember(${realIndex})" title="Delete Member"><i class="ti ti-trash"></i></button>
           </td>
-        </tr>
-      `;
+        </tr>`;
               });
             }
           }

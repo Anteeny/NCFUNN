@@ -209,6 +209,17 @@
     </div>
 
     <div class="form-group">
+      <label>Spiritual Growth Level / Stage</label>
+      <select id="growth_stage">
+        <option value="Community" selected>🟣 Community (Mobilized Database / First Timers)</option>
+        <option value="Crowd">🔵 Crowd (MVPs / Occasional Attenders)</option>
+        <option value="Congregation">🟢 Congregation (Regular Attenders)</option>
+        <option value="Committed">🟡 Committed (Workers / Active Department)</option>
+        <option value="Core">👑 Core (Pastors & Leaders)</option>
+      </select>
+    </div>
+
+    <div class="form-group">
       <label>Who is your G12 Leader?</label>
       <p style="font-size: 0.65rem; color: rgba(232, 205, 122, 0.7); margin-bottom: 6px; margin-top: -4px;">Enter leader name (titles like Pastor, Pa will be removed)</p>
       <input type="text" id="g12_leader" placeholder="Click to select your g12 leader" readonly onclick="selectG12Leader()">
@@ -476,6 +487,8 @@
       const school_address = document.getElementById('school_address').value.trim();
       const home_address = document.getElementById('home_address').value.trim();
       const department = document.getElementById('department').value;
+      const growth_stage_el = document.getElementById('growth_stage');
+      const growth_stage = growth_stage_el ? growth_stage_el.value : 'Community';
       let g12_leader = document.getElementById('g12_leader').value.trim();
       const g12_phone = document.getElementById('g12_phone').value.trim();
 
@@ -501,15 +514,28 @@
       btn.textContent = "Submitting...";
       btn.disabled = true;
 
-      // 1. Check if member already exists (case-insensitive search by name)
+      // 1. Check if member already exists (search by name or phone)
       const { data: existingData, error: searchError } = await supabaseClient
         .from('members')
         .select('*')
-        .ilike('member_name', member_name);
+        .or(`member_name.ilike.${member_name},member_phone.eq.${member_phone}`);
 
       if (searchError) {
         console.error("Search Error:", searchError.message);
-        alert("Error checking database: " + searchError.message);
+        // Fallback search by name if .or fails
+        const { data: nameMatch } = await supabaseClient
+          .from('members')
+          .select('*')
+          .ilike('member_name', member_name);
+          
+        if (nameMatch && nameMatch.length > 0) {
+          alert("User already exist. Contact admin for changes.");
+          btn.textContent = "Submit Details";
+          btn.disabled = false;
+          return;
+        }
+      } else if (existingData && existingData.length > 0) {
+        alert("User already exist. Contact admin for changes.");
         btn.textContent = "Submit Details";
         btn.disabled = false;
         return;
@@ -517,38 +543,61 @@
 
       let dbError = null;
 
-      if (existingData && existingData.length > 0) {
-        // 2. Member exists! Update their record instead of creating a new one.
-        const existingMember = existingData[0];
-        const updatePayload = {};
-        
-        // Only update fields that the user actually filled in on the form
-        if (member_phone) updatePayload.member_phone = member_phone;
-        if (course_of_study) updatePayload.course_of_study = course_of_study;
-        if (level) updatePayload.level = level;
-        if (school_address) updatePayload.School_Address = school_address;
-        if (home_address) updatePayload.Home_Address = home_address;
-        if (department) updatePayload.department = department;
-        if (g12_leader) {
-          updatePayload.g12_leader = g12_leader;
-          const isSelfLeader = normalizeLeaderName(existingMember.member_name) === normalizeLeaderName(existingMember.g12_leader);
-          if (!isSelfLeader) {
-            updatePayload.leader_type = leader_type;
-          }
-        }
-        if (g12_phone) updatePayload.g12_phone = g12_phone;
+      // 2. New Member! Insert into members table.
+      const todayISO = new Date().toISOString().split('T')[0];
+      let insertPayload = {
+        member_name: member_name,
+        member_phone: member_phone,
+        course_of_study: course_of_study || null,
+        level: level || null,
+        School_Address: school_address || null,
+        Home_Address: home_address || null,
+        department: department || null,
+        g12_leader: g12_leader || null,
+        g12_phone: g12_phone || null,
+        leader_type: leader_type,
+        growth_stage: growth_stage || 'Community',
+        is_mvp: true,
+        needs_followup: true,
+        joined_date: todayISO
+      };
 
-        const { error } = await supabaseClient.from('members').update(updatePayload).eq('id', existingMember.id);
-        dbError = error;
-      } else {
-        // 3. New Member! Insert them into the database.
-        const insertPayload = {
-          member_name: member_name, member_phone: member_phone, course_of_study: course_of_study || null,
-          level: level || null, School_Address: school_address || null, Home_Address: home_address || null,
-          department: department || null, g12_leader: g12_leader || null, g12_phone: g12_phone || null, leader_type: leader_type
+      let { error } = await supabaseClient.from('members').insert([insertPayload]);
+
+      // Fallback: If insert fails due to column missing in schema cache, strip optional column and retry
+      if (error && error.message && error.message.includes('schema cache')) {
+        console.warn("Schema cache error, retrying without extended columns:", error.message);
+        const corePayload = {
+          member_name: member_name,
+          member_phone: member_phone,
+          course_of_study: course_of_study || null,
+          level: level || null,
+          School_Address: school_address || null,
+          Home_Address: home_address || null,
+          department: department || null,
+          g12_leader: g12_leader || null,
+          g12_phone: g12_phone || null,
+          leader_type: leader_type
         };
-        const { error } = await supabaseClient.from('members').insert([insertPayload]);
-        dbError = error;
+        const retry = await supabaseClient.from('members').insert([corePayload]);
+        error = retry.error;
+      }
+
+      dbError = error;
+
+      // Also sync to mvps table for legacy compatibility
+      try {
+        await supabaseClient.from('mvps').insert([{
+          'Name': member_name,
+          'Phone Number': member_phone,
+          'Date Visited': todayISO,
+          'Department Joined': department || null,
+          'G12 leader': g12_leader || null,
+          'Address': school_address || home_address || null,
+          'Second Time': 'No'
+        }]);
+      } catch (e) {
+        console.warn("MVP table sync optional note:", e);
       }
 
       if (dbError) {
