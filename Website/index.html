@@ -4744,9 +4744,9 @@
               <option value="">All Zones</option>
             </select>
           </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-gold btn-sm" onclick="toggleAddNewCellForm()"><i class="ti ti-plus"></i> Add New
-              Cell</button>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button class="btn btn-gold btn-sm" onclick="openImportCellsCsvModal()"><i class="ti ti-file-upload"></i> Import Google Sheet CSV</button>
+            <button class="btn btn-gold btn-sm" onclick="toggleAddNewCellForm()"><i class="ti ti-plus"></i> Add New Cell</button>
             <button class="btn btn-outline btn-sm" onclick="promptAddNewZone()"
               style="border-color: var(--gold); color: var(--gold);"><i class="ti ti-map-pin-plus"></i> Add
               Zone</button>
@@ -4771,21 +4771,33 @@
               <label style="font-size: 11px; color: var(--text-muted);">Zone *</label>
               <select id="db-new-zone"
                 style="width:100%; padding: 8px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+                <option value="HQ">HQ</option>
+                <option value="Franco">Franco</option>
+                <option value="Hilltop">Hilltop</option>
+                <option value="JSQ">JSQ</option>
+                <option value="Odim">Odim</option>
+                <option value="Greenhouse">Greenhouse</option>
+                <option value="Odenigwe">Odenigwe</option>
               </select>
             </div>
             <div>
-              <label style="font-size: 11px; color: var(--text-muted);">Cell Name *</label>
-              <input type="text" id="db-new-name" placeholder="e.g. Overcomers Cell"
-                style="width:100%; padding: 8px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.2);">
-            </div>
-            <div>
-              <label style="font-size: 11px; color: var(--text-muted);">Exact Location / Area *</label>
-              <input type="text" id="db-new-location" placeholder="e.g. Flat 4, Franco Block A"
+              <label style="font-size: 11px; color: var(--text-muted);">Area / Hostel *</label>
+              <input type="text" id="db-new-name" placeholder="e.g. Franco Cell A"
                 style="width:100%; padding: 8px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.2);">
             </div>
             <div>
               <label style="font-size: 11px; color: var(--text-muted);">Cell Leader *</label>
-              <input type="text" id="db-new-leader" placeholder="e.g. Bro. Royal Eroh"
+              <input type="text" id="db-new-leader" placeholder="e.g. Bro. Emmanuel"
+                style="width:100%; padding: 8px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+            </div>
+            <div>
+              <label style="font-size: 11px; color: var(--text-muted);">Assistant Leader</label>
+              <input type="text" id="db-new-assistant" placeholder="e.g. Sis. Amanda"
+                style="width:100%; padding: 8px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.2);">
+            </div>
+            <div>
+              <label style="font-size: 11px; color: var(--text-muted);">Cell Address (Room & Lodge)</label>
+              <input type="text" id="db-new-address" placeholder="e.g. RM 33 Born Great Lodge"
                 style="width:100%; padding: 8px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid rgba(255,255,255,0.2);">
             </div>
             <div>
@@ -4808,10 +4820,11 @@
               <tr
                 style="background: rgba(15,23,42,0.9); position: sticky; top: 0; z-index: 2; border-bottom: 2px solid var(--gold);">
                 <th style="width: 40px; text-align: center;">#</th>
-                <th style="width: 130px;">Zone</th>
-                <th style="width: 180px;">Area / Hostel</th>
+                <th style="width: 110px;">Zone</th>
+                <th style="width: 140px;">Area / Hostel</th>
+                <th style="width: 160px;">Cell Leader</th>
+                <th style="width: 140px;">Assistant Leader</th>
                 <th>Cell Address (Room & Lodge)</th>
-                <th style="width: 180px;">Cell Leader</th>
                 <th style="width: 90px; text-align: center;">Actions</th>
               </tr>
             </thead>
@@ -4832,6 +4845,29 @@
           <button class="btn btn-gold btn-sm" onclick="closeModal('manage-cells-db')"><i class="ti ti-check"></i>
             Done</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMPORT GOOGLE SHEET CSV MODAL -->
+  <div class="modal-backdrop" id="modal-import-cells-csv" style="z-index: 230;">
+    <div class="modal" style="max-width: 750px; width: 95%;">
+      <div class="modal-header">
+        <div class="modal-title" style="font-size:18px; font-weight:700; color:#fff; display:flex; align-items:center; gap:8px;">
+          <i class="ti ti-file-upload" style="color:var(--gold);"></i> Import Google Sheet Cells CSV
+        </div>
+        <button class="modal-close" onclick="closeModal('import-cells-csv')">×</button>
+      </div>
+      <div class="modal-body" style="padding:20px;">
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:12px;">
+          Paste CSV contents directly from your Google Sheet or Excel (Columns: <code>S/N, CELL LEADER, LOCATION, NO. OF CELLS, Assistant, Address</code>).
+        </p>
+        <textarea id="input-cells-csv-raw" placeholder="Paste your CSV rows here..."
+          style="width:100%; height:220px; padding:12px; border-radius:10px; background:#0f172a; color:#fff; font-family:monospace; font-size:12px; border:1px solid rgba(255,255,255,0.2);"></textarea>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;">
+        <button class="btn btn-outline btn-sm" onclick="closeModal('import-cells-csv')">Cancel</button>
+        <button class="btn btn-gold btn-sm" onclick="processCellsCsvImport()"><i class="ti ti-check"></i> Import & Sync All Cells</button>
       </div>
     </div>
   </div>
