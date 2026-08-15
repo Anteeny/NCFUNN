@@ -5517,8 +5517,97 @@
       updateBadges();
     }
 
-    // Cleared old dummy seed cells; data is loaded dynamically from Supabase cell_leaders table
-    let CONNECT_CELLS_SEED = [];
+    // Seed connect cells from Google Sheet
+    let CONNECT_CELLS_SEED = [
+      // HQ ZONE
+      { id: "c1", zone: "HQ", cell_name: "Hostel Cell 1", cell_leader: "Umeadi Ifeyinwa", assistant: "Anieke Cynthia", cell_address: "Ọkpara Hostel" },
+      { id: "c2", zone: "HQ", cell_name: "Hostel Cell 2", cell_leader: "Onyekachi Uche", assistant: "—", cell_address: "Akpabio Hostel" },
+      { id: "c3", zone: "HQ", cell_name: "Hostel Cell 3", cell_leader: "Meniru Chioma", assistant: "Marvellous Akaji", cell_address: "Akintola Hostel" },
+      { id: "c4", zone: "HQ", cell_name: "Hostel Cell 4", cell_leader: "Mbamalu Kosy", assistant: "Amanda Ezeh", cell_address: "Eyoita Hostel" },
+      { id: "c5", zone: "HQ", cell_name: "Hostel Cell 5", cell_leader: "Igwilo Janefrancis", assistant: "Opata Esther", cell_address: "Aja Nwachukwu Hostel" },
+      { id: "c6", zone: "HQ", cell_name: "Hostel Cell 6", cell_leader: "Onu Faithfulness", assistant: "—", cell_address: "Tetfund Hostel" },
+      { id: "c7", zone: "HQ", cell_name: "Hostel Cell 7", cell_leader: "Nsude Ifechukwu", assistant: "—", cell_address: "Bello Hostel" },
+      { id: "c8", zone: "HQ", cell_name: "Hostel Cell 8", cell_leader: "Okonkwo Ella", assistant: "Rita Maduka", cell_address: "Mary Slessor Hostel" },
+      { id: "c9", zone: "HQ", cell_name: "Hostel Cell 9", cell_leader: "Nsoke Favour", assistant: "—", cell_address: "Balewa Hostel" },
+      { id: "c10", zone: "HQ", cell_name: "Hostel Cell 10", cell_leader: "Uzodinma Oluoma", assistant: "Cheryl Kingsley", cell_address: "Presidential Hostel" },
+      { id: "c11", zone: "HQ", cell_name: "Hostel Cell 11", cell_leader: "Akogwu Cynthia", assistant: "Friday Onyinyechi", cell_address: "Okeke Hostel" },
+      { id: "c12", zone: "HQ", cell_name: "Hostel Cell 12", cell_leader: "Igwilo Janefrancis", assistant: "Onukwa Chidinnma", cell_address: "Awolowo Hostel" },
+      { id: "c13", zone: "HQ", cell_name: "Hilltop Cell 1", cell_leader: "Okeke Nelson", assistant: "Udeh Promise", cell_address: "RM 33 Born Great Lodge" },
+      { id: "c14", zone: "HQ", cell_name: "Hilltop Cell 2", cell_leader: "Udochukwu Aneke", assistant: "Ogbonnanya Godswill", cell_address: "RM D7 Glorious Lodge" },
+      { id: "c15", zone: "HQ", cell_name: "Odim Cell 1", cell_leader: "Samuel Okonta", assistant: "—", cell_address: "Odim Lodge" },
+      { id: "c16", zone: "HQ", cell_name: "Hilltop Cell 3", cell_leader: "Onwe Samuel", assistant: "Dinne Micheal", cell_address: "Hilltop Lodge" },
+      { id: "c17", zone: "HQ", cell_name: "Odim Cell 2", cell_leader: "Anyachelebu Godreigns", assistant: "Bright Uzoma", cell_address: "Odim Lodge" },
+      { id: "c18", zone: "HQ", cell_name: "Hostel Cell 13", cell_leader: "Crystal Chris-Charles", assistant: "Wisdom Samuel", cell_address: "Alvan Hostel" },
+      { id: "c19", zone: "HQ", cell_name: "HQ Cell 1", cell_leader: "Godfred Akujekwe", assistant: "—", cell_address: "HQ Lodge" },
+      { id: "c20", zone: "HQ", cell_name: "Hilltop Cell 4", cell_leader: "Ikwu Emmanuel", assistant: "Obi Emmanuel", cell_address: "Dedon Lodge" },
+
+      // ODENIGWE ZONE
+      { id: "c21", zone: "Odenigwe", cell_name: "Odenigwe Cell 1", cell_leader: "Idara Joy", assistant: "—", cell_address: "RM 33 Namtex Lodge" },
+      { id: "c22", zone: "Odenigwe", cell_name: "Odenigwe Cell 2", cell_leader: "Kelechi Kamsiyochi", assistant: "—", cell_address: "RM 6 Lodge behind Ejima Junction" },
+      { id: "c23", zone: "Odenigwe", cell_name: "Odenigwe Cell 3", cell_leader: "Igwegbunam Precious", assistant: "—", cell_address: "RM 4 Lodge beside Pastor Restaurant" },
+
+      // ODIM ZONE
+      { id: "c24", zone: "Odim", cell_name: "Odim Cell 3", cell_leader: "Pastor Francis Ogbozor", assistant: "—", cell_address: "Vet Odim gate Lodge" },
+      { id: "c25", zone: "Odim", cell_name: "Odim Cell 4", cell_leader: "Nneoma Ben", assistant: "—", cell_address: "Vet Odim gate Lodge" },
+
+      // HILLTOP ZONE
+      { id: "c26", zone: "Hilltop", cell_name: "Hilltop Cell 5", cell_leader: "Ohazulike Nkechi", assistant: "—", cell_address: "Born Great Lodge" },
+      { id: "c27", zone: "Hilltop", cell_name: "Hilltop Cell 6", cell_leader: "Eze Jemima", assistant: "—", cell_address: "California Lodge" },
+      { id: "c28", zone: "Hilltop", cell_name: "Hilltop Cell 7", cell_leader: "Elijah Iweze", assistant: "—", cell_address: "Favour Lodge" },
+      { id: "c29", zone: "Hilltop", cell_name: "Hilltop Cell 8", cell_leader: "Ibeneme Adaobi", assistant: "—", cell_address: "Buchitex Lodge" },
+      { id: "c30", zone: "Hilltop", cell_name: "Hilltop Cell 9", cell_leader: "Prosper Owoh", assistant: "—", cell_address: "Topstar Lodge" },
+
+      // FRANCO ZONE
+      { id: "c31", zone: "Franco", cell_name: "Franco Cell 1", cell_leader: "Uche Benson", assistant: "—", cell_address: "Mbanefo Hostel" },
+      { id: "c32", zone: "Franco", cell_name: "Franco Cell 2", cell_leader: "Rejoice Robbinson", assistant: "—", cell_address: "Mbanefo Hostel" },
+      { id: "c33", zone: "Franco", cell_name: "Franco Cell 3", cell_leader: "Uche Benson", assistant: "Daberechi Eme", cell_address: "Nkurumah Hostel" },
+
+      // JSQ ZONE
+      { id: "c34", zone: "JSQ", cell_name: "JSQ Cell 1", cell_leader: "Aki Kenechukwu", assistant: "—", cell_address: "Eze opi 1" },
+      { id: "c35", zone: "JSQ", cell_name: "JSQ Cell 2", cell_leader: "Iheanacho Okechukwu", assistant: "—", cell_address: "Eze opi 11" },
+      { id: "c36", zone: "JSQ", cell_name: "JSQ Cell 3", cell_leader: "Aki Jidechukwu", assistant: "—", cell_address: "Albany Loving" },
+      { id: "c37", zone: "JSQ", cell_name: "JSQ Cell 4", cell_leader: "Ubani Precious", assistant: "—", cell_address: "VIP lodge" },
+      { id: "c38", zone: "JSQ", cell_name: "JSQ Cell 5", cell_leader: "Eze Chisoma", assistant: "—", cell_address: "1, Mbinuejikr street" },
+
+      // GREENHOUSE ZONE
+      { id: "c39", zone: "Greenhouse", cell_name: "Greenhouse Cell 1", cell_leader: "Wilfred Lovina", assistant: "—", cell_address: "Guest House Greenhouse" },
+      { id: "c40", zone: "Greenhouse", cell_name: "Greenhouse Cell 2", cell_leader: "Utazi Thomos", assistant: "—", cell_address: "Chisom Lodge Greenhouse" },
+      { id: "c41", zone: "Greenhouse", cell_name: "Greenhouse Cell 3", cell_leader: "Eze Divine Favour", assistant: "—", cell_address: "RM 4C Holy Lodge Greenhouse" }
+    ];
+
+    async function seed41CellsToSupabase() {
+      try {
+        const rowsToUpsert = CONNECT_CELLS_SEED.map(c => ({
+          id: String(c.id),
+          zone: c.zone || 'HQ',
+          cell_name: c.cell_name,
+          cell_leader: c.cell_leader,
+          cell_address: c.cell_address,
+          assistant: c.assistant
+        }));
+        const { error } = await supabaseClient.from('cell_leaders').upsert(rowsToUpsert);
+        if (error) {
+          console.error("Auto-seed upsert with assistant failed, trying without assistant column:", error.message);
+          const rowsToUpsertFallback = CONNECT_CELLS_SEED.map(c => ({
+            id: String(c.id),
+            zone: c.zone || 'HQ',
+            cell_name: c.cell_name,
+            cell_leader: c.cell_leader,
+            cell_address: c.cell_address
+          }));
+          const { error: fallbackError } = await supabaseClient.from('cell_leaders').upsert(rowsToUpsertFallback);
+          if (fallbackError) {
+            console.error("Auto-seed fallback upsert failed:", fallbackError.message);
+          } else {
+            console.log("Auto-seeded cells without assistant successfully.");
+          }
+        } else {
+          console.log("Auto-seeded cells with assistant successfully.");
+        }
+      } catch (e) {
+        console.error("Auto-seed exception:", e);
+      }
+    }
 
     async function fetchConnectCellsFromSupabase() {
       try {
@@ -5526,6 +5615,28 @@
           .from('cell_leaders')
           .select('*');
         if (!error && data) {
+          if (data.length === 0) {
+            console.log("Supabase cell_leaders table is empty. Seeding cells...");
+            await seed41CellsToSupabase();
+            const { data: refetched } = await supabaseClient.from('cell_leaders').select('*');
+            if (refetched && refetched.length > 0) {
+              const formatted = refetched.map(sc => ({
+                id: String(sc.id),
+                zone: sc.zone || 'HQ',
+                name: sc.cell_name || sc.name || 'Cell',
+                cell_name: sc.cell_name || sc.name || 'Cell',
+                leader: sc.cell_leader || sc.leader || 'Leader',
+                cell_leader: sc.cell_leader || sc.leader || 'Leader',
+                assistant: sc.assistant || '—',
+                location: sc.cell_address || sc.location || 'Address',
+                cell_address: sc.cell_address || sc.location || 'Address',
+                schedule: sc.schedule || 'Saturdays 5:00 PM'
+              }));
+              localStorage.setItem('ncf_connect_cells', JSON.stringify(formatted));
+              return formatted;
+            }
+          }
+
           const formatted = data.map(sc => ({
             id: String(sc.id),
             zone: sc.zone || 'HQ',
@@ -5533,6 +5644,7 @@
             cell_name: sc.cell_name || sc.name || 'Cell',
             leader: sc.cell_leader || sc.leader || 'Leader',
             cell_leader: sc.cell_leader || sc.leader || 'Leader',
+            assistant: sc.assistant || '—',
             location: sc.cell_address || sc.location || 'Address',
             cell_address: sc.cell_address || sc.location || 'Address',
             schedule: sc.schedule || 'Saturdays 5:00 PM'
@@ -5566,12 +5678,24 @@
           zone: c.zone || 'HQ',
           cell_name: c.cell_name || c.name || 'Cell',
           cell_leader: c.cell_leader || c.leader || 'Leader',
-          cell_address: c.cell_address || c.location || 'Address'
+          cell_address: c.cell_address || c.location || 'Address',
+          assistant: c.assistant || '—'
         }));
         const { error } = await supabaseClient.from('cell_leaders').upsert(rowsToUpsert);
         if (error) {
-          console.error("Supabase cell_leaders upsert error:", error);
-          if (typeof showToast === 'function') showToast("Supabase Error: " + error.message, "red");
+          console.warn("Upsert with assistant failed, trying without assistant:", error.message);
+          const rowsFallback = cells.map(c => ({
+            id: String(c.id),
+            zone: c.zone || 'HQ',
+            cell_name: c.cell_name || c.name || 'Cell',
+            cell_leader: c.cell_leader || c.leader || 'Leader',
+            cell_address: c.cell_address || c.location || 'Address'
+          }));
+          const { error: fallbackError } = await supabaseClient.from('cell_leaders').upsert(rowsFallback);
+          if (fallbackError) {
+            console.error("Supabase cell_leaders upsert fallback error:", fallbackError);
+            if (typeof showToast === 'function') showToast("Supabase Error: " + fallbackError.message, "red");
+          }
         }
       } catch (e) {
         console.warn("Supabase cell_leaders sync error:", e);
