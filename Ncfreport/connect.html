@@ -458,7 +458,7 @@
           <!-- 3. Cell Leader -->
           <div>
             <label class="form-label" for="leader-name-select">3. Cell Leader *</label>
-            <select id="leader-name-select" class="form-input" style="background: rgba(15, 23, 42, 0.85); color: #f8fafc; border: 1px solid rgba(59, 130, 246, 0.35);">
+            <select id="leader-name-select" class="form-input" onchange="handleLeaderChange()" style="background: rgba(15, 23, 42, 0.85); color: #f8fafc; border: 1px solid rgba(59, 130, 246, 0.35);">
               <option value="" disabled selected style="background: #0f172a; color: #94a3b8;">-- Select Cell Leader --</option>
             </select>
           </div>
@@ -686,12 +686,16 @@
       const selectedZone = (document.getElementById('zone-select')?.value || '').trim();
       const cellNameSelect = document.getElementById('cell-name-select');
       const leaderSelect = document.getElementById('leader-name-select');
+      const addressInput = document.getElementById('cell-address');
 
       if (cellNameSelect) {
         cellNameSelect.innerHTML = '<option value="" disabled selected style="background:#0f172a; color:#94a3b8;">-- Select Area / Hostel --</option>';
       }
       if (leaderSelect) {
         leaderSelect.innerHTML = '<option value="" disabled selected style="background:#0f172a; color:#94a3b8;">-- Select Cell Leader --</option>';
+      }
+      if (addressInput) {
+        addressInput.value = '';
       }
 
       if (!selectedZone) return;
@@ -700,27 +704,70 @@
         (item.zone || '').trim().toLowerCase() === selectedZone.toLowerCase()
       );
 
-      // Populate unique cell names / hostels for this zone
-      const cellNames = [...new Set(matchingItems.map(item => item.cell_name || item.name || item.location).filter(Boolean))];
-      cellNames.forEach(cn => {
+      // Populate unique locations (Area / Hostel) for this zone
+      const locations = [...new Set(matchingItems.map(item => item.cell_name || item.name || item.location || item.cell_address).filter(Boolean))];
+      locations.forEach(loc => {
         const opt = document.createElement('option');
-        opt.value = cn;
-        opt.textContent = cn;
+        opt.value = loc;
+        opt.textContent = loc;
         opt.style.background = '#1e293b';
         opt.style.color = '#f8fafc';
         cellNameSelect.appendChild(opt);
       });
 
       // Populate leaders for this zone
-      const leaders = [...new Set(matchingItems.map(item => item.cell_leader || item.leader || item.leader_name).filter(Boolean))];
-      leaders.forEach(ldr => {
+      const leaders = matchingItems.map(item => ({
+        leader: item.cell_leader || item.leader || item.leader_name,
+        address: item.cell_address || item.address || item.location,
+        location: item.cell_name || item.name || item.location
+      })).filter(item => item.leader);
+      
+      leaders.forEach(item => {
         const opt = document.createElement('option');
-        opt.value = ldr;
-        opt.textContent = ldr;
+        opt.value = item.leader;
+        opt.textContent = item.leader + ' (' + (item.address || item.location || '') + ')';
         opt.style.background = '#1e293b';
         opt.style.color = '#f8fafc';
         leaderSelect.appendChild(opt);
       });
+    }
+
+    function handleLeaderChange() {
+      const selectedZone = (document.getElementById('zone-select')?.value || '').trim();
+      const selectedLeader = (document.getElementById('leader-name-select')?.value || '').trim();
+      const cellNameSelect = document.getElementById('cell-name-select');
+      const addressInput = document.getElementById('cell-address');
+
+      if (!selectedLeader) return;
+
+      const match = cellLeadersList.find(item => 
+        (item.zone || '').trim().toLowerCase() === selectedZone.toLowerCase() &&
+        (item.cell_leader || item.leader || item.leader_name || '').trim().toLowerCase() === selectedLeader.toLowerCase()
+      );
+
+      if (match) {
+        const locationVal = match.cell_name || match.name || match.location;
+        const addressVal = match.cell_address || match.address || match.location;
+        if (locationVal && cellNameSelect) {
+          let exists = false;
+          for (let i = 0; i < cellNameSelect.options.length; i++) {
+            if (cellNameSelect.options[i].value === locationVal) {
+              exists = true;
+              break;
+            }
+          }
+          if (!exists) {
+            const opt = document.createElement('option');
+            opt.value = locationVal;
+            opt.textContent = locationVal;
+            cellNameSelect.appendChild(opt);
+          }
+          cellNameSelect.value = locationVal;
+        }
+        if (addressVal && addressInput) {
+          addressInput.value = addressVal;
+        }
+      }
     }
 
     function handleCellNameChange() {
@@ -731,19 +778,39 @@
 
       if (!selectedCellName) return;
 
-      const match = cellLeadersList.find(item => 
+      const matches = cellLeadersList.filter(item => 
         (item.zone || '').trim().toLowerCase() === selectedZone.toLowerCase() &&
         (item.cell_name || item.name || item.location || '').trim().toLowerCase() === selectedCellName.toLowerCase()
       );
 
-      if (match) {
-        const leaderVal = match.cell_leader || match.leader;
-        const addressVal = match.cell_address || match.address || match.location;
-        if (leaderVal && leaderSelect) {
-          leaderSelect.value = leaderVal;
-        }
-        if (addressVal && addressInput) {
-          addressInput.value = addressVal;
+      if (matches.length > 0) {
+        // If there's only one match, auto-populate leader and address
+        if (matches.length === 1) {
+          const match = matches[0];
+          const leaderVal = match.cell_leader || match.leader;
+          const addressVal = match.cell_address || match.address || match.location;
+          if (leaderVal && leaderSelect) {
+            leaderSelect.value = leaderVal;
+          }
+          if (addressVal && addressInput) {
+            addressInput.value = addressVal;
+          }
+        } else {
+          // If multiple matches (e.g. multiple hostels named "Hostel"), filter the leader dropdown to show only leaders in this hostel
+          if (leaderSelect) {
+            leaderSelect.innerHTML = '<option value="" disabled selected style="background:#0f172a; color:#94a3b8;">-- Select Cell Leader --</option>';
+            matches.forEach(match => {
+              const leaderVal = match.cell_leader || match.leader;
+              if (leaderVal) {
+                const opt = document.createElement('option');
+                opt.value = leaderVal;
+                opt.textContent = leaderVal;
+                opt.style.background = '#1e293b';
+                opt.style.color = '#f8fafc';
+                leaderSelect.appendChild(opt);
+              }
+            });
+          }
         }
       }
     }
