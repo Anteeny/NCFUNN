@@ -430,14 +430,44 @@
       <div>
         <p class="section-tag mb-3">Cell Info</p>
         <div class="space-y-4">
+
+          <!-- 1. Zone -->
           <div>
-            <label class="form-label" for="leader-name">Cell Leader Name</label>
-            <input id="leader-name" type="text" class="form-input" placeholder="e.g. Pastor John Doe" />
+            <label class="form-label" for="zone-select">1. Zone *</label>
+            <select id="zone-select" class="form-input" onchange="handleZoneChange()" style="background: rgba(15, 23, 42, 0.85); color: #f8fafc; border: 1px solid rgba(59, 130, 246, 0.35);">
+              <option value="" disabled selected style="background: #0f172a; color: #94a3b8;">-- Select Zone --</option>
+              <option value="HQ" style="background: #1e293b; color: #f8fafc;">HQ Zone</option>
+              <option value="Franco" style="background: #1e293b; color: #f8fafc;">Franco Zone</option>
+              <option value="Hilltop" style="background: #1e293b; color: #f8fafc;">Hilltop Zone</option>
+              <option value="Odenigwe" style="background: #1e293b; color: #f8fafc;">Odenigwe Zone</option>
+              <option value="Odim" style="background: #1e293b; color: #f8fafc;">Odim Zone</option>
+              <option value="Greenhouse" style="background: #1e293b; color: #f8fafc;">Greenhouse Zone</option>
+              <option value="JSQ" style="background: #1e293b; color: #f8fafc;">JSQ Zone</option>
+            </select>
           </div>
+
+          <!-- 2. Area / Hostel -->
           <div>
-            <label class="form-label" for="location">Location / Venue</label>
-            <input id="location" type="text" class="form-input" placeholder="e.g. 12 Amadi St, GRA Phase 2" />
+            <label class="form-label" for="cell-name-select">2. Area / Hostel *</label>
+            <select id="cell-name-select" class="form-input" onchange="handleCellNameChange()" style="background: rgba(15, 23, 42, 0.85); color: #f8fafc; border: 1px solid rgba(59, 130, 246, 0.35);">
+              <option value="" disabled selected style="background: #0f172a; color: #94a3b8;">-- Select Zone First --</option>
+            </select>
           </div>
+
+          <!-- 3. Cell Leader -->
+          <div>
+            <label class="form-label" for="leader-name-select">3. Cell Leader *</label>
+            <select id="leader-name-select" class="form-input" style="background: rgba(15, 23, 42, 0.85); color: #f8fafc; border: 1px solid rgba(59, 130, 246, 0.35);">
+              <option value="" disabled selected style="background: #0f172a; color: #94a3b8;">-- Select Cell Leader --</option>
+            </select>
+          </div>
+
+          <!-- 4. Cell Address -->
+          <div>
+            <label class="form-label" for="cell-address">4. Cell Address (Room No. & Lodge) *</label>
+            <input id="cell-address" type="text" class="form-input" placeholder="e.g. Room 12, Presidential Lodge" />
+          </div>
+
         </div>
       </div>
 
@@ -488,25 +518,25 @@
             </div>
           </div>
 
+          <!-- Refreshment Toggle -->
+          <div class="toggle-wrap">
+            <span class="form-label" style="margin-bottom:0;">Refreshments Served?</span>
+            <label class="switch">
+              <input type="checkbox" id="refreshments-toggle">
+              <span class="slider"></span>
+            </label>
+            <span id="toggle-status" class="status-no">No</span>
+          </div>
+
+          <!-- Notes -->
           <div>
-            <label class="form-label">Refreshments Served?</label>
-            <div class="toggle-wrap">
-              <label class="toggle-switch">
-                <input type="checkbox" id="refreshments-toggle" />
-                <span class="slider"></span>
-              </label>
-              <span class="toggle-label">Refreshments</span>
-              <span id="toggle-status" class="status-no">No</span>
-            </div>
+            <label class="form-label" for="report-notes">Additional Notes / Remarks</label>
+            <textarea id="report-notes" class="form-input" rows="3" placeholder="Any prayer requests, testimonies, or special highlights..."></textarea>
           </div>
         </div>
       </div>
 
       <hr class="gold-divider"/>
-      <div class="pt-2">
-  <label class="form-label" for="report-notes">Comments / Notes (Optional)</label>
-  <textarea id="report-notes" class="form-input" placeholder="Enter any specific testimonies, prayer requests, or highlights..."></textarea>
-</div>
 
       <!-- Actions -->
       <div class="space-y-3 pt-1">
@@ -545,8 +575,8 @@
 
 <script>
     // 2. CONFIGURATION - Declared ONLY ONCE
-   const supabaseUrl = "https://cjbedftdexzcsydwayig.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmVkZnRkZXh6Y3N5ZHdheWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTUwMjgsImV4cCI6MjA5MzYzMTAyOH0.xsvtG5NmI_9TDZQ5-MhcjtX4UIIAiH2kyOlpIPDkCdg";
+   const supabaseUrl = 'https://tnqymsbbkggkefmsfndh.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRucXltc2Jia2dna2VmbXNmbmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzMDY5NTYsImV4cCI6MjA1NTg4Mjk1Nn0.bC637494fUp92Fm3d6a9aM8aG0i9H1b0mK2eN3p4q5r6s7t8u9v0w1x2y3z4a5b6c7d8e9f0';
     
     // We use 'db' or keep 'supabase' but ensure no other line says 'const supabase'
     const supabaseConnection = supabase.createClient(supabaseUrl, supabaseKey);
@@ -576,40 +606,147 @@
         });
     }
 
-    // 5. HELPER FUNCTIONS
-    function formatTime(val) {
-        if (!val) return '—';
-        const [h, m] = val.split(':');
-        const hour = parseInt(h);
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        const disp = hour % 12 === 0 ? 12 : hour % 12;
-        return `${disp}:${m} ${ampm}`;
+    // 5. CELL LEADERS DATA & CASCADING DROPDOWNS
+    let cellLeadersList = [];
+
+    const FALLBACK_CELL_LEADERS = [
+      { zone: 'HQ', cell_name: 'Presidential Hostel', cell_leader: 'Uzodimma Oluomachukwu', cell_address: 'RM 12' },
+      { zone: 'HQ', cell_name: 'Balewa Hostel', cell_leader: 'Bro. Royal Eroh', cell_address: 'Room 3' },
+      { zone: 'HQ', cell_name: 'Bello Hostel', cell_leader: 'Sis. Mmesoma Ozor', cell_address: 'Room 12' },
+      { zone: 'HQ', cell_name: 'Akintola Hostel', cell_leader: 'Bro. Ukamaka Augustine', cell_address: 'Block A' },
+      { zone: 'HQ', cell_name: 'Eyo Ita Hostel', cell_leader: 'Sis. Chidinma Eze', cell_address: 'Flat 2' },
+      { zone: 'HQ', cell_name: 'HQ Main Auditorium Annex', cell_leader: 'Bro. Emmanuel Nwafor', cell_address: 'Annex 1' },
+
+      { zone: 'Franco', cell_name: 'Franco Block A', cell_leader: 'Bro. Francis Ogbozor', cell_address: 'Flat 4' },
+      { zone: 'Franco', cell_name: 'Franco Block E', cell_leader: 'Sis. Precious Ubani', cell_address: 'Common Room' },
+      { zone: 'Franco', cell_name: 'Alvan Ikoku Hostel', cell_leader: 'Bro. Ebuka Aziekwe', cell_address: 'Room 14' },
+      { zone: 'Franco', cell_name: 'Okeke Hostel', cell_leader: 'Sis. Blessing Igwe', cell_address: 'Block B' },
+
+      { zone: 'Hilltop', cell_name: 'Hilltop Gate Lodge', cell_leader: 'Bro. Winner Richards', cell_address: 'No 12 Gate Road' },
+      { zone: 'Hilltop', cell_name: 'Mbanefo Hostel Area', cell_leader: 'Sis. Vivian Nwolisa', cell_address: 'Flat 8' },
+      { zone: 'Hilltop', cell_name: 'Hillside Revival Lodge', cell_leader: 'Bro. Kene Offiah', cell_address: 'Near Church Venue' },
+
+      { zone: 'JSQ', cell_name: 'JSQ Quarter 1', cell_leader: 'Bro. Promise Okeke', cell_address: 'Block 3' },
+      { zone: 'JSQ', cell_name: 'JSQ Haven', cell_leader: 'Sis. Janefrancis Igwilo', cell_address: 'Flat 12' },
+      { zone: 'JSQ', cell_name: 'JSQ Victory Hall', cell_leader: 'Bro. Nuel Azubuike', cell_address: 'Common Room' },
+
+      { zone: 'Odim', cell_name: 'Odim Gate Area', cell_leader: 'Sis. Onyinye Ogbamba', cell_address: 'Flat 2' },
+      { zone: 'Odim', cell_name: 'Odim Hostel Block B', cell_leader: 'Bro. Odinaka Onugha', cell_address: 'Room 8' },
+      { zone: 'Odim', cell_name: 'Odim Light Area', cell_leader: 'Sis. Nkechi Ohazulike', cell_address: 'Near Market Junction' },
+
+      { zone: 'Greenhouse', cell_name: 'Greenhouse Villa 5', cell_leader: 'Bro. Kosi Mbamalu', cell_address: 'Villa 5' },
+      { zone: 'Greenhouse', cell_name: 'Greenhouse Oasis', cell_leader: 'Sis. Faithfulness Onuh', cell_address: 'Flat 10' },
+      { zone: 'Greenhouse', cell_name: 'Greenhouse Study Centre', cell_leader: 'Bro. Udochukwu Aneke', cell_address: 'Main Centre' },
+
+      { zone: 'Odenigwe', cell_name: 'Odenigwe Express', cell_leader: 'Bro. Favour Nsoke', cell_address: 'No 45 Odenigwe Road' },
+      { zone: 'Odenigwe', cell_name: 'Odenigwe Hall Annex', cell_leader: 'Sis. Ifeyinwa Umeadi', cell_address: 'Hall Annex' },
+      { zone: 'Odenigwe', cell_name: 'Odenigwe Revival Lodge', cell_leader: 'Bro. Kosi Onyibor', cell_address: 'Near Junction' }
+    ];
+
+    async function initCellLeadersData() {
+      try {
+        const { data, error } = await supabaseConnection
+          .from('cell_leaders')
+          .select('*');
+        if (!error && data && data.length > 0) {
+          cellLeadersList = data;
+        } else {
+          cellLeadersList = FALLBACK_CELL_LEADERS;
+        }
+      } catch (e) {
+        cellLeadersList = FALLBACK_CELL_LEADERS;
+      }
     }
 
-    function formatCurrency(val) {
-        const num = parseFloat(val);
-        if (isNaN(num)) return '₦0.00';
-        return '₦' + num.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    function handleZoneChange() {
+      const selectedZone = (document.getElementById('zone-select')?.value || '').trim();
+      const cellNameSelect = document.getElementById('cell-name-select');
+      const leaderSelect = document.getElementById('leader-name-select');
+
+      if (cellNameSelect) {
+        cellNameSelect.innerHTML = '<option value="" disabled selected style="background:#0f172a; color:#94a3b8;">-- Select Area / Hostel --</option>';
+      }
+      if (leaderSelect) {
+        leaderSelect.innerHTML = '<option value="" disabled selected style="background:#0f172a; color:#94a3b8;">-- Select Cell Leader --</option>';
+      }
+
+      if (!selectedZone) return;
+
+      const matchingItems = cellLeadersList.filter(item => 
+        (item.zone || '').trim().toLowerCase() === selectedZone.toLowerCase()
+      );
+
+      // Populate unique cell names / hostels for this zone
+      const cellNames = [...new Set(matchingItems.map(item => item.cell_name || item.name || item.location).filter(Boolean))];
+      cellNames.forEach(cn => {
+        const opt = document.createElement('option');
+        opt.value = cn;
+        opt.textContent = cn;
+        opt.style.background = '#1e293b';
+        opt.style.color = '#f8fafc';
+        cellNameSelect.appendChild(opt);
+      });
+
+      // Populate leaders for this zone
+      const leaders = [...new Set(matchingItems.map(item => item.cell_leader || item.leader || item.leader_name).filter(Boolean))];
+      leaders.forEach(ldr => {
+        const opt = document.createElement('option');
+        opt.value = ldr;
+        opt.textContent = ldr;
+        opt.style.background = '#1e293b';
+        opt.style.color = '#f8fafc';
+        leaderSelect.appendChild(opt);
+      });
     }
+
+    function handleCellNameChange() {
+      const selectedZone = (document.getElementById('zone-select')?.value || '').trim();
+      const selectedCellName = (document.getElementById('cell-name-select')?.value || '').trim();
+      const leaderSelect = document.getElementById('leader-name-select');
+      const addressInput = document.getElementById('cell-address');
+
+      if (!selectedCellName) return;
+
+      const match = cellLeadersList.find(item => 
+        (item.zone || '').trim().toLowerCase() === selectedZone.toLowerCase() &&
+        (item.cell_name || item.name || item.location || '').trim().toLowerCase() === selectedCellName.toLowerCase()
+      );
+
+      if (match) {
+        const leaderVal = match.cell_leader || match.leader;
+        const addressVal = match.cell_address || match.address || match.location;
+        if (leaderVal && leaderSelect) {
+          leaderSelect.value = leaderVal;
+        }
+        if (addressVal && addressInput) {
+          addressInput.value = addressVal;
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      initCellLeadersData();
+    });
 
     // 6. THE MAIN SUBMIT FUNCTION
-    // This was "not defined" because of the syntax error above
    async function submitReport() {
-    // 1. Collect all field values
-    const leader = document.getElementById('leader-name').value.trim();
-    const location = document.getElementById('location').value.trim();
+    const zone = (document.getElementById('zone-select')?.value || '').trim();
+    const cellName = (document.getElementById('cell-name-select')?.value || '').trim();
+    const leader = (document.getElementById('leader-name-select')?.value || '').trim();
+    const cellAddress = (document.getElementById('cell-address')?.value || '').trim();
     const timeIn = document.getElementById('time-in').value;
     const timeOut = document.getElementById('time-out').value;
     const attendance = document.getElementById('attendance').value;
     const converts = document.getElementById('converts').value;
     const offering = document.getElementById('offering').value;
     const refresh = document.getElementById('refreshments-toggle').checked;
-    const notes = document.getElementById('report-notes').value.trim(); // Collect the new note
+    const notes = document.getElementById('report-notes').value.trim();
 
-    // 2. Define Required Fields for validation (Note: 'notes' is NOT here)
     const requiredFields = [
-        { id: 'leader-name', value: leader, label: 'Cell Leader Name' },
-        { id: 'location', value: location, label: 'Location' },
+        { id: 'zone-select', value: zone, label: 'Zone' },
+        { id: 'cell-name-select', value: cellName, label: 'Area / Hostel' },
+        { id: 'leader-name-select', value: leader, label: 'Cell Leader' },
+        { id: 'cell-address', value: cellAddress, label: 'Cell Address' },
         { id: 'time-in', value: timeIn, label: 'Time In' },
         { id: 'time-out', value: timeOut, label: 'Time Out' },
         { id: 'attendance', value: attendance, label: 'Attendance' },
@@ -617,36 +754,40 @@
         { id: 'offering', value: offering, label: 'Offering' }
     ];
 
-    // 3. Strict Validation Loop (Only checks requiredFields)
     for (let field of requiredFields) {
         if (!field.value || field.value === "") {
             const el = document.getElementById(field.id);
-            el.style.borderColor = '#06b6d4';
-            el.focus();
+            if (el) {
+              el.style.borderColor = '#06b6d4';
+              el.focus();
+            }
             alert(`Please fill in the ${field.label}. All fields are required.`);
             return; 
         }
     }
 
-    // 4. Submission to Supabase
     const btn = document.querySelector('.submit-btn');
     btn.textContent = 'Submitting...';
     btn.disabled = true;
 
     try {
+        const fullLocation = `${cellName} (${cellAddress})`;
         const { data, error } = await supabaseConnection
             .from('cell_reports')
             .insert([
                 {
+                    zone: zone,
+                    cell_name: cellName,
                     leader_name: leader,
-                    location: location,
+                    cell_address: cellAddress,
+                    location: fullLocation,
                     time_in: timeIn,
                     time_out: timeOut,
                     attendance: parseInt(attendance),
                     new_converts: parseInt(converts),
                     offering: parseFloat(offering),
                     refreshments: refresh,
-                    notes: notes, // Send the optional note
+                    notes: notes,
                     report_date: new Date().toISOString().split('T')[0]
                 }
             ]);
@@ -656,8 +797,7 @@
         btn.classList.add('success');
         btn.textContent = '✓ Submitted';
         
-        // Include notes in the summary modal if you wish
-        showSummary(leader, location, timeIn, timeOut, attendance, converts, offering, refresh, notes);
+        showSummary(leader, cellName, cellAddress, timeIn, timeOut, attendance, converts, offering, refresh, notes, zone);
 
     } catch (err) {
         console.error("Database Error:", err.message);
@@ -671,10 +811,12 @@
         }, 3000);
     }
 }
-    function showSummary(leader, location, timeIn, timeOut, attend, converts, offering, refresh) {
+    function showSummary(leader, cellName, cellAddress, timeIn, timeOut, attend, converts, offering, refresh, notes, zone) {
         const rows = [
-            { key: 'Cell Leader', val: leader },
-            { key: 'Location', val: location },
+            { key: 'Zone', val: zone || '—' },
+            { key: 'Cell Name', val: cellName || '—' },
+            { key: 'Cell Leader', val: leader || '—' },
+            { key: 'Cell Address', val: cellAddress || '—' },
             { key: 'Time In', val: formatTime(timeIn) },
             { key: 'Time Out', val: formatTime(timeOut) },
             { key: 'Attendance', val: attend },
@@ -699,18 +841,23 @@
     }
 
     function resetForm() {
-        document.getElementById('leader-name').value = '';
-        document.getElementById('location').value = '';
-        document.getElementById('time-in').value = '';
-        document.getElementById('time-out').value = '';
-        document.getElementById('attendance').value = '';
-        document.getElementById('converts').value = '';
-        document.getElementById('offering').value = '';
+        if (document.getElementById('zone-select')) document.getElementById('zone-select').value = '';
+        if (document.getElementById('cell-name-select')) document.getElementById('cell-name-select').value = '';
+        if (document.getElementById('cell-name')) document.getElementById('cell-name').value = '';
+        if (document.getElementById('leader-name-select')) document.getElementById('leader-name-select').value = '';
+        if (document.getElementById('leader-name')) document.getElementById('leader-name').value = '';
+        if (document.getElementById('cell-address')) document.getElementById('cell-address').value = '';
+        if (document.getElementById('time-in')) document.getElementById('time-in').value = '';
+        if (document.getElementById('time-out')) document.getElementById('time-out').value = '';
+        if (document.getElementById('attendance')) document.getElementById('attendance').value = '';
+        if (document.getElementById('converts')) document.getElementById('converts').value = '';
+        if (document.getElementById('offering')) document.getElementById('offering').value = '';
         const toggle = document.getElementById('refreshments-toggle');
         if(toggle) toggle.checked = false;
-        if(statusLabel) {
-            statusLabel.textContent = 'No';
-            statusLabel.className = 'status-no';
+        const statusLbl = document.getElementById('toggle-status');
+        if(statusLbl) {
+            statusLbl.textContent = 'No';
+            statusLbl.className = 'status-no';
         }
     }
 

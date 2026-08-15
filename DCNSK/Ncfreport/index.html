@@ -148,13 +148,6 @@
         <div class="card-btn">Submit Report <span>→</span></div>
       </a>
 
-      <a class="card card-member" href="mvp.html">
-        <div class="card-icon">✨</div>
-        <h3>New Member Registration</h3>
-        <p>Register a new member joining the family.</p>
-        <div class="card-btn">Register Member <span>→</span></div>
-      </a>
-
       <a class="card card-service" href="servicereport.html">
         <div class="card-icon">⛪</div>
         <h3>Service Report</h3>
@@ -174,6 +167,8 @@
   const d = new Date();
   document.getElementById('live-date').textContent =
     d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+
+  // All report forms are open 24/7 for submissions
 
   // Supabase Configuration
   const supabaseUrl = "https://cjbedftdexzcsydwayig.supabase.co";
@@ -267,20 +262,33 @@
 
   function getServiceDate(reportDate) {
     if (!reportDate) return 'Unknown Date';
-    const date = new Date(reportDate);
-    if (isNaN(date.getTime())) return 'Unknown Date';
-    const dayOfWeek = date.getDay();
-    let serviceDate;
-    if (dayOfWeek === 0 || dayOfWeek === 1) {
-      serviceDate = new Date(date);
-      if (dayOfWeek === 1) serviceDate.setDate(serviceDate.getDate() - 1);
-    } else if (dayOfWeek === 3 || dayOfWeek === 4) {
-      serviceDate = new Date(date);
-      if (dayOfWeek === 4) serviceDate.setDate(serviceDate.getDate() - 1);
-    } else {
-      serviceDate = new Date(date);
+    let y, m, d;
+    if (typeof reportDate === 'string') {
+      const parts = reportDate.split('T')[0].split('-');
+      if (parts.length === 3) {
+        y = parseInt(parts[0], 10);
+        m = parseInt(parts[1], 10) - 1;
+        d = parseInt(parts[2], 10);
+      }
     }
-    return serviceDate.toISOString().split('T')[0];
+    let dt;
+    if (y !== undefined && !isNaN(y)) {
+      dt = new Date(y, m, d);
+    } else {
+      dt = new Date(reportDate);
+    }
+    if (isNaN(dt.getTime())) return 'Unknown Date';
+    const dayOfWeek = dt.getDay();
+    const target = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+    if (dayOfWeek === 0 || dayOfWeek === 1 || dayOfWeek === 2) {
+      target.setDate(target.getDate() - dayOfWeek);
+    } else {
+      target.setDate(target.getDate() - (dayOfWeek - 3));
+    }
+    const yr = target.getFullYear();
+    const mo = String(target.getMonth() + 1).padStart(2, '0');
+    const da = String(target.getDate()).padStart(2, '0');
+    return `${yr}-${mo}-${da}`;
   }
 
   function formatServiceDate(dateStr) {

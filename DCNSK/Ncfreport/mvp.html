@@ -165,35 +165,28 @@
     </div>
 
     <div class="form-group">
-      <label>Course of Study & Level</label>
-      <div style="display: flex; gap: 10px;">
-        <input type="text" id="course_of_study" placeholder="E.g. Computer Science" style="flex: 1;">
-        <select id="level" style="width: 120px; flex-shrink: 0;">
-          <option value="">Level</option>
-          <option value="100">100 lvl</option>
-          <option value="200">200 lvl</option>
-          <option value="300">300 lvl</option>
-          <option value="400">400 lvl</option>
-          <option value="500">500 lvl</option>
-          <option value="600">600 lvl</option>
-        </select>
-      </div>
+      <label>Address</label>
+      <textarea id="address" placeholder="Hostel/Lodge, Room No, or Permanent Address"></textarea>
     </div>
 
     <div class="form-group">
-      <label>School Address</label>
-      <textarea id="school_address" placeholder="Hostel or Lodge name, room number, etc."></textarea>
+      <label>Open to Visitation?</label>
+      <select id="open_to_visitation">
+        <option value="Yes">Yes</option>
+        <option value="No">No</option>
+        <option value="Maybe">Maybe / Contact First</option>
+      </select>
     </div>
 
     <div class="form-group">
-      <label>Home Address</label>
-      <textarea id="home_address" placeholder="Permanent home address"></textarea>
+      <label>Birthday</label>
+      <input type="date" id="birthday">
     </div>
 
     <div class="form-group">
-      <label>Unit in Church</label>
-      <select id="department">
-        <option value="">-- Select (Optional) --</option>
+      <label>Dept Interest (Unit in Church)</label>
+      <select id="dept_interest">
+        <option value="">-- Select Department Interest --</option>
         <option value="DC NSK Angels">DC NSK Angels</option>
         <option value="Media Unit">Media Unit</option>
         <option value="Technical Unit">Technical Unit</option>
@@ -209,14 +202,19 @@
     </div>
 
     <div class="form-group">
-      <label>Who is your G12 Leader?</label>
-      <p style="font-size: 0.65rem; color: rgba(232, 205, 122, 0.7); margin-bottom: 6px; margin-top: -4px;">Enter leader name (titles like Pastor, Pa will be removed)</p>
-      <input type="text" id="g12_leader" placeholder="Click to select your g12 leader" readonly onclick="selectG12Leader()">
+      <label>Prayer Points</label>
+      <textarea id="prayer_points" placeholder="Any prayer requests..."></textarea>
     </div>
 
     <div class="form-group">
-      <label>G12 Leader's Phone No.</label>
-      <input type="tel" id="g12_phone" placeholder="Leader's phone number">
+      <label>Complains / Comments</label>
+      <textarea id="comments" placeholder="Any complaints, comments, or feedback..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Who is your G12 Leader?</label>
+      <p style="font-size: 0.65rem; color: rgba(232, 205, 122, 0.7); margin-bottom: 6px; margin-top: -4px;">Enter leader name (titles like Pastor, Pa will be removed)</p>
+      <input type="text" id="g12_leader" placeholder="Click to select your g12 leader" readonly onclick="selectG12Leader()">
     </div>
 
     <button class="btn-submit" id="submit-btn" onclick="submitRegistration()">Submit Details</button>
@@ -471,25 +469,16 @@
       // Gather input values
       const member_name = document.getElementById('member_name').value.trim();
       const member_phone = document.getElementById('member_phone').value.trim();
-      const course_of_study = document.getElementById('course_of_study').value.trim();
-      const level = document.getElementById('level').value;
-      const school_address = document.getElementById('school_address').value.trim();
-      const home_address = document.getElementById('home_address').value.trim();
-      const department = document.getElementById('department').value;
-      let g12_leader = document.getElementById('g12_leader').value.trim();
-      const g12_phone = document.getElementById('g12_phone').value.trim();
+      const address = (document.getElementById('address')?.value || '').trim();
+      const open_to_visitation = document.getElementById('open_to_visitation')?.value || 'Yes';
+      const birthday = document.getElementById('birthday')?.value || '';
+      const dept_interest = document.getElementById('dept_interest')?.value || '';
+      const prayer_points = (document.getElementById('prayer_points')?.value || '').trim();
+      const comments = (document.getElementById('comments')?.value || '').trim();
+      let g12_leader = (document.getElementById('g12_leader')?.value || '').trim();
 
       // NORMALIZE G12 LEADER NAME - Convert aliases to canonical names
       g12_leader = normalizeLeaderName(g12_leader);
-
-      // Determine leader type dynamically based on leader name
-      let leader_type = 'G12'; // Default fallback
-      if (g12_leader && g12_leader !== 'Unassigned') {
-        const canonical = normalizeLeaderName(g12_leader);
-        if (window.leaderTypes && window.leaderTypes[canonical]) {
-          leader_type = window.leaderTypes[canonical];
-        }
-      }
 
       // Basic validation
       if (!member_name || !member_phone) {
@@ -501,54 +490,53 @@
       btn.textContent = "Submitting...";
       btn.disabled = true;
 
-      // 1. Check if member already exists (case-insensitive search by name)
-      const { data: existingData, error: searchError } = await supabaseClient
-        .from('members')
-        .select('*')
-        .ilike('member_name', member_name);
-
-      if (searchError) {
-        console.error("Search Error:", searchError.message);
-        alert("Error checking database: " + searchError.message);
-        btn.textContent = "Submit Details";
-        btn.disabled = false;
-        return;
-      }
-
       let dbError = null;
 
-      if (existingData && existingData.length > 0) {
-        // 2. Member exists! Update their record instead of creating a new one.
-        const existingMember = existingData[0];
-        const updatePayload = {};
-        
-        // Only update fields that the user actually filled in on the form
-        if (member_phone) updatePayload.member_phone = member_phone;
-        if (course_of_study) updatePayload.course_of_study = course_of_study;
-        if (level) updatePayload.level = level;
-        if (school_address) updatePayload.School_Address = school_address;
-        if (home_address) updatePayload.Home_Address = home_address;
-        if (department) updatePayload.department = department;
-        if (g12_leader) {
-          updatePayload.g12_leader = g12_leader;
-          const isSelfLeader = normalizeLeaderName(existingMember.member_name) === normalizeLeaderName(existingMember.g12_leader);
-          if (!isSelfLeader) {
-            updatePayload.leader_type = leader_type;
-          }
-        }
-        if (g12_phone) updatePayload.g12_phone = g12_phone;
+      // Build payload for MVP table
+      const mvpPayload = {
+        'Name': member_name,
+        'Phone Number': member_phone,
+        'Address': address || null,
+        'Open to Visitation': open_to_visitation,
+        'Birthday': birthday || null,
+        'Dept Interest': dept_interest || null,
+        'Prayer Points': prayer_points || null,
+        'Complains / Comments': comments || null,
+        'campus': 'DC_NSK'
+      };
 
-        const { error } = await supabaseClient.from('members').update(updatePayload).eq('id', existingMember.id);
-        dbError = error;
-      } else {
-        // 3. New Member! Insert them into the database.
-        const insertPayload = {
-          member_name: member_name, member_phone: member_phone, course_of_study: course_of_study || null,
-          level: level || null, School_Address: school_address || null, Home_Address: home_address || null,
-          department: department || null, g12_leader: g12_leader || null, g12_phone: g12_phone || null, leader_type: leader_type
+      // Also build fallback / legacy column payload to ensure smooth migration
+      const legacyPayload = {
+        ...mvpPayload,
+        'Visitation': open_to_visitation,
+        'Department Joined': dept_interest || null,
+        'Department in School': dept_interest || null,
+        'Requests': prayer_points || null,
+        'Comments': comments || null,
+        'G12 leader': g12_leader || null
+      };
+
+      // 1. Insert into 'mvps' table
+      const { error: mvpErr } = await supabaseClient.from('mvps').insert([legacyPayload]);
+      if (mvpErr) {
+        console.warn("MVP table insert error, trying standard payload:", mvpErr.message);
+        const { error: retryErr } = await supabaseClient.from('mvps').insert([mvpPayload]);
+        dbError = retryErr;
+      }
+
+      // 2. Also insert/update members table for general database synchronization
+      try {
+        const memberPayload = {
+          member_name: member_name,
+          member_phone: member_phone,
+          School_Address: address || null,
+          department: dept_interest || null,
+          g12_leader: g12_leader || null,
+          campus: 'DC_NSK'
         };
-        const { error } = await supabaseClient.from('members').insert([insertPayload]);
-        dbError = error;
+        await supabaseClient.from('members').insert([memberPayload]);
+      } catch(e) {
+        console.warn("Members table sync note:", e);
       }
 
       if (dbError) {

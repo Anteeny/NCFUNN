@@ -1,0 +1,141 @@
+
+          function renderCellStatsTable() {
+            const listArea = document.getElementById('cell-stats-area');
+            const cells = getConnectCells();
+            const ZONES = ['HQ', 'Franco', 'Hilltop', 'JSQ', 'Odim', 'Greenhouse', 'Odenigwe'];
+
+            if (!cells || cells.length === 0) {
+              listArea.innerHTML = `<div class="empty-state"><p>No cell data available.</p></div>`;
+              return;
+            }
+
+            // Calculate stats per zone
+            const stats = {};
+            ZONES.forEach(zone => stats[zone] = {
+              functionalCells: 0,
+              newCellsPlanted: 0,
+              cellsHeld: 0,
+              totalAttendance: 0,
+              offering: 0,
+              refreshments: 0,
+              newConverts: 0
+            });
+
+            // Aggregate cell data
+            cells.forEach(cell => {
+              const zone = cell.zone || 'HQ';
+              if (stats[zone]) {
+                stats[zone].functionalCells++;
+                stats[zone].cellsHeld++;
+                stats[zone].totalAttendance += cell.attendance || 0;
+                stats[zone].offering += parseFloat(cell.offering) || 0;
+                stats[zone].refreshments += (cell.refreshments ? 1 : 0);
+                stats[zone].newConverts += cell.newConverts || 0;
+              }
+            });
+
+            renderStatsHTML();
+
+            function renderStatsHTML() {
+              let totalStats = {
+                functionalCells: 0,
+                newCellsPlanted: 0,
+                cellsHeld: 0,
+                totalAttendance: 0,
+                offering: 0,
+                refreshments: 0,
+                newConverts: 0
+              };
+
+              const rows = ZONES.map(zone => {
+                const z = stats[zone];
+                Object.keys(totalStats).forEach(key => totalStats[key] += z[key]);
+                return `<tr>
+                  <td style="font-weight:600; color:var(--gold);">${zone}</td>
+                  <td>${z.functionalCells}</td>
+                  <td>${z.newCellsPlanted}</td>
+                  <td>${z.cellsHeld}</td>
+                  <td>${z.totalAttendance}</td>
+                  <td>₦${z.offering.toLocaleString()}</td>
+                  <td>${z.refreshments}</td>
+                  <td>${z.newConverts}</td>
+                </tr>`;
+              }).join('');
+
+              listArea.innerHTML = `<div class="table-wrap"><table style="width:100%;">
+                <thead>
+                  <tr>
+                    <th>Zone</th>
+                    <th>Functional Cells</th>
+                    <th>New Cells Planted</th>
+                    <th>Cells Held</th>
+                    <th>Total Attendance</th>
+                    <th>Offering</th>
+                    <th>Refreshments</th>
+                    <th>New Converts</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rows}
+                  <tr style="background:rgba(251,191,36,0.08); border-top:2px solid var(--gold); font-weight:700;">
+                    <td style="color:var(--gold);">Total</td>
+                    <td>${totalStats.functionalCells}</td>
+                    <td>${totalStats.newCellsPlanted}</td>
+                    <td>${totalStats.cellsHeld}</td>
+                    <td>${totalStats.totalAttendance}</td>
+                    <td>₦${totalStats.offering.toLocaleString()}</td>
+                    <td>${totalStats.refreshments}</td>
+                    <td>${totalStats.newConverts}</td>
+                  </tr>
+                </tbody>
+              </table></div>`;
+            }
+          }
+
+          function exportCellStatsCSV() {
+            const cells = getConnectCells();
+            const ZONES = ['HQ', 'Franco', 'Hilltop', 'JSQ', 'Odim', 'Greenhouse', 'Odenigwe'];
+            let csv = 'Zone,Functional Cells,New Cells Planted,Cells Held,Total Attendance,Offering,Refreshments,New Converts\n';
+
+            const stats = {};
+            ZONES.forEach(zone => stats[zone] = {
+              functionalCells: 0,
+              newCellsPlanted: 0,
+              cellsHeld: 0,
+              totalAttendance: 0,
+              offering: 0,
+              refreshments: 0,
+              newConverts: 0
+            });
+
+            cells.forEach(cell => {
+              const zone = cell.zone || 'HQ';
+              if (stats[zone]) {
+                stats[zone].functionalCells++;
+                stats[zone].cellsHeld++;
+                stats[zone].totalAttendance += cell.attendance || 0;
+                stats[zone].offering += parseFloat(cell.offering) || 0;
+                stats[zone].refreshments += (cell.refreshments ? 1 : 0);
+                stats[zone].newConverts += cell.newConverts || 0;
+              }
+            });
+
+            let total = { functionalCells: 0, newCellsPlanted: 0, cellsHeld: 0, totalAttendance: 0, offering: 0, refreshments: 0, newConverts: 0 };
+            ZONES.forEach(zone => {
+              const z = stats[zone];
+              csv += `${zone},${z.functionalCells},${z.newCellsPlanted},${z.cellsHeld},${z.totalAttendance},${z.offering},${z.refreshments},${z.newConverts}\n`;
+              Object.keys(total).forEach(key => total[key] += z[key]);
+            });
+
+            csv += `Total,${total.functionalCells},${total.newCellsPlanted},${total.cellsHeld},${total.totalAttendance},${total.offering},${total.refreshments},${total.newConverts}\n`;
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Cell_Zone_Stats_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+          }

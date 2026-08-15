@@ -7,23 +7,22 @@
 
 # Define your variables below. Replace the placeholder values with the real ones.
 $envVars = @{
-    "META_ACCESS_TOKEN"      = "YOUR_META_ACCESS_TOKEN"
-    "META_PHONE_NUMBER_ID"   = "YOUR_META_PHONE_NUMBER_ID"
-    "META_TEMPLATE_NAME"     = "ncf_report_reminder"  # optional – change if you use another template
-    "NCF_PORTAL_URL"         = "https://your-portal.example.com"  # optional
-    "SUPABASE_URL"           = "https://YOUR_PROJECT.supabase.co"
+    "META_ACCESS_TOKEN"         = "YOUR_META_ACCESS_TOKEN"  # Paste token from Meta Dev Console
+    "META_PHONE_NUMBER_ID"      = "1242999625564267"       # NCF UNN App Phone Number ID
+    "META_TEMPLATE_NAME"        = "hello_world"            # Use 'hello_world' for dev testing, or 'ncf_report_reminder'
+    "NCF_PORTAL_URL"            = "http://localhost:8000"
+    "SUPABASE_URL"              = "https://cjbedftdexzcsydwayig.supabase.co"
     "SUPABASE_SERVICE_ROLE_KEY" = "YOUR_SERVICE_ROLE_KEY"
-    # "SUPABASE_ANON_KEY"    = "YOUR_ANON_KEY"   # use only if you prefer anon access
 }
 
 foreach ($key in $envVars.Keys) {
     $value = $envVars[$key]
-    if ($value -eq "YOUR_*") {
+    if ($value.StartsWith("YOUR_")) {
         Write-Host "⚠️  Please replace the placeholder for $key before running the script." -ForegroundColor Yellow
         continue
     }
     Write-Host "Setting $key..." -NoNewline
-    supabase functions env set $key $value
+    supabase secrets set "${key}=${value}"
     if ($LASTEXITCODE -eq 0) {
         Write-Host " ✅" -ForegroundColor Green
     } else {

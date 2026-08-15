@@ -2800,7 +2800,24 @@
         <div class="nav-sub-item" onclick="showPage('mvp',this)"><i class="ti ti-star"></i> MVP</div>
         <div class="nav-item" onclick="showPage('units',this)"><i class="ti ti-grid-dots"></i> Units</div>
         <div class="nav-section">INSIGHTS</div>
-        <div class="nav-item" onclick="showPage('reports',this)"><i class="ti ti-chart-bar"></i> Reports</div>
+        <div class="nav-item" onclick="toggleServiceReportsNav(this)" id="nav-service-reports">
+          <i class="ti ti-file-report"></i> Reports <i class="ti ti-chevron-down"
+            style="font-size:10px; margin-left:auto; transition:transform 0.2s;" id="nav-reports-chevron"></i>
+        </div>
+        <div id="nav-reports-sub" style="display:none;">
+          <div class="nav-sub-item" onclick="showPage('attendance',this)" id="nav-service-sub">
+            <i class="ti ti-calendar-check"></i> Service Reports
+          </div>
+          <div class="nav-sub-item" onclick="showPage('g12-reports',this)" id="nav-g12-reports">
+            <i class="ti ti-report"></i> G12 Reports
+          </div>
+          <div class="nav-sub-item" onclick="showPage('dept-reports',this)" id="nav-dept-reports">
+            <i class="ti ti-building-community"></i> Dept Reports
+          </div>
+          <div class="nav-sub-item" onclick="showPage('connect-cells-report',this)" id="nav-connect-cells-reports">
+            <i class="ti ti-chart-bar"></i> Cell Reports
+          </div>
+        </div>
       </div>
       <div style="padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.08); text-align: center;">
         <div
@@ -2880,6 +2897,9 @@
             </div>
             <div class="ann-badge">✝ Active</div>
           </div>
+
+          <!-- DASHBOARD PUSH NOTIFICATION ALERT BANNER -->
+          <div id="dashboard-push-alert"></div>
 
           <!-- Live zone highlights ticker -->
           <div class="dash-ticker-wrap" id="dash-ticker-wrap">
@@ -2977,13 +2997,13 @@
                   <tr>
                     <th>#</th>
                     <th>Name</th>
-                    <th>Phone</th>
-                    <th>Date Visited</th>
-                    <th>Service</th>
-                    <th>Zone</th>
-                    <th>Times</th>
-                    <th>Status</th>
-                    <th>Action</th>
+                    <th>Phone Number</th>
+                    <th>Address</th>
+                    <th>Open to Visitation</th>
+                    <th>Birthday</th>
+                    <th>Dept Interest</th>
+                    <th>Prayer Points</th>
+                    <th>Complains / Comments</th>
                   </tr>
                 </thead>
                 <tbody id="mvp-tbody">
@@ -2999,20 +3019,21 @@
 
         <!-- G12 PAGE -->
         <div class="page" id="page-g12">
+          <!-- Top Bar -->
           <div class="search-bar"
             style="margin-bottom: 24px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
             <div class="search-wrap" style="flex: 1; min-width: 200px; max-width: 300px;">
               <i class="ti ti-search"></i>
-              <input type="text" id="g12-search-input" placeholder="Search leader..." oninput="renderG12()">
+              <input type="text" id="g12-search-input" placeholder="Search G12 leader..." oninput="renderG12()">
             </div>
             <select id="g12-type-filter" onchange="renderG12()"
-              style="min-width: 150px; max-width: 200px; padding: 8px 10px; border-radius: 6px; border: 0.5px solid var(--border); background: var(--card); color: var(--text);">
-              <option value="all">All Categories</option>
+              style="min-width: 150px; max-width: 180px; padding: 8px 10px; border-radius: 6px; border: 0.5px solid var(--border); background: var(--card); color: var(--text);">
+              <option value="all">All Leaders</option>
               <option value="G12">G12 Leaders</option>
               <option value="DH">DH Leaders</option>
             </select>
-            <button class="btn btn-gold" onclick="addNewLeaderPrompt()" style="margin-left: auto;">
-              <i class="ti ti-plus"></i> Add Leader
+            <button class="btn btn-gold" id="btn-manage-g12-top" onclick="promptManageG12Auth()" style="margin-left: auto;">
+              <i class="ti ti-settings"></i> Manage G12
             </button>
             <button class="btn btn-outline" onclick="cleanupDatabaseG12()"
               style="border-color: var(--gold); color: var(--gold);">
@@ -3020,18 +3041,14 @@
             </button>
           </div>
 
-          <div class="g12-container">
-            <!-- G12 Leaders section -->
-            <div id="g12-leaders-section">
-              <div class="g12-section-title" id="g12-leaders-title">🌿 G12 Leaders</div>
-              <div class="leader-grid-modern" id="g12-leaders-grid"></div>
+          <!-- DIRECT G12 LEADERS GRID VIEW -->
+          <div>
+            <div
+              style="font-size:15px; font-weight:700; color:#fff; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+              <span id="selected-g12-category-title"><i class="ti ti-users-group" style="color:var(--gold);"></i> G12 Discipleship Leaders</span>
+              <span class="badge badge-gold" id="selected-g12-category-badge" style="font-size:12px;">Active Leaders</span>
             </div>
-
-            <!-- DH Leaders section -->
-            <div id="dh-leaders-section">
-              <div class="g12-section-title" id="dh-leaders-title">🏠 DH Leaders</div>
-              <div class="leader-grid-modern" id="dh-leaders-grid"></div>
-            </div>
+            <div id="g12-leaders-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:18px;"></div>
           </div>
 
           <!-- Selected Leader's Members Section (Modal Popup) -->
@@ -3064,10 +3081,16 @@
                   </table>
                 </div>
               </div>
-              <div class="modal-footer">
-                <button class="btn btn-outline" onclick="closeG12Details()">Close</button>
-                <button class="btn btn-gold" onclick="openAddMemberForSelectedLeader()"><i class="ti ti-plus"></i> Add
-                  Member</button>
+              <div class="modal-footer" style="display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between;">
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                  <button class="btn btn-sm btn-outline" onclick="changeLeaderTypePrompt(selectedG12Leader)" style="border-color:#3b82f6; color:#60a5fa;"><i class="ti ti-refresh"></i> Shift G12/DH</button>
+                  <button class="btn btn-sm btn-outline" onclick="editLeaderPrompt(selectedG12Leader)" style="border-color:var(--gold); color:var(--gold);"><i class="ti ti-edit"></i> Rename Leader</button>
+                  <button class="btn btn-sm btn-danger" onclick="deleteLeaderPrompt(selectedG12Leader)"><i class="ti ti-trash"></i> Delete Leader</button>
+                </div>
+                <div style="display:flex; gap:8px;">
+                  <button class="btn btn-outline" onclick="closeG12Details()">Close</button>
+                  <button class="btn btn-gold" onclick="openAddMemberForSelectedLeader()"><i class="ti ti-plus"></i> Add Disciple</button>
+                </div>
               </div>
             </div>
           </div>
@@ -3084,8 +3107,8 @@
               <i class="ti ti-search"></i>
               <input type="text" id="connect-search-input" placeholder="Search Connect cell or leader..." oninput="renderConnectPage()">
             </div>
-            <button class="btn btn-gold" id="btn-add-connect-cell" onclick="openAddConnectCellModal()" style="display:none; margin-left: auto;">
-              <i class="ti ti-plus"></i> Add Cell to Zone
+            <button class="btn btn-gold" id="btn-add-connect-cell" onclick="openAddConnectCellModal()" style="display:none; margin-left: auto; position: relative; z-index: 5; pointer-events: auto;">
+              <i class="ti ti-plus"></i> Manage Cells
             </button>
             <button class="btn btn-gold" onclick="window.open('../Ncfreport/Connect.html','_blank')" style="margin-left: auto;">
               <i class="ti ti-heart-handshake"></i> Record Connect Meeting
@@ -3229,21 +3252,45 @@
         </div>
 
 
-        <!-- UNITS / DEPARTMENTS -->
+        <!-- UNITS / DEPARTMENTS PAGE -->
         <div class="page" id="page-units">
           <div class="search-bar"
             style="margin-bottom: 24px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-outline" id="btn-dept-back-clusters" onclick="exitDeptClusterView()"
+              style="display:none; border-color:var(--gold); color:var(--gold);">
+              <i class="ti ti-arrow-left"></i> All Ministry Clusters
+            </button>
             <div class="search-wrap" style="flex: 1; min-width: 200px; max-width: 300px;">
               <i class="ti ti-search"></i>
-              <input type="text" id="dept-search-input" placeholder="Search department..." oninput="renderUnits()">
+              <input type="text" id="dept-search-input" placeholder="Search department or member..." oninput="renderUnits()">
             </div>
             <button class="btn btn-gold" onclick="openAddCustomDeptPrompt()" style="margin-left: auto;">
               <i class="ti ti-plus"></i> Add Department
             </button>
           </div>
 
-          <!-- Department Card Grid -->
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px;" id="units-grid">
+          <!-- LEVEL 1: DEPARTMENT CLUSTERS VIEW -->
+          <div id="dept-clusters-view">
+            <div
+              style="font-size:14px; font-weight:600; color:var(--gold); margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+              <i class="ti ti-building-community" style="font-size:18px;"></i> Church Ministry Clusters — Select a cluster to view departments
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:18px;"
+              id="dept-clusters-grid">
+              <!-- Department cluster cards loaded dynamically -->
+            </div>
+          </div>
+
+          <!-- LEVEL 2: DEPARTMENTS GRID VIEW -->
+          <div id="dept-grid-view" style="display:none;">
+            <div
+              style="font-size:15px; font-weight:700; color:#fff; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+              <span id="selected-dept-cluster-title"><i class="ti ti-building" style="color:var(--gold);"></i> Departments</span>
+              <span class="badge badge-gold" id="selected-dept-cluster-badge" style="font-size:12px;">Active Departments</span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:18px;" id="units-grid">
+              <!-- Department cards loaded dynamically -->
+            </div>
           </div>
 
           <!-- Selected Department Members Modal -->
@@ -3344,6 +3391,16 @@
             </div>
 
             <div class="card unit-card"
+              style="cursor:pointer; text-align:center; padding:40px; border-top: 4px solid #10b981;"
+              onclick="enterReportCategory('connectCells')">
+              <div class="unit-icon" style="background:rgba(16,185,129,0.15); width:60px; height:60px; margin:0 auto 20px;">
+                <i class="ti ti-chart-bar" style="color:#10b981; font-size:28px;"></i>
+              </div>
+              <div class="unit-name" style="font-size:18px; font-weight:600;">Cell Reports</div>
+              <p class="text-sm">Zone statistics & performance</p>
+            </div>
+
+            <div class="card unit-card"
               style="cursor:pointer; text-align:center; padding:40px; border-top: 4px solid #ec4899;"
               onclick="openAbsenteeSummaryModal()">
               <div class="unit-icon"
@@ -3429,6 +3486,26 @@
           <div id="category-content" class="card">
             <!-- Data/Charts will load here -->
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONNECT CELLS REPORTS PAGE -->
+    <div class="page" id="page-connect-cells-report">
+      <div
+        style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h2 style="font-size:22px; font-weight:700; color:#ffffff; margin:0 0 4px 0;"><i class="ti ti-chart-bar"></i>
+            Connect Cells Report</h2>
+          <p style="font-size:13px; color:var(--text-muted); margin:0;">Zone statistics, cell performance, and membership data.</p>
+        </div>
+        <button class="btn btn-gold" onclick="renderCellStatsTable()"><i class="ti ti-refresh"></i> Refresh</button>
+        <button class="btn btn-gold" onclick="exportCellStatsCSV()"><i class="ti ti-file-spreadsheet"></i> Export CSV</button>
+      </div>
+
+      <div id="cell-stats-area">
+        <div class="empty-state"><i class="ti ti-loader"></i>
+          <p>Loading zone statistics...</p>
         </div>
       </div>
     </div>
@@ -3656,33 +3733,54 @@
       <div class="modal-footer">
         <button class="btn btn-outline" onclick="closeModal('edit-member')">Cancel</button>
         <button class="btn btn-gold" onclick="submitEditMember()"><i class="ti ti-check"></i> Save Changes</button>
-  <!-- ADD CONNECT CELL MODAL -->
+  <!-- MANAGE CONNECT CELL MODAL -->
   <div class="modal-backdrop" id="modal-add-connect-cell" style="z-index: 210;">
-    <div class="modal" style="max-width: 500px;">
+    <div class="modal" style="max-width: 620px;">
       <div class="modal-header">
-        <div class="modal-title">➕ Add Connect Cell</div>
+        <div>
+          <div class="modal-title">🛠️ Manage Connect Cells</div>
+          <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Create a new cell or update an existing one in one place.</div>
+        </div>
         <button class="modal-close" onclick="closeModal('add-connect-cell')">×</button>
       </div>
-      <div class="modal-body">
-        <div class="form-group full"><label>Cell Name *</label><input type="text" id="new-cell-name" placeholder="e.g. Overcomers Connect Cell"></div>
-        <div class="form-group full"><label>Campus Zone *</label>
-          <select id="new-cell-zone">
-            <option value="HQ">HQ Zone</option>
-            <option value="Franco">Franco Zone</option>
-            <option value="Hilltop">Hilltop Zone</option>
-            <option value="JSQ">JSQ Zone</option>
-            <option value="Odim">Odim Zone</option>
-            <option value="Greenhouse">Greenhouse Zone</option>
-            <option value="Odenigwe">Odenigwe Zone</option>
+      <div class="modal-body" style="display:grid; gap:14px;">
+        <div style="padding:12px 14px; border-radius:12px; background:rgba(251,191,36,0.10); border:1px solid rgba(251,191,36,0.24);">
+          <div style="font-size:11px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:0.08em;">Quick setup</div>
+          <div style="font-size:13px; color:var(--text-muted); margin-top:4px;">Use the area field to create a new hostel or zone grouping instantly for HQ cells.</div>
+        </div>
+        <div class="form-group full" style="margin:0;">
+          <label>Select Existing Cell</label>
+          <select id="manage-connect-cell-select" onchange="loadManagedConnectCell()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#fff;">
+            <option value="new">➕ Create a new cell</option>
           </select>
         </div>
-        <div class="form-group full"><label>Exact Location / Venue *</label><input type="text" id="new-cell-location" placeholder="e.g. Flat 4, Franco Block A"></div>
-        <div class="form-group full"><label>Cell Leader *</label><input type="text" id="new-cell-leader" placeholder="e.g. Bro. Royal Eroh"></div>
-        <div class="form-group full"><label>Meeting Schedule</label><input type="text" id="new-cell-schedule" value="Saturdays 5:00 PM" placeholder="e.g. Saturdays 5:00 PM"></div>
+        <div style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px;">
+          <div class="form-group full" style="margin:0; grid-column:1/-1;"><label>Area / Hostel *</label><input type="text" id="manage-cell-area"
+              placeholder="e.g. Balewa Hostel or Bello Hostel"></div>
+          <div class="form-group full" style="margin:0; grid-column:1/-1;"><label>Cell Name *</label><input type="text" id="manage-cell-name"
+              placeholder="e.g. Overcomers Connect Cell"></div>
+          <div class="form-group full" style="margin:0;"><label>Campus Zone *</label>
+            <select id="manage-cell-zone" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:#fff;">
+              <option value="HQ">HQ Zone</option>
+              <option value="Franco">Franco Zone</option>
+              <option value="Hilltop">Hilltop Zone</option>
+              <option value="JSQ">JSQ Zone</option>
+              <option value="Odim">Odim Zone</option>
+              <option value="Greenhouse">Greenhouse Zone</option>
+              <option value="Odenigwe">Odenigwe Zone</option>
+            </select>
+          </div>
+          <div class="form-group full" style="margin:0;"><label>Meeting Schedule</label><input type="text" id="manage-cell-schedule"
+              value="Saturdays 5:00 PM" placeholder="e.g. Saturdays 5:00 PM"></div>
+          <div class="form-group full" style="margin:0; grid-column:1/-1;"><label>Exact Location / Venue *</label><input type="text"
+              id="manage-cell-location" placeholder="e.g. Flat 4, Franco Block A"></div>
+          <div class="form-group full" style="margin:0; grid-column:1/-1;"><label>Cell Leader *</label><input type="text" id="manage-cell-leader"
+              placeholder="e.g. Bro. Royal Eroh"></div>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" onclick="closeModal('add-connect-cell')">Cancel</button>
-        <button class="btn btn-gold" onclick="saveNewConnectCell()"><i class="ti ti-check"></i> Add Cell</button>
+        <button class="btn btn-gold" onclick="saveNewConnectCell()"><i class="ti ti-check"></i> Save Cell</button>
       </div>
     </div>
   </div>
@@ -3716,6 +3814,89 @@
         <button class="btn btn-outline" onclick="closeModal('edit-connect-cell')">Cancel</button>
         <button class="btn btn-danger" onclick="deleteConnectCell()" style="margin-right:auto;"><i class="ti ti-trash"></i> Delete</button>
         <button class="btn btn-gold" onclick="saveEditedConnectCell()"><i class="ti ti-check"></i> Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTHENTICATION MODAL FOR G12 LEADER MANAGEMENT -->
+  <div class="modal-backdrop" id="modal-auth-manage-g12" style="z-index: 220;">
+    <div class="modal" style="max-width: 440px; width: 90%;">
+      <div class="modal-header">
+        <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
+          <i class="ti ti-lock" style="color:var(--gold);"></i> G12 Manager Authorization
+        </div>
+        <button class="modal-close" onclick="closeModal('auth-manage-g12')">×</button>
+      </div>
+      <div class="modal-body" style="padding:20px;">
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;">
+          Please enter the manager access key to unlock editing permissions for G12 leaders, disciples, and database controls.
+        </p>
+        <div class="form-group">
+          <label>Manager Access Key / Password</label>
+          <input type="password" id="input-g12-auth-pass" placeholder="Enter manager key..." 
+                 onkeyup="if(event.key==='Enter') verifyManageG12Auth()">
+        </div>
+        <div id="auth-g12-error" style="display:none; margin-top:10px; color:#ef4444; font-size:12px; font-weight:600;">
+          <i class="ti ti-alert-triangle"></i> Incorrect authorization key. Access denied.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('auth-manage-g12')">Cancel</button>
+        <button class="btn btn-gold" onclick="verifyManageG12Auth()"><i class="ti ti-key"></i> Unlock G12 Manager</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MASTER G12 LEADERS & DISCIPLES DATABASE SHEET MODAL -->
+  <div class="modal-backdrop" id="modal-manage-g12-db" style="z-index: 215;">
+    <div class="modal" style="max-width: 1000px; width: 95%;">
+      <div class="modal-header">
+        <div class="modal-title" style="display:flex; align-items:center; gap:8px;">
+          <i class="ti ti-users-group" style="color:var(--gold);"></i> G12 Discipleship Management Sheet
+        </div>
+        <button class="modal-close" onclick="closeModal('manage-g12-db')">×</button>
+      </div>
+      <div class="modal-body" style="max-height: 75vh; overflow-y: auto; padding: 20px;">
+        
+        <!-- Segmented Tab Navigation: Leaders vs Disciples -->
+        <div style="display:flex; gap:10px; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:12px;">
+          <button class="btn btn-sm btn-gold" id="tab-btn-g12-leaders" onclick="switchG12SheetTab('leaders')" style="border-radius:20px;">
+            <i class="ti ti-crown"></i> G12 Leaders (<span id="sheet-leader-count">0</span>)
+          </button>
+          <button class="btn btn-sm btn-outline" id="tab-btn-g12-disciples" onclick="switchG12SheetTab('disciples')" style="border-radius:20px;">
+            <i class="ti ti-users"></i> All Disciples / Reassign (<span id="sheet-disciple-count">0</span>)
+          </button>
+        </div>
+
+        <!-- Toolbar -->
+        <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:16px;">
+          <input type="text" id="db-g12-search" placeholder="Search by name, phone, or leader..." oninput="renderManageG12Database()"
+            style="flex:1; min-width:220px; padding:8px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.15); background:#0f172a; color:#fff; font-size:13px;">
+          <button class="btn btn-gold" id="btn-sheet-add-leader" onclick="checkG12Auth(() => addNewLeaderPrompt())"><i class="ti ti-user-plus"></i> Add New Leader</button>
+          <button class="btn btn-gold" id="btn-sheet-add-disciple" onclick="checkG12Auth(() => openModal('add-member'))" style="display:none;"><i class="ti ti-user-plus"></i> Add New Disciple</button>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <span style="font-size:12px; color:var(--text-muted);" id="db-g12-count-badge">Loading G12 Sheet...</span>
+          <span style="font-size:11px; color:#10b981;"><i class="ti ti-lock-open"></i> Manager Session Unlocked</span>
+        </div>
+
+        <!-- Master Sheet Table -->
+        <div class="table-wrap">
+          <table style="width:100%; border-collapse:collapse; font-size:12.5px;">
+            <thead id="db-g12-thead">
+              <!-- Header generated dynamically based on active tab -->
+            </thead>
+            <tbody id="db-g12-tbody">
+              <!-- Rows loaded dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+      <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+        <button class="btn btn-outline btn-danger" onclick="lockManageG12Session()"><i class="ti ti-lock"></i> Lock Manager Session</button>
+        <button class="btn btn-gold" onclick="saveAllG12SheetChanges()"><i class="ti ti-check"></i> Done (Save All Changes)</button>
       </div>
     </div>
   </div>
@@ -3900,6 +4081,19 @@
       }
     }
 
+    function toggleServiceReportsNav(el) {
+      const sub = document.getElementById('nav-reports-sub');
+      const chevron = document.getElementById('nav-reports-chevron');
+      if (!sub) return;
+      const isOpen = sub.style.display !== 'none';
+      sub.style.display = isOpen ? 'none' : 'block';
+      if (chevron) chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+      if (!isOpen) {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+      }
+    }
+
     function showPage(name, navEl) {
       document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -4021,17 +4215,16 @@
       else if (name === 'connect') renderConnectPage();
       else if (name === 'units') renderUnits();
       else if (name === 'reports') renderReports();
+      else if (name === 'connect-cells-report') renderCellStatsTable();
       populateUnitDropdowns();
       updateBadges();
     }
 
     let CONNECT_CELLS_SEED = [
       // HQ Zone
-      { id: 'c-hq-1', zone: 'HQ', name: 'Covenant Springs Cell', location: 'HQ Main Auditorium Annex', leader: 'Bro. Royal Eroh', schedule: 'Saturdays 5:00 PM' },
-      { id: 'c-hq-2', zone: 'HQ', name: 'Zion Gate Cell', location: 'Behind HQ Fellowship Hall', leader: 'Sis. Mmesoma Ozor', schedule: 'Saturdays 5:00 PM' },
-      { id: 'c-hq-3', zone: 'HQ', name: 'Grace Shakers Cell', location: 'HQ Upper Room', leader: 'Bro. Ukamaka Augustine', schedule: 'Saturdays 5:00 PM' },
-
-      // Franco Zone
+            { id: 'c-hq-1', zone: 'HQ', name: 'Covenant Springs Cell', location: 'Balewa Hostel, Room 3', leader: 'Bro. Royal Eroh', schedule: 'Saturdays 5:00 PM' },
+            { id: 'c-hq-2', zone: 'HQ', name: 'Zion Gate Cell', location: 'Bello Hostel, Room 12', leader: 'Sis. Mmesoma Ozor', schedule: 'Saturdays 5:00 PM' },
+            { id: 'c-hq-3', zone: 'HQ', name: 'Grace Shakers Cell', location: 'Balewa Hostel Annex', leader: 'Bro. Ukamaka Augustine', schedule: 'Saturdays 5:00 PM' },
       { id: 'c-franco-1', zone: 'Franco', name: 'Franco Block A Cell', location: 'Flat 4, Franco Block A, UNN Campus', leader: 'Bro. Francis Ogbozor', schedule: 'Saturdays 5:00 PM' },
       { id: 'c-franco-2', zone: 'Franco', name: 'Franco Block E Fellowship Cell', location: 'Common Room, Franco Block E', leader: 'Sis. Precious Ubani', schedule: 'Saturdays 5:00 PM' },
       { id: 'c-franco-3', zone: 'Franco', name: 'Alvan Ikoku Cell', location: 'Room 14, Alvan Ikoku Hostel', leader: 'Bro. Ebuka Aziekwe', schedule: 'Saturdays 5:00 PM' },
@@ -4065,7 +4258,21 @@
     function getConnectCells() {
       try {
         const stored = localStorage.getItem('ncf_connect_cells');
-        if (stored) return JSON.parse(stored);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            const seededHQMap = Object.fromEntries(CONNECT_CELLS_SEED.filter(c => c.zone === 'HQ').map(c => [c.id, c]));
+            const migrated = parsed.map(cell => {
+              if (cell.zone === 'HQ' && seededHQMap[cell.id]) {
+                const currentLocation = `${cell.location || ''}`.toLowerCase();
+                const shouldUseSeeded = !currentLocation.includes('balewa') && !currentLocation.includes('bello') && !currentLocation.includes('alvan') && !currentLocation.includes('franco') && !currentLocation.includes('odim') && !currentLocation.includes('hilltop') && !currentLocation.includes('jsq') && !currentLocation.includes('greenhouse') && !currentLocation.includes('odenigwe');
+                if (shouldUseSeeded) return { ...seededHQMap[cell.id], id: cell.id };
+              }
+              return cell;
+            });
+            return migrated;
+          }
+        }
       } catch (e) {}
       localStorage.setItem('ncf_connect_cells', JSON.stringify(CONNECT_CELLS_SEED));
       return CONNECT_CELLS_SEED;
@@ -4076,6 +4283,24 @@
     }
 
     let selectedConnectZone = null;
+
+    function inferHQHostelGroup(cell) {
+      const explicitArea = `${cell.area || ''}`.trim();
+      if (explicitArea) return explicitArea;
+
+      const haystack = `${cell.name || ''} ${cell.location || ''}`.toLowerCase();
+
+      if (haystack.includes('balewa')) return 'Balewa Hostel';
+      if (haystack.includes('bello')) return 'Bello Hostel';
+      if (haystack.includes('alvan')) return 'Alvan Hostel';
+      if (haystack.includes('franco')) return 'Franco Hostel';
+      if (haystack.includes('odim')) return 'Odim Hostel';
+      if (haystack.includes('hilltop')) return 'Hilltop Hostel';
+      if (haystack.includes('jsq')) return 'JSQ Hostel';
+      if (haystack.includes('greenhouse')) return 'Greenhouse Hostel';
+      if (haystack.includes('odenigwe')) return 'Odenigwe Hostel';
+      return 'Other UNN Hostels';
+    }
 
     function renderConnectPage() {
       const cells = getConnectCells();
@@ -4124,35 +4349,62 @@
           return;
         }
 
-        cellsContainer.innerHTML = zoneCells.map(c => `
-          <div class="card" style="position:relative; transition:all 0.25s ease; border:1px solid var(--border); border-top:3px solid var(--gold);">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-              <span class="badge badge-gold" style="font-size:11px;">${c.zone} Zone</span>
-              <button class="btn btn-sm btn-outline" onclick="openEditConnectCellModal('${c.id}')" title="Edit Cell details">
-                <i class="ti ti-edit"></i> Edit
-              </button>
-            </div>
-            <h3 style="font-size:16px; font-weight:700; color:#fff; margin-bottom:8px;">${c.name}</h3>
-            <div style="font-size:12.5px; color:var(--text-muted); margin-bottom:6px; display:flex; align-items:flex-start; gap:6px;">
-              <i class="ti ti-map-pin" style="color:var(--gold); margin-top:2px;"></i>
-              <span><strong>Location:</strong> ${c.location}</span>
-            </div>
-            <div style="font-size:12.5px; color:var(--text-muted); margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-              <i class="ti ti-user" style="color:#06b6d4;"></i>
-              <span><strong>Leader:</strong> <span style="color:#fff; font-weight:600;">${c.leader}</span></span>
-            </div>
-            <div style="font-size:12.5px; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
-              <i class="ti ti-clock" style="color:#10b981;"></i>
-              <span><strong>Meeting:</strong> ${c.schedule || 'Saturdays 5:00 PM'}</span>
-            </div>
-          </div>
-        `).join('');
+              const groupedZoneCells = selectedConnectZone === 'HQ'
+                ? Object.entries(zoneCells.reduce((acc, cell) => {
+                    const groupName = inferHQHostelGroup(cell);
+                    if (!acc[groupName]) acc[groupName] = [];
+                    acc[groupName].push(cell);
+                    return acc;
+                  }, {})).sort((a, b) => a[0].localeCompare(b[0]))
+                : [['', zoneCells]];
 
-      } else {
-        // LEVEL 1: Show Campus Zones Grid
-        zonesView.style.display = 'block';
-        cellsView.style.display = 'none';
-        if (btnBack) btnBack.style.display = 'none';
+              cellsContainer.innerHTML = groupedZoneCells.map(([groupName, groupCells]) => `
+                <div style="grid-column:1/-1;">
+                  ${selectedConnectZone === 'HQ' ? `
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.12);">
+                      <h4 style="margin:0; color:#fff; font-size:15px; font-weight:700;">${groupName}</h4>
+                      <span class="badge badge-gold">${groupCells.length} Cell${groupCells.length > 1 ? 's' : ''}</span>
+                    </div>` : ''}
+                  <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); gap:16px;">
+                    ${groupCells.map(c => `
+                      <div class="card" style="position:relative; transition:all 0.25s ease; border:1px solid rgba(255,255,255,0.12); background:linear-gradient(135deg, rgba(255,255,255,0.06), rgba(15,23,42,0.45)); box-shadow:0 12px 30px rgba(0,0,0,0.22); border-top:3px solid var(--gold);">
+                        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:12px;">
+                          <div>
+                            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:6px;">
+                              <span class="badge badge-gold" style="font-size:11px; padding:4px 8px;">${c.zone} Zone</span>
+                              <span style="font-size:11px; padding:4px 8px; border-radius:999px; background:rgba(6,182,212,0.16); color:#7dd3fc; border:1px solid rgba(6,182,212,0.25);">${c.area || inferHQHostelGroup(c)}</span>
+                            </div>
+                            <h3 style="font-size:17px; font-weight:700; color:#fff; margin:0;">${c.name}</h3>
+                          </div>
+                          <button class="btn btn-sm btn-outline" onclick="event.stopPropagation(); openEditConnectCellModal('${c.id}')" title="Manage this cell" style="padding:6px 8px; min-width:auto;">
+                            <i class="ti ti-pencil"></i>
+                          </button>
+                        </div>
+                        <div style="display:grid; gap:8px; font-size:12.5px; color:var(--text-muted);">
+                          <div style="display:flex; align-items:flex-start; gap:8px;">
+                            <i class="ti ti-map-pin" style="color:var(--gold); margin-top:2px;"></i>
+                            <div>
+                              <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:rgba(255,255,255,0.55);">Location</div>
+                              <div style="color:#fff; font-weight:600;">${c.location}</div>
+                            </div>
+                          </div>
+                          <div style="display:flex; align-items:flex-start; gap:8px;">
+                            <i class="ti ti-user" style="color:#06b6d4;"></i>
+                            <div>
+                              <div style="font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:rgba(255,255,255,0.55);">Leader</div>
+                              <div style="color:#fff; font-weight:600;">${c.leader}</div>
+                            </div>
+                          </div>
+                        </div>
+                        <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.1); display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--text-muted);">
+                          <span><i class="ti ti-clock" style="color:#10b981;"></i> ${c.schedule || 'Saturdays 5:00 PM'}</span>
+                          <span style="color:#fbbf24; font-weight:600;">Tap to manage</span>
+                        </div>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              `).join('');
         if (btnAdd) btnAdd.style.display = 'none';
 
         const zonesContainer = document.getElementById('connect-zones-grid');
@@ -4193,28 +4445,93 @@
 
     function openAddConnectCellModal() {
       openModal('add-connect-cell');
+      populateManagedConnectCellSelect();
       if (selectedConnectZone) {
-        document.getElementById('new-cell-zone').value = selectedConnectZone;
+        document.getElementById('manage-cell-zone').value = selectedConnectZone;
       }
+      clearManagedConnectCellForm();
+    }
+
+    function populateManagedConnectCellSelect() {
+      const select = document.getElementById('manage-connect-cell-select');
+      if (!select) return;
+
+      const cells = getConnectCells();
+      const filteredCells = selectedConnectZone
+        ? cells.filter(c => c.zone === selectedConnectZone)
+        : cells;
+
+      select.innerHTML = '<option value="new">➕ Create a new cell</option>' + filteredCells.map(c => {
+        const areaLabel = c.area || inferHQHostelGroup(c);
+        return `<option value="${c.id}">${c.name} (${areaLabel})</option>`;
+      }).join('');
+    }
+
+    function clearManagedConnectCellForm() {
+      document.getElementById('manage-connect-cell-select').value = 'new';
+      document.getElementById('manage-cell-area').value = '';
+      document.getElementById('manage-cell-name').value = '';
+      document.getElementById('manage-cell-zone').value = selectedConnectZone || 'HQ';
+      document.getElementById('manage-cell-location').value = '';
+      document.getElementById('manage-cell-leader').value = '';
+      document.getElementById('manage-cell-schedule').value = 'Saturdays 5:00 PM';
+    }
+
+    function loadManagedConnectCell() {
+      const select = document.getElementById('manage-connect-cell-select');
+      const chosenId = select?.value;
+      if (!chosenId || chosenId === 'new') {
+        clearManagedConnectCellForm();
+        return;
+      }
+
+      const cell = getConnectCells().find(c => c.id === chosenId);
+      if (!cell) return;
+
+      document.getElementById('manage-cell-area').value = cell.area || inferHQHostelGroup(cell);
+      document.getElementById('manage-cell-name').value = cell.name || '';
+      document.getElementById('manage-cell-zone').value = cell.zone || 'HQ';
+      document.getElementById('manage-cell-location').value = cell.location || '';
+      document.getElementById('manage-cell-leader').value = cell.leader || '';
+      document.getElementById('manage-cell-schedule').value = cell.schedule || 'Saturdays 5:00 PM';
     }
 
     function saveNewConnectCell() {
-      const name = document.getElementById('new-cell-name').value.trim();
-      const zone = document.getElementById('new-cell-zone').value;
-      const location = document.getElementById('new-cell-location').value.trim();
-      const leader = document.getElementById('new-cell-leader').value.trim();
-      const schedule = document.getElementById('new-cell-schedule').value.trim();
+      const name = document.getElementById('manage-cell-name').value.trim();
+      const zone = document.getElementById('manage-cell-zone').value;
+      const area = document.getElementById('manage-cell-area').value.trim();
+      const location = document.getElementById('manage-cell-location').value.trim();
+      const leader = document.getElementById('manage-cell-leader').value.trim();
+      const schedule = document.getElementById('manage-cell-schedule').value.trim();
 
-      if (!name || !location || !leader) {
-        alert("Please fill in Cell Name, Location, and Leader.");
+      if (!name || !area || !location || !leader) {
+        alert("Please fill in Cell Name, Area / Hostel, Location, and Leader.");
         return;
       }
 
       const cells = getConnectCells();
+      const selectedId = document.getElementById('manage-connect-cell-select').value;
+      const existingCell = selectedId && selectedId !== 'new' ? cells.find(c => c.id === selectedId) : null;
+
+      if (existingCell) {
+        existingCell.name = name;
+        existingCell.zone = zone;
+        existingCell.area = area;
+        existingCell.location = location;
+        existingCell.leader = leader;
+        existingCell.schedule = schedule || 'Saturdays 5:00 PM';
+        saveConnectCells(cells);
+        closeModal('add-connect-cell');
+        showToast(`Updated ${name}!`);
+        renderConnectPage();
+        return;
+      }
+
       const newCell = {
         id: 'c-' + Date.now(),
         zone,
         name,
+        area,
         location,
         leader,
         schedule: schedule || 'Saturdays 5:00 PM'
@@ -4224,28 +4541,19 @@
       saveConnectCells(cells);
       closeModal('add-connect-cell');
       showToast(`Added ${name} to ${zone} Zone!`);
-      
-      // Clear inputs
-      document.getElementById('new-cell-name').value = '';
-      document.getElementById('new-cell-location').value = '';
-      document.getElementById('new-cell-leader').value = '';
-
       renderConnectPage();
     }
 
     function openEditConnectCellModal(cellId) {
-      const cells = getConnectCells();
-      const cell = cells.find(c => c.id === cellId);
-      if (!cell) return;
+      openModal('add-connect-cell');
+      populateManagedConnectCellSelect();
 
-      document.getElementById('edit-cell-id').value = cell.id;
-      document.getElementById('edit-cell-name').value = cell.name;
-      document.getElementById('edit-cell-zone').value = cell.zone;
-      document.getElementById('edit-cell-location').value = cell.location;
-      document.getElementById('edit-cell-leader').value = cell.leader;
-      document.getElementById('edit-cell-schedule').value = cell.schedule || 'Saturdays 5:00 PM';
+      const select = document.getElementById('manage-connect-cell-select');
+      const cell = getConnectCells().find(c => c.id === cellId);
+      if (!cell || !select) return;
 
-      openModal('edit-connect-cell');
+      select.value = cell.id;
+      loadManagedConnectCell();
     }
 
     function saveEditedConnectCell() {
@@ -4289,7 +4597,8 @@
       let title = '';
       if (category === 'g12') title = 'G12 Leadership Reports';
       else if (category === 'department') title = 'Departmental Reports';
-      else if (category === 'connect') title = 'Connect & Membership Growth'; // New Title
+      else if (category === 'connect') title = 'Connect & Membership Growth';
+      else if (category === 'connectCells') title = 'Connect Cells Zone Report';
 
       document.getElementById('page-title').textContent = title;
 
@@ -4380,14 +4689,21 @@
         <div class="empty-state"><p>Fetching reports...</p></div>
       </div>
     `;
-        renderConnectTable(); // New function defined below
+        renderConnectTable();
       }
-    }
-
-    async function renderConnectTable() {
-      const listArea = document.getElementById('connect-list-area');
-      listArea.innerHTML = '<div class="empty-state"><i class="ti ti-loader"></i><p>Fetching latest reports...</p></div>';
-
+      else if (category === 'connectCells') {
+        content.innerHTML = `
+  <div class="card-title">Zone Statistics & Cell Performance</div>
+  <div style="display:flex; gap:12px; margin-bottom:16px; flex-wrap:wrap;">
+    <button class="btn btn-gold btn-sm" onclick="exportCellStatsCSV()" style="display:inline-flex; align-items:center; gap:6px;">
+      <i class="ti ti-file-spreadsheet"></i> Export Stats
+    </button>
+  </div>
+  <div id="cell-stats-area">
+    <div class="empty-state"><p>Loading zone statistics...</p></div>
+  </div>
+`;
+        renderCellStatsTable();
       try {
         const { data: reports, error } = await supabaseClient
           .from('cell_reports')
@@ -4450,6 +4766,75 @@
         console.error("Fetch Error:", err.message);
         listArea.innerHTML = `<div class="empty-state"><p>Error loading reports.</p></div>`;
       }
+    }
+
+    function renderCellStatsTable() {
+      const listArea = document.getElementById('cell-stats-area');
+      const cells = getConnectCells();
+      const ZONES = ['HQ', 'Franco', 'Hilltop', 'JSQ', 'Odim', 'Greenhouse', 'Odenigwe'];
+
+      if (!cells || cells.length === 0) {
+        listArea.innerHTML = `<div class="empty-state"><p>No cell data available.</p></div>`;
+        return;
+      }
+
+      const stats = {};
+      ZONES.forEach(zone => stats[zone] = { functionalCells: 0, newCellsPlanted: 0, cellsHeld: 0, totalAttendance: 0, offering: 0, refreshments: 0, newConverts: 0 });
+      cells.forEach(cell => {
+        const zone = cell.zone || 'HQ';
+        if (stats[zone]) {
+          stats[zone].functionalCells++;
+          stats[zone].cellsHeld++;
+          stats[zone].totalAttendance += cell.attendance || 0;
+          stats[zone].offering += parseFloat(cell.offering) || 0;
+          stats[zone].refreshments += (cell.refreshments ? 1 : 0);
+          stats[zone].newConverts += cell.newConverts || 0;
+        }
+      });
+
+      let totalStats = { functionalCells: 0, newCellsPlanted: 0, cellsHeld: 0, totalAttendance: 0, offering: 0, refreshments: 0, newConverts: 0 };
+      const rows = ZONES.map(zone => {
+        const z = stats[zone];
+        Object.keys(totalStats).forEach(key => totalStats[key] += z[key]);
+        return `<tr><td style="font-weight:600; color:var(--gold);">${zone}</td><td>${z.functionalCells}</td><td>${z.newCellsPlanted}</td><td>${z.cellsHeld}</td><td>${z.totalAttendance}</td><td>₦${z.offering.toLocaleString()}</td><td>${z.refreshments}</td><td>${z.newConverts}</td></tr>`;
+      }).join('');
+
+      listArea.innerHTML = `<div class="table-wrap"><table style="width:100%;"><thead><tr><th>Zone</th><th>Functional Cells</th><th>New Cells Planted</th><th>Cells Held</th><th>Total Attendance</th><th>Offering</th><th>Refreshments</th><th>New Converts</th></tr></thead><tbody>${rows}<tr style="background:rgba(251,191,36,0.08); border-top:2px solid var(--gold); font-weight:700;"><td style="color:var(--gold);">Total</td><td>${totalStats.functionalCells}</td><td>${totalStats.newCellsPlanted}</td><td>${totalStats.cellsHeld}</td><td>${totalStats.totalAttendance}</td><td>₦${totalStats.offering.toLocaleString()}</td><td>${totalStats.refreshments}</td><td>${totalStats.newConverts}</td></tr></tbody></table></div>`;
+    }
+
+    function exportCellStatsCSV() {
+      const cells = getConnectCells();
+      const ZONES = ['HQ', 'Franco', 'Hilltop', 'JSQ', 'Odim', 'Greenhouse', 'Odenigwe'];
+      let csv = 'Zone,Functional Cells,New Cells Planted,Cells Held,Total Attendance,Offering,Refreshments,New Converts\n';
+      const stats = {};
+      ZONES.forEach(zone => stats[zone] = { functionalCells: 0, newCellsPlanted: 0, cellsHeld: 0, totalAttendance: 0, offering: 0, refreshments: 0, newConverts: 0 });
+      cells.forEach(cell => {
+        const zone = cell.zone || 'HQ';
+        if (stats[zone]) {
+          stats[zone].functionalCells++;
+          stats[zone].cellsHeld++;
+          stats[zone].totalAttendance += cell.attendance || 0;
+          stats[zone].offering += parseFloat(cell.offering) || 0;
+          stats[zone].refreshments += (cell.refreshments ? 1 : 0);
+          stats[zone].newConverts += cell.newConverts || 0;
+        }
+      });
+      let total = { functionalCells: 0, newCellsPlanted: 0, cellsHeld: 0, totalAttendance: 0, offering: 0, refreshments: 0, newConverts: 0 };
+      ZONES.forEach(zone => {
+        const z = stats[zone];
+        csv += `${zone},${z.functionalCells},${z.newCellsPlanted},${z.cellsHeld},${z.totalAttendance},${z.offering},${z.refreshments},${z.newConverts}\n`;
+        Object.keys(total).forEach(key => total[key] += z[key]);
+      });
+      csv += `Total,${total.functionalCells},${total.newCellsPlanted},${total.cellsHeld},${total.totalAttendance},${total.offering},${total.refreshments},${total.newConverts}\n`;
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Cell_Zone_Stats_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     }
 
     async function renderDeptTable() {
@@ -6607,47 +6992,24 @@
       tbody.innerHTML = rows.map((m, i) => {
         const name = m['Name'] || '—';
         const phone = m['Phone Number'] || '—';
-        const dept = m['Department in School'] || '—';
-        const g12 = m['G12 leader'] || '—';
-        const deptJoined = m['Department Joined'] || '—';
-        const requests = m['Requests'] || '';
-        const comments = m['Comments'] || '';
+        const address = m['Address'] || '—';
+        const openToVisit = m['Open to Visitation'] || m['Visitation'] || '—';
+        const birthday = m['Birthday'] || '—';
+        const deptInterest = m['Dept Interest'] || m['Department Joined'] || m['Department in School'] || '—';
+        const prayerPoints = m['Prayer Points'] || m['Requests'] || '—';
+        const comments = m['Complains / Comments'] || m['Comments'] || m['Information'] || '—';
         const sn = m['S/N'] || (i + 1);
 
-        const isSecond = m['Second Time'] && m['Second Time'].trim().toLowerCase().startsWith('y');
-        const hasPrayer = requests.trim() !== '';
-        const needsVisit = m['Visitation'] && m['Visitation'].trim().toLowerCase().startsWith('y');
-        const bornAgain = m['Born Again'] && m['Born Again'].trim().toLowerCase().startsWith('y');
-
-        let badges = [];
-        if (isSecond) badges.push(`<span class="badge badge-gold">2nd Timer</span>`);
-        if (hasPrayer) badges.push(`<span class="badge badge-red">Prayer</span>`);
-        if (needsVisit) badges.push(`<span class="badge badge-blue">Visit</span>`);
-        if (bornAgain) badges.push(`<span class="badge badge-green">Born Again</span>`);
-        if (!badges.length) badges.push(`<span class="badge badge-gray">1st Visit</span>`);
-
-        // Safe JSON for onclick — encode for HTML attribute
-        const safeJson = JSON.stringify({ Name: name, 'Phone Number': phone, 'G12 leader': g12, Requests: requests }).replace(/"/g, '&quot;');
-
-        return `<tr style="${isSecond ? 'background:rgba(59, 130, 246,0.04)' : ''}">
+        return `<tr>
       <td style="color:var(--text-muted);font-size:13px">${sn}</td>
-      <td>
-        <strong>${name}</strong>
-        ${hasPrayer ? `<br><small style="color:#A32D2D;font-size:12px"><i class="ti ti-heart" style="font-size:10px"></i> ${requests}</small>` : ''}
-        ${comments ? `<br><small style="color:var(--text-muted);font-size:12px">${comments}</small>` : ''}
-      </td>
+      <td><strong>${name}</strong></td>
       <td>${phone}</td>
-      <td>${dept}</td>
-      <td>${g12}</td>
-      <td>${deptJoined !== '—' ? `<span class="badge badge-blue">${deptJoined}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
-      <td><span class="badge badge-${isSecond ? 'gold' : 'gray'}">${isSecond ? '2nd' : '1st'}</span></td>
-      <td>${badges.join(' ')}</td>
-      <td>
-        <button class="btn btn-sm btn-outline" style="font-size:12px;padding:4px 10px;white-space:nowrap"
-          onclick="promoteMvpToFollowup('${safeJson.replace(/'/g, '&#39;')}')">
-          <i class="ti ti-arrow-right"></i> Follow-Up
-        </button>
-      </td>
+      <td>${address}</td>
+      <td><span class="badge ${openToVisit.toLowerCase().startsWith('y') ? 'badge-blue' : 'badge-gray'}">${openToVisit}</span></td>
+      <td>${birthday}</td>
+      <td>${deptInterest !== '—' ? `<span class="badge badge-blue">${deptInterest}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+      <td>${prayerPoints !== '—' ? `<span style="color:#A32D2D"><i class="ti ti-heart" style="font-size:10px"></i> ${prayerPoints}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+      <td>${comments}</td>
     </tr>`;
       }).join('');
     }
@@ -7027,18 +7389,12 @@
       const dayOfWeek = dt.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
       const target = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
 
-      if (dayOfWeek === 0) { // Sunday
-        // keep as Sunday
-      } else if (dayOfWeek === 1) { // Monday -> move back to Sunday
-        target.setDate(target.getDate() - 1);
-      } else if (dayOfWeek === 6) { // Saturday -> move forward to Sunday
-        target.setDate(target.getDate() + 1);
-      } else if (dayOfWeek === 3) { // Wednesday
-        // keep as Wednesday
-      } else if (dayOfWeek === 4) { // Thursday -> move back to Wednesday
-        target.setDate(target.getDate() - 1);
-      } else if (dayOfWeek === 2) { // Tuesday -> move forward to Wednesday
-        target.setDate(target.getDate() + 1);
+      if (dayOfWeek === 0 || dayOfWeek === 1 || dayOfWeek === 2) {
+        // Sun (0), Mon (1), Tue (2) -> Group under preceding Sunday
+        target.setDate(target.getDate() - dayOfWeek);
+      } else {
+        // Wed (3), Thu (4), Fri (5), Sat (6) -> Group under preceding Wednesday
+        target.setDate(target.getDate() - (dayOfWeek - 3));
       }
 
       const yr = target.getFullYear();
@@ -7850,6 +8206,10 @@
     }
 
     async function deleteMember(index) {
+      if (!isG12ManagerAuth()) {
+        checkG12Auth(() => deleteMember(index));
+        return;
+      }
       if (!confirm('Remove this member from the database?')) return;
 
       const member = state.members[index];
@@ -7878,6 +8238,10 @@
     }
 
     function openEditMemberModal(index) {
+      if (!isG12ManagerAuth()) {
+        checkG12Auth(() => openEditMemberModal(index));
+        return;
+      }
       const member = state.members[index];
       if (!member) return;
 
@@ -8227,6 +8591,283 @@
       renderReports();
       setupRealtimeListener();
       calculateFollowupsCount(); // Silently calculate followups counts for badges
+      initBrowserNotificationScheduler(); // Initialize 7PM & 9PM push notification scheduler
+    }
+
+    function showMissingReportsModal() {
+      const stats = state.latestStats;
+      if (!stats) return;
+
+      const dateLabel = document.getElementById('missing-date-label');
+      if (dateLabel) dateLabel.textContent = stats.dateLabel;
+
+      const listEl = document.getElementById('missing-leaders-list');
+      if (!listEl) return;
+      listEl.innerHTML = '';
+
+      const broadcastContainer = document.getElementById('missing-broadcast-container');
+
+      if (!stats.missingLeaders || stats.missingLeaders.length === 0) {
+        if (broadcastContainer) broadcastContainer.style.display = 'none';
+        listEl.innerHTML = `
+          <div style="text-align: center; padding: 24px; color: #10B981; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+            <i class="ti ti-circle-check" style="font-size: 32px;"></i>
+            All folders submitted! Excellent work! 🎉
+          </div>`;
+      } else {
+        const hasPhones = stats.missingLeaders.some(l => l.phone && l.phone.trim() !== '');
+        if (broadcastContainer) broadcastContainer.style.display = hasPhones ? 'block' : 'none';
+
+        stats.missingLeaders.forEach(l => {
+          const cleanPhone = l.phone ? formatWhatsAppPhone(l.phone) : '';
+          const msg = `Hi ${l.name}, this is a friendly reminder to please submit your NCF ${l.type} folder report for today's service. The submission deadline is 7:00 PM today. Thank you!`;
+          const waUrl = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}` : '#';
+          const emailSubject = `NCF ${l.type} Report Submission Reminder`;
+          const emailBody = `Hi ${l.name},\n\nThis is a friendly reminder to please submit your NCF ${l.type} folder report for today's service.\n\nThank you!`;
+          const mailtoUrl = `mailto:${l.email || ''}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+
+          const item = document.createElement('div');
+          item.style.cssText = "display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 14px; gap: 12px;";
+
+          const info = document.createElement('div');
+          info.style.cssText = "display: flex; flex-direction: column; gap: 4px; flex: 1;";
+
+          info.innerHTML = `
+            <div style="font-weight: 600; color: #ffffff; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <span style="font-size: 15px; color: #ffffff;">${l.name}</span>
+              <span class="badge" style="font-size: 10px; background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); padding: 2px 6px; border-radius: 6px;">${l.type}</span>
+            </div>
+            ${l.phone ? `<div style="font-size: 12px; color: var(--text-muted);">${l.phone}</div>` : '<div style="font-size: 12px; color: var(--text-muted); font-style: italic;">No contact info</div>'}
+          `;
+
+          const action = document.createElement('div');
+          action.style.cssText = "display: flex; gap: 8px; align-items: center;";
+
+          if (l.phone && cleanPhone) {
+            action.innerHTML = `
+              <a href="tel:${l.phone}" class="btn btn-sm" title="Call Leader" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0 !important; background: rgba(59, 130, 246, 0.15) !important; border: 1px solid rgba(59, 130, 246, 0.3) !important; color: #60a5fa !important; border-radius: 8px; transition: all 0.2s;">
+                <i class="ti ti-phone" style="font-size: 16px;"></i>
+              </a>
+              <a href="${waUrl}" target="_blank" class="btn btn-sm" title="Send WhatsApp Reminder" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0 !important; background: rgba(37, 211, 102, 0.15) !important; border: 1px solid rgba(37, 211, 102, 0.3) !important; color: #25D366 !important; border-radius: 8px; transition: all 0.2s;">
+                <i class="ti ti-brand-whatsapp" style="font-size: 16px;"></i>
+              </a>
+              <a href="${mailtoUrl}" target="_blank" class="btn btn-sm" title="Send Email Reminder" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0 !important; background: rgba(245, 158, 11, 0.15) !important; border: 1px solid rgba(245, 158, 11, 0.3) !important; color: var(--gold) !important; border-radius: 8px; transition: all 0.2s;">
+                <i class="ti ti-mail" style="font-size: 16px;"></i>
+              </a>
+            `;
+          } else {
+            action.innerHTML = `
+              <a href="${mailtoUrl}" target="_blank" class="btn btn-sm" title="Send Email Reminder" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; padding: 0 !important; background: rgba(245, 158, 11, 0.15) !important; border: 1px solid rgba(245, 158, 11, 0.3) !important; color: var(--gold) !important; border-radius: 8px; transition: all 0.2s;">
+                <i class="ti ti-mail" style="font-size: 16px;"></i>
+              </a>
+            `;
+          }
+
+          item.appendChild(info);
+          item.appendChild(action);
+          listEl.appendChild(item);
+        });
+      }
+
+      openModal('missing-folders');
+      updatePushUI();
+    }
+
+    // ── AUTOMATED BROWSER PUSH NOTIFICATION ENGINE ──
+    function isPushSupported() {
+      return 'Notification' in window;
+    }
+
+    function getPushPermission() {
+      return isPushSupported() ? Notification.permission : 'denied';
+    }
+
+    async function requestPushPermission() {
+      if (!isPushSupported()) {
+        alert("Browser push notifications are not supported by this browser.");
+        return false;
+      }
+      if (Notification.permission === 'granted') {
+        showToast("Push notifications are already active ✓");
+        updatePushUI();
+        return true;
+      }
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        showToast("Push notifications enabled! You will receive 7PM & 9PM reminders ✓");
+        sendBrowserNotification(
+          "🔔 NCF Notifications Activated",
+          "You are all set! Automated 7:00 PM submission reminders and 9:00 PM pending report alerts are now active."
+        );
+      } else {
+        alert("Notification permission denied. Please allow notifications in your browser site settings.");
+      }
+      updatePushUI();
+      return permission === 'granted';
+    }
+
+    function sendBrowserNotification(title, body, tag = 'ncf-general', data = {}) {
+      if (!isPushSupported() || Notification.permission !== 'granted') return false;
+      try {
+        const options = {
+          body: body,
+          icon: 'https://cdn-icons-png.flaticon.com/512/2645/2645897.png',
+          badge: 'https://cdn-icons-png.flaticon.com/512/2645/2645897.png',
+          tag: tag,
+          renotify: true,
+          requireInteraction: true,
+          data: data
+        };
+        const notif = new Notification(title, options);
+        notif.onclick = function() {
+          window.focus();
+          showPage('reports');
+          this.close();
+        };
+        return true;
+      } catch (e) {
+        console.error("Error sending push notification:", e);
+        return false;
+      }
+    }
+
+    function checkAndTriggerScheduledReminders() {
+      if (!isPushSupported() || Notification.permission !== 'granted') return;
+
+      const now = new Date();
+      const dayOfWeek = now.getDay(); // 0 = Sunday, 3 = Wednesday
+      // Trigger on Service Days (Sundays & Wednesdays)
+      if (dayOfWeek !== 0 && dayOfWeek !== 3) return;
+
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const date = String(now.getDate()).padStart(2, '0');
+      const todayKey = `${year}-${month}-${date}`;
+
+      const hours = now.getHours();
+
+      // 1. General Reminder at 7:00 PM (19:00)
+      const key7pm = `ncf_push_7pm_${todayKey}`;
+      if (hours === 19 && !localStorage.getItem(key7pm)) {
+        const sent = sendBrowserNotification(
+          "🔔 NCF Service Report Reminder (7:00 PM)",
+          "Attendance report submission is now open! Please fill and submit your G12 and Department folder reports for today's service.",
+          `7pm-${todayKey}`
+        );
+        if (sent) localStorage.setItem(key7pm, 'sent');
+      }
+
+      // 2. Targeted Reminder at 9:00 PM (21:00) for pending/missing reports
+      const key9pm = `ncf_push_9pm_${todayKey}`;
+      if (hours === 21 && !localStorage.getItem(key9pm)) {
+        triggerTargeted9PMPushNotification(todayKey);
+      }
+    }
+
+    function triggerTargeted9PMPushNotification(todayKey = '') {
+      if (!todayKey) {
+        const now = new Date();
+        todayKey = now.toISOString().split('T')[0];
+      }
+      
+      const stats = state.latestStats;
+      let missingNames = [];
+      if (stats && stats.missingLeaders && stats.missingLeaders.length > 0) {
+        missingNames = stats.missingLeaders.map(l => l.name);
+      }
+
+      if (missingNames.length > 0) {
+        const displayList = missingNames.slice(0, 4).join(', ') + (missingNames.length > 4 ? ` +${missingNames.length - 4} more` : '');
+        sendBrowserNotification(
+          "⚠️ Pending Report Alert (9:00 PM)",
+          `Attention: ${missingNames.length} report(s) are still pending for today's service! Missing: ${displayList}. Click to view missing folders.`,
+          `9pm-${todayKey}`
+        );
+      }
+      // Silent when all reports are submitted (no notification needed)
+
+      localStorage.setItem(`ncf_push_9pm_${todayKey}`, 'sent');
+    }
+
+    function triggerTest7PMPush() {
+      if (Notification.permission !== 'granted') {
+        requestPushPermission().then(granted => {
+          if (granted) triggerTest7PMPush();
+        });
+        return;
+      }
+      sendBrowserNotification(
+        "🔔 TEST: NCF Service Report Reminder (7:00 PM)",
+        "Attendance report submission is now open! Please fill and submit your G12 and Department folder reports for today's service.",
+        "test-7pm"
+      );
+      showToast("7:00 PM Push Notification triggered ✓");
+    }
+
+    function triggerTest9PMPush() {
+      if (Notification.permission !== 'granted') {
+        requestPushPermission().then(granted => {
+          if (granted) triggerTest9PMPush();
+        });
+        return;
+      }
+      triggerTargeted9PMPushNotification('test');
+      showToast("9:00 PM Targeted Push Notification triggered ✓");
+    }
+
+    function initBrowserNotificationScheduler() {
+      updatePushUI();
+      checkAndTriggerScheduledReminders();
+      setInterval(checkAndTriggerScheduledReminders, 30000);
+    }
+
+    function updatePushUI() {
+      const statusBadge = document.getElementById('push-status-badge');
+      const btnRequest = document.getElementById('btn-request-push');
+      const dashAlert = document.getElementById('dashboard-push-alert');
+      const perm = getPushPermission();
+
+      if (statusBadge) {
+        if (perm === 'granted') {
+          statusBadge.className = 'badge badge-green';
+          statusBadge.innerHTML = '<i class="ti ti-bell-check"></i> Push Active (7PM & 9PM Scheduled)';
+        } else if (perm === 'denied') {
+          statusBadge.className = 'badge badge-red';
+          statusBadge.innerHTML = '<i class="ti ti-bell-off"></i> Push Blocked';
+        } else {
+          statusBadge.className = 'badge badge-amber';
+          statusBadge.innerHTML = '<i class="ti ti-bell"></i> Push Permission Needed';
+        }
+      }
+
+      if (btnRequest) {
+        btnRequest.style.display = (perm === 'granted') ? 'none' : 'inline-flex';
+      }
+
+      if (dashAlert) {
+        if (perm === 'granted') {
+          dashAlert.style.display = 'none';
+          dashAlert.innerHTML = '';
+        } else {
+          dashAlert.style.display = 'block';
+          dashAlert.innerHTML = `
+            <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(15, 23, 42, 0.8)); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(245, 158, 11, 0.2); color: var(--gold); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;">
+                  <i class="ti ti-bell-ringing"></i>
+                </div>
+                <div>
+                  <div style="font-size: 14px; font-weight: 700; color: #fff;">Automated Service Day Push Reminders</div>
+                  <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Receive 7:00 PM submission reminders & 9:00 PM pending report alerts directly on your device.</div>
+                </div>
+              </div>
+              <button onclick="requestPushPermission()" class="btn btn-sm btn-gold" style="white-space: nowrap; font-weight: 600;">
+                <i class="ti ti-bell-plus"></i> Enable Push Notifications
+              </button>
+            </div>
+          `;
+        }
+      }
     }
 
     async function checkSession() {
@@ -8297,6 +8938,388 @@
       return { phone, type };
     }
 
+    function isG12ManagerAuth() {
+      return sessionStorage.getItem('ncf_g12_auth') === 'true';
+    }
+
+    function promptManageG12Auth() {
+      if (isG12ManagerAuth()) {
+        openModal('manage-g12-db');
+        renderManageG12Database();
+      } else {
+        const input = document.getElementById('input-g12-auth-pass');
+        if (input) input.value = '';
+        const errDiv = document.getElementById('auth-g12-error');
+        if (errDiv) errDiv.style.display = 'none';
+        openModal('auth-manage-g12');
+        setTimeout(() => {
+          document.getElementById('input-g12-auth-pass')?.focus();
+        }, 150);
+      }
+    }
+
+    function verifyManageG12Auth() {
+      const inputPass = (document.getElementById('input-g12-auth-pass')?.value || '').trim().toLowerCase();
+      if (inputPass === 'nkechi' || inputPass === 'chioma' || inputPass === 'g12' || inputPass === 'admin') {
+        sessionStorage.setItem('ncf_g12_auth', 'true');
+        closeModal('auth-manage-g12');
+        showToast("G12 Manager session unlocked ✓");
+        updateG12ManagerUI();
+        
+        if (window._pendingG12Callback) {
+          const cb = window._pendingG12Callback;
+          window._pendingG12Callback = null;
+          cb();
+        } else {
+          openModal('manage-g12-db');
+          renderManageG12Database();
+        }
+      } else {
+        const errDiv = document.getElementById('auth-g12-error');
+        if (errDiv) errDiv.style.display = 'block';
+        else alert("Incorrect authorization key. Access denied.");
+      }
+    }
+
+    function lockManageG12Session() {
+      sessionStorage.removeItem('ncf_g12_auth');
+      closeModal('manage-g12-db');
+      updateG12ManagerUI();
+      showToast("G12 Manager session locked.");
+    }
+
+    function checkG12Auth(callback) {
+      if (isG12ManagerAuth()) {
+        callback();
+      } else {
+        window._pendingG12Callback = callback;
+        promptManageG12Auth();
+      }
+    }
+
+    function updateG12ManagerUI() {
+      const btnTop = document.getElementById('btn-manage-g12-top');
+      const isAuth = isG12ManagerAuth();
+      if (btnTop) {
+        if (isAuth) {
+          btnTop.innerHTML = `<i class="ti ti-settings"></i> Manage Leaders`;
+          btnTop.className = `btn btn-outline`;
+          btnTop.style.borderColor = 'var(--gold)';
+          btnTop.style.color = 'var(--gold)';
+        } else {
+          btnTop.innerHTML = `<i class="ti ti-settings"></i> Manage G12`;
+          btnTop.className = `btn btn-gold`;
+          btnTop.style.borderColor = '';
+          btnTop.style.color = '';
+        }
+      }
+
+      const editCtrls = document.querySelectorAll('.g12-edit-ctrl');
+      editCtrls.forEach(el => {
+        el.style.display = isAuth ? 'inline-flex' : 'none';
+      });
+    }
+
+    let currentG12SheetTab = 'leaders';
+
+    function switchG12SheetTab(tabName) {
+      currentG12SheetTab = tabName;
+
+      const btnLeaders = document.getElementById('tab-btn-g12-leaders');
+      const btnDisciples = document.getElementById('tab-btn-g12-disciples');
+      const btnAddLeader = document.getElementById('btn-sheet-add-leader');
+      const btnAddDisciple = document.getElementById('btn-sheet-add-disciple');
+
+      if (tabName === 'disciples') {
+        if (btnLeaders) btnLeaders.className = 'btn btn-sm btn-outline';
+        if (btnDisciples) btnDisciples.className = 'btn btn-sm btn-gold';
+        if (btnAddLeader) btnAddLeader.style.display = 'none';
+        if (btnAddDisciple) btnAddDisciple.style.display = 'inline-flex';
+      } else {
+        if (btnLeaders) btnLeaders.className = 'btn btn-sm btn-gold';
+        if (btnDisciples) btnDisciples.className = 'btn btn-sm btn-outline';
+        if (btnAddLeader) btnAddLeader.style.display = 'inline-flex';
+        if (btnAddDisciple) btnAddDisciple.style.display = 'none';
+      }
+
+      renderManageG12Database();
+    }
+
+    function renderManageG12Database() {
+      const thead = document.getElementById('db-g12-thead');
+      const tbody = document.getElementById('db-g12-tbody');
+      if (!tbody || !thead) return;
+
+      const searchInput = (document.getElementById('db-g12-search')?.value || '').trim().toLowerCase();
+      const allMembers = state.members || [];
+
+      // Calculate active leaders list for leader reassignment dropdowns
+      const leaderMap = {};
+      let unassignedMembers = [];
+
+      allMembers.forEach(m => {
+        const lName = m.g12_leader;
+        if (!lName || lName === 'Unassigned') {
+          unassignedMembers.push(m);
+          return;
+        }
+        const canonical = normalizeLeaderName(lName);
+        if (!leaderMap[canonical]) {
+          leaderMap[canonical] = { name: canonical, phone: m.g12_phone || '', count: 0 };
+        }
+        leaderMap[canonical].count++;
+        if (m.g12_phone) leaderMap[canonical].phone = m.g12_phone;
+      });
+
+      let leaders = Object.values(leaderMap).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+      const leaderNamesList = leaders.map(l => l.name);
+
+      // Update tab count badges
+      const sheetLeaderBadge = document.getElementById('sheet-leader-count');
+      const sheetDiscipleBadge = document.getElementById('sheet-disciple-count');
+      if (sheetLeaderBadge) sheetLeaderBadge.textContent = leaders.length;
+      if (sheetDiscipleBadge) sheetDiscipleBadge.textContent = allMembers.length;
+
+      const badge = document.getElementById('db-g12-count-badge');
+
+      if (currentG12SheetTab === 'disciples') {
+        // ── DISCIPLES & LEADER REASSIGNMENT TAB ──
+        thead.innerHTML = `
+          <tr style="background:rgba(15,23,42,0.9); text-align:left;">
+            <th style="width:40px; text-align:center;">#</th>
+            <th>Disciple Name</th>
+            <th>Assigned G12 Leader</th>
+            <th>Phone</th>
+            <th>Department</th>
+            <th style="text-align:center; width:160px;">Actions</th>
+          </tr>
+        `;
+
+        let filteredMembers = allMembers;
+        if (searchInput) {
+          filteredMembers = filteredMembers.filter(m =>
+            (m.member_name || '').toLowerCase().includes(searchInput) ||
+            (m.g12_leader || '').toLowerCase().includes(searchInput) ||
+            (m.member_phone || '').toLowerCase().includes(searchInput) ||
+            (m.department || '').toLowerCase().includes(searchInput)
+          );
+        }
+
+        if (badge) badge.textContent = `Showing ${filteredMembers.length} of ${allMembers.length} Disciples`;
+
+        if (filteredMembers.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:30px; color:var(--text-muted);">No disciples found matching your search filter.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = filteredMembers.map((m, idx) => {
+          const realIndex = allMembers.indexOf(m);
+          const currentLeader = m.g12_leader ? normalizeLeaderName(m.g12_leader) : 'Unassigned';
+
+          const leaderOptionsHtml = `
+            <option value="Unassigned" ${currentLeader === 'Unassigned' ? 'selected' : ''}>-- Unassigned --</option>
+            ${leaderNamesList.map(lName => `<option value="${lName}" ${currentLeader === lName ? 'selected' : ''}>${lName}</option>`).join('')}
+          `;
+
+          return `
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+              <td style="text-align:center; font-weight:600; color:var(--gold);">${idx + 1}</td>
+              <td>
+                <div style="font-weight:600; color:#fff;">${m.member_name || 'Unnamed'}</div>
+              </td>
+              <td>
+                <select id="db-member-leader-${realIndex}" data-old-leader="${currentLeader}" style="width:100%; padding:5px 8px; border-radius:6px; background:#0f172a; color:var(--gold); border:1px solid rgba(245,158,11,0.3); font-size:12px; font-weight:600;">
+                  ${leaderOptionsHtml}
+                </select>
+              </td>
+              <td style="color:var(--text-muted); font-size:12px;">${m.member_phone || '—'}</td>
+              <td><span class="badge badge-blue" style="font-size:10.5px;">${m.department || '—'}</span></td>
+              <td style="text-align:center; white-space:nowrap;">
+                <button class="btn btn-sm btn-outline" onclick="openEditMemberModal(${realIndex})" title="Full Edit (phone, address, etc)" style="padding:4px 8px;">
+                  <i class="ti ti-edit"></i> Edit
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="deleteMember(${realIndex})" title="Delete / Remove disciple" style="padding:4px 8px; margin-left:4px;">
+                  <i class="ti ti-trash"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+      } else {
+        // ── G12 LEADERS TAB ──
+        thead.innerHTML = `
+          <tr style="background:rgba(15,23,42,0.9); text-align:left;">
+            <th style="width:40px; text-align:center;">#</th>
+            <th>Leader Name</th>
+            <th>Leader Phone</th>
+            <th style="text-align:center;">Disciples</th>
+            <th style="text-align:center; width:150px;">Actions</th>
+          </tr>
+        `;
+
+        let filteredLeaders = leaders;
+        if (searchInput) {
+          filteredLeaders = filteredLeaders.filter(l => l.name.toLowerCase().includes(searchInput) || l.phone.includes(searchInput));
+        }
+
+        if (badge) badge.textContent = `${filteredLeaders.length} Active G12 Leaders`;
+
+        if (filteredLeaders.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding:30px; color:var(--text-muted);">No leaders match your search filter.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = filteredLeaders.map((l, idx) => {
+          const safeName = l.name.replace(/'/g, "\\'");
+          return `
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+            <td style="text-align:center; font-weight:600; color:var(--gold);">${idx + 1}</td>
+            <td>
+              <input type="text" id="db-g12-name-${idx}" data-old-name="${safeName}" value="${l.name}" style="width:100%; padding:6px 8px; border-radius:6px; background:#0f172a; color:#fff; border:1px solid rgba(255,255,255,0.15); font-size:12px; font-weight:600;">
+            </td>
+            <td>
+              <input type="text" id="db-g12-phone-${idx}" data-old-phone="${l.phone || ''}" value="${l.phone}" placeholder="Leader phone..." style="width:100%; padding:6px 8px; border-radius:6px; background:#0f172a; color:#fff; border:1px solid rgba(255,255,255,0.15); font-size:12px;">
+            </td>
+            <td style="text-align:center;"><span class="badge badge-gold">${l.count} disciples</span></td>
+            <td style="text-align:center; white-space:nowrap;">
+              <button class="btn btn-sm btn-outline" onclick="closeModal('manage-g12-db'); selectG12Leader('${safeName}');" title="View disciples" style="padding:5px 8px;">
+                <i class="ti ti-users"></i> Disciples
+              </button>
+              <button class="btn btn-sm btn-danger" onclick="checkG12Auth(() => deleteLeaderPrompt('${safeName}'))" title="Delete leader" style="padding:5px 8px; margin-left:4px;">
+                <i class="ti ti-trash"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+        }).join('');
+      }
+    }
+
+    async function saveAllG12SheetChanges() {
+      showToast("Saving all sheet changes...");
+
+      let changeCount = 0;
+      const allMembers = state.members || [];
+
+      // 1. Process G12 Leaders Tab changes
+      if (currentG12SheetTab === 'leaders') {
+        const rows = document.querySelectorAll('#db-g12-tbody tr');
+        for (let i = 0; i < rows.length; i++) {
+          const nameInput = document.getElementById(`db-g12-name-${i}`);
+          const phoneInput = document.getElementById(`db-g12-phone-${i}`);
+          if (!nameInput || !phoneInput) continue;
+
+          const oldName = nameInput.getAttribute('data-old-name') || '';
+          const oldPhone = phoneInput.getAttribute('data-old-phone') || '';
+          const newName = nameInput.value.trim();
+          const newPhone = phoneInput.value.trim();
+
+          if (!newName) continue;
+
+          if (newName !== oldName || newPhone !== oldPhone) {
+            changeCount++;
+            const updates = { g12_phone: newPhone || null };
+            if (newName !== oldName) {
+              updates.g12_leader = newName;
+            }
+            await supabaseClient
+              .from('members')
+              .update(updates)
+              .eq('g12_leader', oldName);
+          }
+        }
+      } else {
+        // 2. Process Disciples Reassignment Tab changes
+        for (let i = 0; i < allMembers.length; i++) {
+          const m = allMembers[i];
+          const selectEl = document.getElementById(`db-member-leader-${i}`);
+          if (!selectEl) continue;
+
+          const oldLeader = selectEl.getAttribute('data-old-leader') || 'Unassigned';
+          const newLeader = selectEl.value;
+
+          if (newLeader !== oldLeader) {
+            changeCount++;
+            m.g12_leader = newLeader;
+            await supabaseClient
+              .from('members')
+              .update({ g12_leader: newLeader })
+              .eq('id', m.id);
+          }
+        }
+      }
+
+      if (changeCount > 0) {
+        showToast(`Saved ${changeCount} change(s) successfully! ✓`);
+        logActivity(`Updated G12 management sheet (${changeCount} record(s))`, 'gold', 'ti-check');
+        fetchAndRenderMembers();
+      } else {
+        showToast("No changes detected.");
+      }
+
+      closeModal('manage-g12-db');
+    }
+
+    async function reassignDiscipleLeaderFromSheet(realIndex) {
+      const member = state.members[realIndex];
+      if (!member) return;
+
+      const selectEl = document.getElementById(`db-member-leader-${realIndex}`);
+      if (!selectEl) return;
+
+      const newLeader = selectEl.value;
+      const oldLeader = member.g12_leader || 'Unassigned';
+
+      showToast(`Updating leader for ${member.member_name}...`);
+
+      const { error } = await supabaseClient
+        .from('members')
+        .update({ g12_leader: newLeader })
+        .eq('id', member.id);
+
+      if (error) {
+        console.error("Error reassigning disciple leader:", error);
+        showToast("Reassignment failed: " + error.message);
+      } else {
+        member.g12_leader = newLeader;
+        showToast(`${member.member_name} reassigned to ${newLeader}! ✓`);
+        logActivity(`Reassigned ${member.member_name} from ${oldLeader} to ${newLeader}`, 'gold', 'ti-user-check');
+        fetchAndRenderMembers();
+      }
+    }
+
+    async function updateG12FromSheet(oldName, idx) {
+      const newName = (document.getElementById(`db-g12-name-${idx}`)?.value || '').trim();
+      const newPhone = (document.getElementById(`db-g12-phone-${idx}`)?.value || '').trim();
+
+      if (!newName) {
+        alert("Leader name cannot be empty.");
+        return;
+      }
+
+      showToast(`Saving updates for leader "${newName}"...`);
+
+      const updates = { leader_type: 'G12', g12_phone: newPhone || null, campus: 'DC_NSK' };
+      if (newName !== oldName) {
+        updates.g12_leader = newName;
+      }
+
+      const { error } = await supabaseClient
+        .from('members')
+        .update(updates)
+        .eq('g12_leader', oldName);
+
+      if (error) {
+        console.error("Error updating leader from sheet:", error);
+        showToast("Update failed: " + error.message);
+      } else {
+        showToast(`Leader "${newName}" updated!`);
+        logActivity(`Updated G12 leader: ${newName}`, 'navy', 'ti-check');
+        fetchAndRenderMembers();
+      }
+    }
+
     function selectG12Leader(name) {
       selectedG12Leader = name;
       renderG12();
@@ -8342,26 +9365,27 @@
         }
       }
 
-      titleEl.textContent = `Members under ${name} (${members.length})`;
+      titleEl.textContent = `Disciples under ${name} (${members.length})`;
       tbody.innerHTML = '';
 
+      const isAuth = isG12ManagerAuth();
+
       if (members.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-muted);">No members assigned to this leader.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);">No disciples assigned to this leader.</td></tr>`;
       } else {
         members.forEach((m, index) => {
           const realIndex = state.members.indexOf(m);
           const row = document.createElement('tr');
           row.innerHTML = `
             <td style="font-weight: 600; color: var(--gold);">${index + 1}</td>
-            <td><div style="cursor: pointer; color: var(--gold);" onclick="openEditMemberModal(${realIndex})" title="Click to edit">${m.member_name || 'Unnamed'}</div></td>
+            <td><div style="font-weight: 600; color: #fff;">${m.member_name || 'Unnamed'}</div></td>
             <td>${m.phone || '—'}</td>
             <td>${m.department || '—'}</td>
-            <td><span class="badge ${m.leader_type === 'G12' ? 'badge-blue' : 'badge-gold'}">${m.leader_type || '—'}</span></td>
             <td><span style="font-size: 12px; color: var(--text-muted);">${m.school_address || m.School_Address || '—'}</span></td>
             <td><span style="font-size: 12px; color: var(--text-muted);">${m.home_address || m.Home_Address || '—'}</span></td>
             <td>
-              <button class="btn btn-sm" onclick="openEditMemberModal(${realIndex})" title="Edit Member"><i class="ti ti-edit"></i></button>
-              <button class="btn btn-sm btn-danger" onclick="deleteMember(${realIndex})" title="Remove Member"><i class="ti ti-trash"></i></button>
+              <button class="btn btn-sm g12-edit-ctrl" onclick="checkG12Auth(() => openEditMemberModal(${realIndex}))" title="Edit Member" style="display: ${isAuth ? 'inline-flex' : 'none'};"><i class="ti ti-edit"></i></button>
+              <button class="btn btn-sm btn-danger g12-edit-ctrl" onclick="checkG12Auth(() => deleteMember(${realIndex}))" title="Remove Member" style="display: ${isAuth ? 'inline-flex' : 'none'};"><i class="ti ti-trash"></i></button>
             </td>
           `;
           tbody.appendChild(row);
@@ -8399,15 +9423,14 @@
     }
 
     function renderG12() {
-      const g12Grid = document.getElementById('g12-leaders-grid');
-      const dhGrid = document.getElementById('dh-leaders-grid');
-      if (!g12Grid || !dhGrid) return;
+      const leadersGrid = document.getElementById('g12-leaders-grid');
+      const titleEl = document.getElementById('selected-g12-category-title');
+      const badgeEl = document.getElementById('selected-g12-category-badge');
+
+      if (!leadersGrid) return;
 
       const searchInput = document.getElementById('g12-search-input');
-      const typeFilterSelect = document.getElementById('g12-type-filter');
-
       const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : "";
-      const typeFilter = typeFilterSelect ? typeFilterSelect.value : "all";
 
       const unassignedMembers = [];
       const leaderMap = {};
@@ -8419,21 +9442,7 @@
         deletedLeaders = [];
       }
 
-      LEADER_DICTIONARY.forEach(entry => {
-        const canonicalDict = normalizeLeaderName(entry.name).toLowerCase().trim();
-        const rawDict = entry.name.toLowerCase().trim();
-        if (entry.name !== 'Unassigned' && !deletedLeaders.includes(canonicalDict) && !deletedLeaders.includes(rawDict)) {
-          leaderMap[entry.name] = {
-            name: entry.name,
-            type: 'G12',
-            members: [],
-            memberCount: 0,
-            phone: ""
-          };
-        }
-      });
-
-      state.members.forEach(member => {
+      (state.members || []).forEach(member => {
         const leaderName = member.g12_leader;
         if (!leaderName) {
           unassignedMembers.push(member);
@@ -8451,7 +9460,6 @@
         if (!leaderMap[canonical]) {
           leaderMap[canonical] = {
             name: canonical,
-            type: member.leader_type || 'G12',
             members: [],
             memberCount: 0,
             phone: ""
@@ -8463,11 +9471,6 @@
         if (member.g12_phone && member.g12_phone.trim() !== '') {
           leaderMap[canonical].phone = member.g12_phone.trim();
         }
-
-        // Strictly G12 or DH (prioritize DH)
-        if (member.leader_type === 'DH') {
-          leaderMap[canonical].type = 'DH';
-        }
       });
 
       let leaders = Object.values(leaderMap);
@@ -8476,101 +9479,85 @@
         leaders = leaders.filter(l => l.name.toLowerCase().includes(searchVal));
       }
 
-      if (typeFilter !== 'all') {
-        leaders = leaders.filter(l => l.type.includes(typeFilter));
+      leaders.sort((a, b) => b.memberCount - a.memberCount || a.name.localeCompare(b.name));
+
+      if (titleEl) {
+        titleEl.innerHTML = searchVal
+          ? `<i class="ti ti-search" style="color:var(--gold);"></i> Search Results for "${searchVal}"`
+          : `<i class="ti ti-users-group" style="color:var(--gold);"></i> G12 Discipleship Leaders`;
       }
 
-      leaders.sort((a, b) => {
-        if (b.memberCount !== a.memberCount) {
-          return b.memberCount - a.memberCount;
-        }
-        return a.name.localeCompare(b.name);
-      });
+      if (badgeEl) badgeEl.textContent = `${leaders.length} Active G12 Leader(s)`;
 
-      g12Grid.innerHTML = '';
-      dhGrid.innerHTML = '';
+      leadersGrid.innerHTML = '';
 
-      let g12Count = 0;
-      let dhCount = 0;
+      if (unassignedMembers.length > 0 && (!searchVal || 'unassigned'.includes(searchVal))) {
+        const isSelected = selectedG12Leader === 'Unassigned';
+        const card = document.createElement('div');
+        card.className = `card ${isSelected ? 'selected' : ''}`;
+        card.style.cssText = "position:relative; cursor:pointer; padding:20px; border-radius:16px; border:1px solid rgba(245,158,11,0.3); background:linear-gradient(135deg, rgba(245,158,11,0.08), rgba(15,23,42,0.6)); border-top:3px solid #f59e0b; display:flex; flex-direction:column; justify-content:space-between; gap:12px; overflow:hidden; margin-bottom:0;";
+        card.onclick = () => selectG12Leader('Unassigned');
+
+        card.innerHTML = `
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
+            <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
+              <div style="width:42px; height:42px; border-radius:50%; background-color:#FCEBEB; color:#A32D2D; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:16px; flex-shrink:0;">
+                <i class="ti ti-help"></i>
+              </div>
+              <div style="min-width:0; flex:1;">
+                <div style="font-size:15px; font-weight:700; color:#fff;">Unassigned</div>
+                <div style="font-size:11px; color:var(--text-muted); margin-top:4px;">👥 ${unassignedMembers.length} disciple${unassignedMembers.length !== 1 ? 's' : ''}</div>
+              </div>
+            </div>
+            <span class="badge badge-red" style="font-size:10px; padding:2px 8px; flex-shrink:0;">Needs Attention</span>
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:10px; margin-top:4px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:var(--text-muted); gap:8px;">
+            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Assign leaders to disciples</span>
+            <span style="color:#fbbf24; font-weight:600; white-space:nowrap; flex-shrink:0;">Tap to view →</span>
+          </div>
+        `;
+        leadersGrid.appendChild(card);
+      }
 
       leaders.forEach(l => {
         const isSelected = selectedG12Leader === l.name;
         const initials = getInitials(l.name);
         const bg = getAvatarBg(l.name);
         const tc = getAvatarText(l.name);
+        const safeName = l.name.replace(/'/g, "\\'");
 
         const card = document.createElement('div');
-        card.className = `leader-card-modern ${isSelected ? 'selected' : ''}`;
+        card.className = `card ${isSelected ? 'selected' : ''}`;
+        card.style.cssText = "position:relative; cursor:pointer; padding:20px; border-radius:16px; border:1px solid rgba(255,255,255,0.12); background:linear-gradient(135deg, rgba(255,255,255,0.05), rgba(15,23,42,0.6)); border-top:3px solid var(--gold); display:flex; flex-direction:column; justify-content:space-between; gap:12px; overflow:hidden; margin-bottom:0;";
         card.onclick = () => selectG12Leader(l.name);
 
-        let badgeClass = l.type === 'DH' ? 'badge-gold' : 'badge-blue';
-
         card.innerHTML = `
-          <div class="leader-avatar-circle" style="background-color: ${bg}; color: ${tc};">${initials}</div>
-          <div class="leader-info-block">
-            <div class="leader-name-text" title="${l.name}">${l.name}</div>
-            <div class="leader-member-count">
-              <i class="ti ti-users-group"></i> ${l.memberCount} member${l.memberCount !== 1 ? 's' : ''}
-            </div>
-            <div style="margin-top: 4px;">
-              <span class="badge ${badgeClass}" onclick="event.stopPropagation(); changeLeaderTypePrompt('${l.name}')" style="cursor: pointer;" title="Click to change leader type">${l.type}</span>
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">
+            <div style="display:flex; align-items:center; gap:12px; min-width:0; flex:1;">
+              <div style="width:42px; height:42px; border-radius:50%; background-color:${bg}; color:${tc}; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; flex-shrink:0;">
+                ${initials}
+              </div>
+              <div style="min-width:0; flex:1;">
+                <div style="font-size:15px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${l.name}">${l.name}</div>
+                <div style="display:flex; align-items:center; gap:6px; margin-top:4px; flex-wrap:wrap;">
+                  <span class="badge badge-gold" style="font-size:10px; padding:2px 8px;">G12 Leader</span>
+                  <span style="font-size:11px; color:var(--text-muted); white-space:nowrap;">👥 ${l.memberCount} disciple${l.memberCount !== 1 ? 's' : ''}</span>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="leader-card-actions">
-            <button class="leader-action-btn edit" onclick="event.stopPropagation(); editLeaderPrompt('${l.name}')" title="Rename Leader">
-              <i class="ti ti-edit"></i>
-            </button>
-            <button class="leader-action-btn delete" onclick="event.stopPropagation(); deleteLeaderPrompt('${l.name}')" title="Delete Leader & Group">
-              <i class="ti ti-trash"></i>
-            </button>
+          <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:10px; margin-top:4px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:var(--text-muted); gap:8px;">
+            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              ${l.phone ? `<i class="ti ti-phone" style="color:var(--gold);"></i> ${l.phone}` : '<i class="ti ti-phone-off" style="opacity:0.5;"></i> No phone'}
+            </span>
+            <span style="color:#fbbf24; font-weight:600; white-space:nowrap; flex-shrink:0;">Tap to view →</span>
           </div>
         `;
-
-        if (l.type === 'DH') {
-          dhGrid.appendChild(card);
-          dhCount++;
-        } else {
-          g12Grid.appendChild(card);
-          g12Count++;
-        }
+        leadersGrid.appendChild(card);
       });
 
-      if (unassignedMembers.length > 0 && (!searchVal || 'unassigned'.includes(searchVal)) && (typeFilter === 'all')) {
-        const isSelected = selectedG12Leader === 'Unassigned';
-        const card = document.createElement('div');
-        card.className = `leader-card-modern ${isSelected ? 'selected' : ''}`;
-        card.onclick = () => selectG12Leader('Unassigned');
-
-        card.innerHTML = `
-          <div class="leader-avatar-circle" style="background-color: #FCEBEB; color: #A32D2D;"><i class="ti ti-help"></i></div>
-          <div class="leader-info-block">
-            <div class="leader-name-text">Unassigned</div>
-            <div class="leader-member-count">
-              <i class="ti ti-users-group"></i> ${unassignedMembers.length} member${unassignedMembers.length !== 1 ? 's' : ''}
-            </div>
-            <div style="margin-top: 4px;">
-              <span class="badge badge-red">Needs Attention</span>
-            </div>
-          </div>
-        `;
-        g12Grid.appendChild(card);
-        g12Count++;
-      }
-
-      const g12Section = document.getElementById('g12-leaders-section');
-      const dhSection = document.getElementById('dh-leaders-section');
-      const g12Title = document.getElementById('g12-leaders-title');
-      const dhTitle = document.getElementById('dh-leaders-title');
-
-      if (g12Title) g12Title.textContent = `🌿 G12 Leaders (${g12Count})`;
-      if (dhTitle) dhTitle.textContent = `🏠 DH Leaders (${dhCount})`;
-
-      if (g12Section) {
-        g12Section.style.display = (g12Count === 0 || typeFilter === 'DH') ? 'none' : 'block';
-      }
-
-      if (dhSection) {
-        dhSection.style.display = (dhCount === 0 || typeFilter === 'G12') ? 'none' : 'block';
+      if (leaders.length === 0 && unassignedMembers.length === 0) {
+        leadersGrid.innerHTML = `<div class="card" style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);"><i class="ti ti-user-off" style="font-size:32px; opacity:0.3;"></i><p style="margin-top:12px;">No G12 leaders found matching your search filter.</p></div>`;
       }
 
       if (selectedG12Leader) {
@@ -8596,23 +9583,15 @@
       deletedLeaders = deletedLeaders.filter(l => l !== canonicalLower && l !== name.trim().toLowerCase());
       localStorage.setItem('ncf_deleted_leaders', JSON.stringify(deletedLeaders));
 
-      const type = prompt("Enter leader type (G12 or DH):", "G12");
-      if (!type) return;
-      const leaderType = type.trim().toUpperCase();
-      if (leaderType !== 'G12' && leaderType !== 'DH') {
-        alert("Invalid type! Must be G12 or DH.");
-        return;
-      }
-
       const phone = prompt("Enter leader's phone number (optional):", "");
 
-      showToast(`Creating leader "${canonical}"...`);
+      showToast(`Creating G12 leader "${canonical}"...`);
 
       const insertPayload = {
         member_name: canonical,
         member_phone: phone || null,
         g12_leader: canonical,
-        leader_type: leaderType, campus: 'DC_NSK',
+        leader_type: 'G12', campus: 'DC_NSK',
         g12_phone: phone || null
       };
 
@@ -8624,8 +9603,8 @@
         console.error("Error creating leader:", error.message);
         showToast("Error creating leader: " + error.message);
       } else {
-        showToast(`Leader "${canonical}" created successfully!`);
-        logActivity(`New leader added: ${canonical} (${leaderType})`, 'gold', 'ti-user-plus');
+        showToast(`G12 Leader "${canonical}" created successfully!`);
+        logActivity(`New G12 leader added: ${canonical}`, 'gold', 'ti-user-plus');
         fetchAndRenderMembers();
       }
     }

@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 
+<head>
+  <!-- OneSignal Web Push SDK -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "031e7145-9dec-47e3-9020-9ccd9658bdaa",
+      });
+    });
+  </script>
+</head>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 <script>
   const supabaseUrl = "https://cjbedftdexzcsydwayig.supabase.co";
@@ -327,9 +339,9 @@
 
     /* ── CONTAINER ── */
     .container {
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 0 16px 60px;
+      max-width: 640px;
+      margin: 30px auto 60px;
+      padding: 0 16px;
       width: 100%;
     }
 
@@ -403,11 +415,14 @@
 
     /* ── GLASS CARD ── */
     .card {
-      background: rgba(17, 24, 39, 0.75);
+      background: rgba(17, 24, 39, 0.82);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
       border: 1px solid rgba(59, 130, 246, 0.35);
-      border-radius: 1.25rem;
-      padding: 28px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      border-radius: 1.5rem;
+      padding: 38px 34px;
+      box-shadow: 0 15px 45px rgba(0, 0, 0, 0.5);
+      width: 100%;
     }
 
     .step-label {
@@ -1057,106 +1072,61 @@
       <h1>New Covenant Family</h1>
       <p>Leader Accountability System</p>
     </div>
-    <div class="header-date" id="live-date"></div>
   </header>
 
+  <main class="container">
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-dot done" id="dot1"></div>
+      <div class="progress-line" id="line1"></div>
+      <div class="progress-dot" id="dot2"></div>
+    </div>
 
-  <div class="progress-wrap" id="progressWrap">
-    <div class="progress-dot done" id="dot1"></div>
-    <div class="progress-line" id="line1"></div>
-    <div class="progress-dot" id="dot2"></div>
-    <div class="progress-line" id="line2"></div>
-    <div class="progress-dot" id="dot3"></div>
-    <div class="progress-line" id="line3"></div>
-    <div class="progress-dot" id="dot4"></div>
-  </div>
+    <!-- STEP 1: Leader Details & Service -->
+    <div class="step active" id="step1">
+      <div class="card">
+        <div class="step-label">Step 1 of 2</div>
+        <h2 class="step-title">G12 Leader Details</h2>
 
-  <!-- STEP 1: Category -->
-  <!-- STEP 1: Category -->
-  <div class="step active" id="step1">
-    <div class="card">
-      <div class="step-label">Step 1 of 3</div>
-      <h2 class="step-title">Select appropriate category</h2>
+        <label class="field-label" for="leaderSelect">Select Your Name *</label>
+        <select id="leaderSelect">
+          <option value="">— Choose your name —</option>
+        </select>
+        <p class="error-msg" id="errLeader">Please select your name.</p>
 
-      <div class="cat-tabs">
-        <div class="cat-tab dh-tab" onclick="selectCategory('DH', this)">
-          <div class="cat-name">DH Leader</div>
-          <div class="cat-sub">Discipleship House</div>
+        <div style="margin-top:24px;">
+          <label class="field-label" for="serviceDate">Service Date *</label>
+          <input type="date" id="serviceDate" />
+          <p class="error-msg" id="errDate">Please select the service date.</p>
         </div>
-        <div class="cat-tab g12-tab" onclick="selectCategory('G12', this)">
-          <div class="cat-name">G12 Leader</div>
-          <div class="cat-sub">Government of 12</div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="goStep(2)">Next →</button>
         </div>
-      </div>
-
-      <p class="error-msg" id="errCat">Please select a category.</p>
-
-      <!-- THIS WAS MISSING: The Next Button -->
-      <div class="btn-row">
-        <button class="btn btn-primary" onclick="goStep(2)">Next →</button>
       </div>
     </div>
-  </div>
 
-  <!-- STEP 2: Leader + Service -->
-  <div class="step" id="step2">
-    <div class="card">
-      <div class="step-label">Step 2 of 3</div>
-      <h2 class="step-title">Your Details</h2>
-      <div id="catBadge2" class="cat-badge"></div>
-
-      <label class="field-label" for="leaderSelect">Select Your Name</label>
-      <select id="leaderSelect">
-        <option value="">— Choose your name —</option>
-      </select>
-      <p class="error-msg" id="errLeader">Please select your name.</p>
-
-      <div style="margin-top:20px;">
-        <label class="field-label">Service Type</label>
-        <div class="service-tags">
-          <button class="tag-btn" onclick="selectService(this,'Sunday Service')">☀️ Sunday Service</button>
-          <button class="tag-btn" onclick="selectService(this,'Wednesday Bible Study')">⚡ Wednesday Bible Study</button>
-          <button class="tag-btn" onclick="selectService(this,'Midweek Service')">📖 Midweek Service</button>
-          <button class="tag-btn" onclick="selectService(this,'Equip Training')">🎓 Equip Training</button>
+    <!-- STEP 2: Attendance -->
+    <div class="step" id="step2">
+      <div class="card">
+        <div class="step-label">Step 2 of 2</div>
+        <h2 class="step-title">Mark Disciples Attendance</h2>
+        <div class="info-box" id="reportInfo"></div>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:18px;">
+          Tap <strong style="color:var(--success)">✓ Present</strong> or <strong style="color:var(--danger)">✗
+            Absent</strong>. Add a reason for anyone absent.
+        </p>
+        <div class="att-header">
+          <span>Member</span><span>Present</span><span>Absent</span>
         </div>
-        <p class="error-msg" id="errService">Please select a service type.</p>
-      </div>
-
-      <div style="margin-top:20px;">
-        <label class="field-label" for="serviceDate">Service Date</label>
-        <input type="date" id="serviceDate" />
-        <p class="error-msg" id="errDate">Please select the service date.</p>
-      </div>
-
-      <div class="btn-row">
-        <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
-        <button class="btn btn-primary" onclick="goStep(3)">Next →</button>
+        <div id="memberList"></div>
+        <p class="error-msg" id="errAtt">Please mark attendance for all members before submitting.</p>
+        <div class="btn-row">
+          <button class="btn btn-ghost" onclick="goStep(1)">← Back</button>
+          <button class="btn btn-primary btn-submit" id="submitReportBtn" onclick="submitReport()">Submit Report ✦</button>
+        </div>
       </div>
     </div>
-  </div>
-
-  <!-- STEP 3: Attendance -->
-  <div class="step" id="step3">
-    <div class="card">
-      <div class="step-label">Step 3 of 3</div>
-      <h2 class="step-title">Mark Attendance</h2>
-      <div id="catBadge3" class="cat-badge"></div>
-      <div class="info-box" id="reportInfo"></div>
-      <p style="color:var(--muted);font-size:13px;margin-bottom:18px;">
-        Tap <strong style="color:var(--success)">✓ Present</strong> or <strong style="color:var(--danger)">✗
-          Absent</strong>. Add a reason for anyone absent.
-      </p>
-      <div class="att-header">
-        <span>Member</span><span>Present</span><span>Absent</span>
-      </div>
-      <div id="memberList"></div>
-      <p class="error-msg" id="errAtt">Please mark attendance for all members before submitting.</p>
-      <div class="btn-row">
-        <button class="btn btn-ghost" onclick="goStep(2)">← Back</button>
-        <button class="btn btn-primary btn-submit" id="submitReportBtn" onclick="submitReport()">Submit Report ✦</button>
-      </div>
-    </div>
-  </div>
+  </main>
 
 
 
@@ -1265,20 +1235,18 @@
       }
     }
 
-    function goStep(n) {
-      if (currentStep === 1 && n === 2) {
-        if (!selectedCategory) { showErr('errCat'); return; }
-        if (selectedCategory === 'ADMIN') { handleAdminLogin(); return; }
-        populateLeaders();
-      }
+    function checkFormShutdown() {
+      return false;
+    }
 
-      if (currentStep === 2 && n === 3) {
+    function goStep(n) {
+      if (checkFormShutdown()) return;
+      if (currentStep === 1 && n === 2) {
         const leader = document.getElementById('leaderSelect').value;
         const date = document.getElementById('serviceDate').value;
         if (!leader) { showErr('errLeader'); return; }
-        if (!selectedService) { showErr('errService'); return; }
         if (!date) { showErr('errDate'); return; }
-        hideErr('errLeader'); hideErr('errService'); hideErr('errDate');
+        hideErr('errLeader'); hideErr('errDate');
         renderAttendance();
       }
 
@@ -1295,14 +1263,12 @@
     }
 
     function updateProgress() {
-      for (let i = 1; i <= 4; i++) {
+      for (let i = 1; i <= 2; i++) {
         const d = document.getElementById('dot' + i);
         if (d) d.classList.toggle('done', i <= currentStep);
       }
-      for (let i = 1; i <= 3; i++) {
-        const l = document.getElementById('line' + i);
-        if (l) l.classList.toggle('filled', i < currentStep);
-      }
+      const l = document.getElementById('line1');
+      if (l) l.classList.toggle('filled', currentStep > 1);
     }
 
     // --- DATABASE: ADMIN CRUD OPERATIONS ---
@@ -1664,32 +1630,42 @@
      */
     async function populateLeaders() {
       const sel = document.getElementById('leaderSelect');
-      sel.value = ""; // FIX: Reset the selection value
+      sel.value = "";
       hideErr('errLeader');
       sel.innerHTML = '<option value="">— Loading Leaders... —</option>';
-
-      const badge = document.getElementById('catBadge2');
-      badge.textContent = selectedCategory === 'DH' ? '🏠 DH Leader' : '🌿 G12 Leader';
-      badge.className = 'cat-badge ' + (selectedCategory === 'DH' ? 'dh' : 'g12');
 
       try {
         if (!window.allLeaders || window.allLeaders.length === 0) {
           await fetchAllLeaders();
         }
 
-        // Filter leaders by the selectedCategory (using window.leaderTypes)
-        const filteredLeaders = window.allLeaders.filter(name => {
-          const type = window.leaderTypes[name] || 'G12';
-          return type === selectedCategory;
-        });
+        let leadersSet = new Set(window.allLeaders || []);
 
-        if (filteredLeaders.length === 0) {
-          sel.innerHTML = `<option value="">No ${selectedCategory} leaders found</option>`;
+        if (typeof LEADER_DICTIONARY !== 'undefined') {
+          LEADER_DICTIONARY.forEach(d => {
+            if (d.name && d.name !== 'Unassigned') leadersSet.add(d.name);
+          });
+        }
+
+        try {
+          const { data: dbLeaders } = await supabaseClient.from('g12_leaders').select('*');
+          if (dbLeaders && dbLeaders.length > 0) {
+            dbLeaders.forEach(l => {
+              const name = (l.g12_leader || l.name || '').trim();
+              if (name && name !== 'Unassigned') leadersSet.add(name);
+            });
+          }
+        } catch (e) { }
+
+        const finalLeaders = [...leadersSet].sort((a, b) => a.localeCompare(b));
+
+        if (finalLeaders.length === 0) {
+          sel.innerHTML = '<option value="">No G12 leaders found</option>';
           return;
         }
 
         sel.innerHTML = '<option value="">— Choose your name —</option>';
-        filteredLeaders.forEach(name => {
+        finalLeaders.forEach(name => {
           const opt = document.createElement('option');
           opt.value = name;
           opt.textContent = name;
@@ -1978,6 +1954,13 @@
             submitBtn.disabled = false;
             submitBtn.textContent = "Submit Report ✦";
           }
+
+          // --- OneSignal Push Notification Subscription ---
+          window.OneSignalDeferred = window.OneSignalDeferred || [];
+          OneSignalDeferred.push(async function(OneSignal) {
+            await OneSignal.login(normalizeLeaderName(leader).toLowerCase().trim());
+            await OneSignal.Slidedown.promptPush();
+          });
         }
       } catch (err) {
         console.error("Submission Error:", err);
@@ -2071,49 +2054,25 @@
       }
     });
 
-    // URL parameters handler to pre-fill the form
+    // URL parameters handler to pre-fill the form & auto-load G12 Leaders
     window.addEventListener('DOMContentLoaded', async () => {
-      await fetchAllLeaders();
+      selectedCategory = 'G12';
+      await populateLeaders();
       const urlParams = new URLSearchParams(window.location.search);
       const paramLeader = urlParams.get('leader');
-      const paramType = urlParams.get('type'); // 'G12' or 'DH'
 
-      if (paramType && (paramType === 'G12' || paramType === 'DH')) {
-        // 1. Select category
-        selectedCategory = paramType;
+      if (paramLeader) {
+        const sel = document.getElementById('leaderSelect');
+        const normalizedParamLeader = normalizeLeaderName(paramLeader);
 
-        // Find the corresponding element
-        const tabs = document.querySelectorAll('.cat-tab');
-        let tabEl = null;
-        tabs.forEach(t => {
-          if (t.textContent.toUpperCase().includes(paramType)) {
-            tabEl = t;
-          }
-        });
-
-        if (tabEl) {
-          selectCategory(paramType, tabEl);
-        }
-
-        // 2. Go to Step 2 (populates leaders list)
-        await populateLeaders();
-        goStep(2);
-
-        // 3. Pre-select leader
-        if (paramLeader) {
-          const sel = document.getElementById('leaderSelect');
-          const normalizedParamLeader = normalizeLeaderName(paramLeader);
-
-          // Wait slightly to make sure the options are populated
-          setTimeout(() => {
-            for (let i = 0; i < sel.options.length; i++) {
-              if (normalizeLeaderName(sel.options[i].value) === normalizedParamLeader) {
-                sel.selectedIndex = i;
-                break;
-              }
+        setTimeout(() => {
+          for (let i = 0; i < sel.options.length; i++) {
+            if (normalizeLeaderName(sel.options[i].value) === normalizedParamLeader) {
+              sel.selectedIndex = i;
+              break;
             }
-          }, 200);
-        }
+          }
+        }, 200);
       }
     });
   </script>

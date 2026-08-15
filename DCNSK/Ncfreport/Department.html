@@ -163,6 +163,32 @@
   <div class="header-date" id="live-date"></div>
 </header>
 
+  <div id="shutdownNotice" style="display:none; max-width:640px; width:100%; margin: 20px auto; padding: 0 16px;">
+    <div class="card" style="text-align:center; padding:40px 24px; border-top: 4px solid #ef4444; background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(12px); border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.4);">
+      <div style="width:70px; height:70px; margin: 0 auto 20px; border-radius:50%; background: rgba(239,68,68,0.15); display:flex; align-items:center; justify-content:center; font-size:36px; color:#ef4444;">
+        🔒
+      </div>
+      <h2 style="font-size:22px; font-weight:700; color:#ffffff; margin-bottom:12px; font-family:'Playfair Display', serif;">Department Report Submissions Closed Today</h2>
+      <p style="font-size:14px; color:var(--muted, #a8b2d8); line-height:1.6; margin-bottom:24px; max-width:500px; margin-left:auto; margin-right:auto;">
+        Report submissions are closed on <strong>Tuesdays, Fridays, and Saturdays</strong>. Reports for Sunday service are submitted on Sunday & Monday, and Wednesday service reports on Wednesday & Thursday.
+      </p>
+      <div style="background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius:12px; padding:16px; text-align:left; margin-bottom:28px; font-size:13px; color:var(--text, #e8edf2);">
+        <div style="font-weight:700; color:var(--gold, #3b82f6); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px; font-size:11px;">📅 Submission Schedule</div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+          <span style="color:#10b981; font-weight:bold;">• Sunday Service Reports:</span>
+          <span>Open Sunday – Monday</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="color:#60a5fa; font-weight:bold;">• Wednesday Service Reports:</span>
+          <span>Open Wednesday – Thursday</span>
+        </div>
+      </div>
+      <a href="index.html" class="btn-primary" style="display:inline-block; text-decoration:none; padding:12px 28px; font-size:14px; border-radius:10px; font-weight:600; text-align:center;">
+        ← Return to Submission Hub
+      </a>
+    </div>
+  </div>
+
   <!-- Progress -->
   <div class="progress-wrap">
     <div class="progress-dot done" id="dot1"></div>
@@ -227,7 +253,12 @@
       liveDateEl.textContent = d.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
   }
 
+  function checkFormShutdown() {
+    return false;
+  }
+
   function goStep(n) {
+    if (checkFormShutdown()) return;
     if (n === 2 && !document.getElementById('deptSelect').value) return alert("Select a department");
     if (n === 2 && !document.getElementById('reportDate').value) return alert("Select a service date");
     if (n === 2) {
@@ -263,6 +294,7 @@
   document.addEventListener('DOMContentLoaded', loadDepartments);
 
   async function loadDepartments() {
+    if (checkFormShutdown()) return;
     const deptSelect = document.getElementById('deptSelect');
     deptSelect.innerHTML = '<option value="">Loading...</option>';
 
@@ -298,14 +330,24 @@
     });
   }
 
+  function isHqMember(m) {
+    if (!m) return false;
+    const z = (m.zone || m.Zone || m.campus_zone || '').toUpperCase().trim();
+    if (z === 'HQ') return true;
+    if (z && z !== 'HQ' && z !== 'ALL') return false;
+    const addr = (m.school_address || m.School_Address || '').toLowerCase();
+    if (addr.includes('franco') || addr.includes('hilltop') || addr.includes('jsq') || addr.includes('odim') || addr.includes('greenhouse') || addr.includes('odenigwe')) return false;
+    return true;
+  }
+
   async function renderPersonnel() {
     const dept = document.getElementById('deptSelect').value;
     const listDiv = document.getElementById('personnelList');
-    listDiv.innerHTML = 'Loading members...';
+    listDiv.innerHTML = 'Loading HQ members...';
 
     const { data, error } = await supabaseClient
         .from('members')
-        .select('member_name, department');
+        .select('member_name, department, zone, School_Address');
 
     if (error) {
         console.error('Error fetching personnel:', error.message);
@@ -317,14 +359,15 @@
 
     const filtered = (data || []).filter(m => {
       if (!m.department || m.department.trim() === '') return false;
-      return normalizeDepartmentName(m.department) === canonicalSelected;
+      if (normalizeDepartmentName(m.department) !== canonicalSelected) return false;
+      return isHqMember(m);
     });
 
     reportData = filtered.map(d => ({ name: d.member_name, status: null, reason: "" }));
     
     listDiv.innerHTML = '';
     if (reportData.length === 0) {
-        listDiv.innerHTML = `<p style="color: var(--muted); font-size: 14px;">No members found in ${dept}.</p>`;
+        listDiv.innerHTML = `<p style="color: var(--muted); font-size: 14px;">No HQ members found in ${dept}.</p>`;
         return;
     }
 

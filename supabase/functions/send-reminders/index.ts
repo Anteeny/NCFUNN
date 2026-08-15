@@ -37,7 +37,31 @@ serve(async (req) => {
     // Helper functions
     const getServiceDate = (dateStr: string) => {
       if (!dateStr) return 'Unknown Date';
-      return dateStr.split('T')[0];
+      let y: number | undefined, m: number | undefined, d: number | undefined;
+      const parts = dateStr.split('T')[0].split('-');
+      if (parts.length === 3) {
+        y = parseInt(parts[0], 10);
+        m = parseInt(parts[1], 10) - 1;
+        d = parseInt(parts[2], 10);
+      }
+      let dt: Date;
+      if (y !== undefined && !isNaN(y)) {
+        dt = new Date(y, m!, d!);
+      } else {
+        dt = new Date(dateStr);
+      }
+      if (isNaN(dt.getTime())) return 'Unknown Date';
+      const dayOfWeek = dt.getDay();
+      const target = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+      if (dayOfWeek === 0 || dayOfWeek === 1 || dayOfWeek === 2) {
+        target.setDate(target.getDate() - dayOfWeek);
+      } else {
+        target.setDate(target.getDate() - (dayOfWeek - 3));
+      }
+      const yr = target.getFullYear();
+      const mo = String(target.getMonth() + 1).padStart(2, '0');
+      const da = String(target.getDate()).padStart(2, '0');
+      return `${yr}-${mo}-${da}`;
     };
 
     const normalizeLeaderName = (name: string) => {
@@ -70,16 +94,17 @@ serve(async (req) => {
       }
     });
 
-    // 4. Fetch all expected leaders from members table
+    // 4. Fetch all expected leaders from members table including email and phone
     const { data: membersData, error: membersError } = await supabase
       .from('members')
-      .select('g12_leader, leader_type, g12_phone');
+      .select('g12_leader, leader_type, g12_phone, email, member_name');
     if (membersError) throw membersError;
     const members = membersData || [];
 
     const expectedG12 = new Set<string>();
     const expectedDH = new Set<string>();
     const leaderPhones: Record<string, string> = {};
+    const leaderEmails: Record<string, string> = {};
 
     members.forEach(m => {
       if (m.g12_leader) {
@@ -92,22 +117,39 @@ serve(async (req) => {
           if (m.g12_phone && m.g12_phone.trim() !== '') {
             leaderPhones[canonical.toLowerCase().trim()] = m.g12_phone.trim();
           }
+          if (m.email && m.email.trim() !== '') {
+            leaderEmails[canonical.toLowerCase().trim()] = m.email.trim();
+          }
         }
       }
     });
 
-    // Compute missing leaders
-    const missingG12 = [...expectedG12]
-      .filter(l => !foldersSubmittedSet.has(l.toLowerCase().trim()))
-      .map(name => ({ name, type: 'G12', phone: leaderPhones[name.toLowerCase().trim()] || "" }));
+    // Compute missing leaders with their email and phone numbers
+    const missingLeaders: Array<{ name: string; type: string; phone: string; email: string }> = [];
 
-    const missingDH = [...expectedDH]
-      .filter(l => !foldersSubmittedSet.has(l.toLowerCase().trim()))
-      .map(name => ({ name, type: 'DH', phone: leaderPhones[name.toLowerCase().trim()] || "" }));
+    expectedG12.forEach(name => {
+      if (!foldersSubmittedSet.has(name.toLowerCase().trim())) {
+        missingLeaders.push({
+          name,
+          type: 'G12',
+          phone: leaderPhones[name.toLowerCase().trim()] || "",
+          email: leaderEmails[name.toLowerCase().trim()] || ""
+        });
+      }
+    });
 
-    const missingLeaders = [...missingG12, ...missingDH];
+    expectedDH.forEach(name => {
+      if (!foldersSubmittedSet.has(name.toLowerCase().trim())) {
+        missingLeaders.push({
+          name,
+          type: 'DH',
+          phone: leaderPhones[name.toLowerCase().trim()] || "",
+          email: leaderEmails[name.toLowerCase().trim()] || ""
+        });
+      }
+    });
 
-    // If no one is missing, stop!
+    // If no one is missing, stop silently!
     if (missingLeaders.length === 0) {
       return new Response(
         JSON.stringify({ message: "All expected reports submitted! No reminders sent." }),
@@ -115,59 +157,154 @@ serve(async (req) => {
       );
     }
 
-    // 5. Send WhatsApp messages to each missing leader if credentials are set
-    if (!metaToken || !phoneNumberId) {
-      return new Response(
-        JSON.stringify({
-          message: `Calculated missing reports for ${missingLeaders.length} leaders. To send DMs, please configure META_ACCESS_TOKEN and META_PHONE_NUMBER_ID in Supabase.`,
-          missingLeaders
-        }),
-        { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
-      );
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    const senderEmail = Deno.env.get('SENDER_EMAIL') || 'onboarding@resend.dev';
+    let emailsSentCount = 0;
+
+    // Send targeted email notifications to each missing leader's email address
+    if (resendApiKey) {
+      for (const leader of missingLeaders) {
+        if (leader.email) {
+          try {
+            const resendResponse = await fetch('https://api.resend.com/emails', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${resendApiKey}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                from: `NCF Attendance <${senderEmail}>`,
+                to: [leader.email],
+                subject: `⚠️ Reminder: NCF ${leader.type} Report Pending (${targetServiceDate})`,
+                html: `
+                  <div style="font-family: Arial, sans-serif; padding: 24px; background: #0f172a; color: #f8fafc; border-radius: 12px;">
+                    <h2 style="color: #f59e0b; margin-top: 0;">Hi ${leader.name},</h2>
+                    <p style="font-size: 15px; line-height: 1.6;">This is an automated reminder that your <strong>NCF ${leader.type} Folder Report</strong> for today's service (<strong>${targetServiceDate}</strong>) has not been submitted yet.</p>
+                    <p style="font-size: 14px; color: #94a3b8;">Please click below to access the portal and complete your report submission.</p>
+                    <div style="margin: 24px 0;">
+                      <a href="${portalUrl}" style="background: #f59e0b; color: #0f172a; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; display: inline-block;">Fill Out Report Now →</a>
+                    </div>
+                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 30px;">
+                    <p style="font-size: 11px; color: #64748b;">NCF UNN Discipleship & Attendance Tracker</p>
+                  </div>
+                `
+              })
+            });
+            if (resendResponse.ok) emailsSentCount++;
+          } catch (e) {
+            console.error(`Failed to send email to ${leader.email}:`, e);
+          }
+        }
+      }
     }
 
-    const sendPromises = missingLeaders
-      .filter(leader => leader.phone && leader.phone.trim() !== '')
-      .map(async (leader) => {
-        const cleanPhone = leader.phone.replace(/[^0-9]/g, '');
-        // Meta WhatsApp API Payload
-        const messagePayload = {
-          messaging_product: "whatsapp",
-          to: cleanPhone,
-          type: "template",
-          template: {
-            name: templateName,
-            language: { code: "en" },
-            components: [
-              {
-                type: "body",
-                parameters: [
-                  { type: "text", text: leader.name },      // {{1}} Leader name
-                  { type: "text", text: leader.type }       // {{2}} G12 / DH
-                ]
-              }
-            ]
-          }
-        };
+    // Helper: E.164 International Phone Normalizer
+    const formatWhatsAppPhone = (phone: string): string => {
+      if (!phone) return '';
+      let clean = phone.replace(/[^0-9]/g, '');
+      if (clean.startsWith('0') && clean.length === 11) {
+        clean = '234' + clean.slice(1);
+      } else if (clean.length === 10 && !clean.startsWith('234')) {
+        clean = '234' + clean;
+      }
+      return clean;
+    };
 
-        const metaResponse = await fetch(`https://graph.facebook.com/v17.0/${phoneNumberId}/messages`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${metaToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(messagePayload)
+    let whatsappSentCount = 0;
+    if (metaToken && phoneNumberId) {
+      const sendPromises = missingLeaders
+        .map(leader => ({ ...leader, formattedPhone: formatWhatsAppPhone(leader.phone) }))
+        .filter(leader => leader.formattedPhone && leader.formattedPhone.length >= 10)
+        .map(async (leader) => {
+          const cleanPhone = leader.formattedPhone;
+
+          let messagePayload: any = {
+            messaging_product: "whatsapp",
+            to: cleanPhone
+          };
+
+          if (templateName === 'text' || templateName === 'direct') {
+            messagePayload.type = "text";
+            messagePayload.text = {
+              body: `Hi ${leader.name}, this is a friendly reminder to please submit your NCF ${leader.type} folder report for today's service. Thank you!`
+            };
+          } else {
+            messagePayload.type = "template";
+            messagePayload.template = {
+              name: templateName,
+              language: { code: "en" }
+            };
+            if (templateName !== 'hello_world') {
+              messagePayload.template.components = [
+                {
+                  type: "body",
+                  parameters: [
+                    { type: "text", text: leader.name },
+                    { type: "text", text: leader.type }
+                  ]
+                }
+              ];
+            }
+          }
+
+          const metaResponse = await fetch(`https://graph.facebook.com/v17.0/${phoneNumberId}/messages`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${metaToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(messagePayload)
+          });
+
+          return metaResponse.ok;
         });
 
-        return { leader: leader.name, response: await metaResponse.json() };
-      });
+      const results = await Promise.all(sendPromises);
+      whatsappSentCount = results.filter(Boolean).length;
+    }
 
-    const results = await Promise.all(sendPromises);
+    // --- OneSignal Push Notifications ---
+    let pushSentCount = 0;
+    const onesignalApiKey = Deno.env.get("ONESIGNAL_API_KEY") || "";
+    const onesignalAppId = Deno.env.get("ONESIGNAL_APP_ID") || "031e7145-9dec-47e3-9020-9ccd9658bdaa";
+
+    if (missingLeaders.length > 0) {
+      // Target leaders by their canonical name (External ID)
+      const externalIds = missingLeaders.map(l => l.name.toLowerCase().trim());
+      externalIds.push("tubagu6@gmail.com"); // TEST EMAIL target
+
+      try {
+        const osResponse = await fetch("https://onesignal.com/api/v1/notifications", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Basic ${onesignalApiKey}`
+          },
+          body: JSON.stringify({
+            app_id: onesignalAppId,
+            include_external_user_ids: externalIds,
+            headings: { "en": "⚠️ NCF Report Reminder" },
+            contents: { "en": `Your NCF G12 report for ${targetServiceDate} is still pending! Please submit it now.` },
+            url: portalUrl
+          })
+        });
+        if (osResponse.ok) {
+          pushSentCount = externalIds.length;
+        } else {
+          console.error("OneSignal push error:", await osResponse.text());
+        }
+      } catch (e) {
+        console.error("Failed to send OneSignal push:", e);
+      }
+    }
 
     return new Response(
       JSON.stringify({
-        message: `Reminders sent to ${results.length} leaders.`,
-        details: results
+        message: `Calculated missing reports for ${missingLeaders.length} leader(s).`,
+        missingLeaders,
+        emailsSent: emailsSentCount,
+        whatsappSent: whatsappSentCount,
+        pushSent: pushSentCount
       }),
       { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
     );
