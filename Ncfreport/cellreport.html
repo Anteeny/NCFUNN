@@ -4,12 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Cell Group Meeting Report</title>
-   <link rel="icon" type="image/png" href="images.png?v=3">
-<link rel="shortcut icon" type="image/x-icon" href="images.png?v=3">
-<link rel="apple-touch-icon" href="images.png?v=3">
+  <link rel="icon" type="image/png" href="images.png?v=3">
+  <link rel="shortcut icon" type="image/x-icon" href="images.png?v=3">
+  <link rel="apple-touch-icon" href="images.png?v=3">
  
   <script>
-    // Automatically unregister any stray OneSignal Service Worker from localhost/origin
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
         for (let registration of registrations) {
@@ -17,7 +16,6 @@
         }
       });
     }
-    // Remove any injected OneSignal widget overlay elements immediately
     const cleanOneSignal = () => {
       document.querySelectorAll('#onesignal-bell-container, #onesignal-slidedown-container, [id*="onesignal"], [class*="onesignal"], iframe[src*="onesignal"]').forEach(el => el.remove());
     };
@@ -287,48 +285,6 @@
       transform: translateY(-1px);
     }
 
-    /* Logo placeholder */
-    .logo-placeholder {
-      width: 90px;
-      height: 90px;
-      border-radius: 50%;
-      border: 2px dashed rgba(59, 130, 246,0.5);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      background: rgba(59, 130, 246,0.06);
-      transition: border-color 0.2s, background 0.2s;
-      margin: 0 auto 1rem auto;
-    }
-
-    .logo-placeholder:hover {
-      border-color: var(--gold);
-      background: rgba(59, 130, 246,0.1);
-    }
-
-    .logo-placeholder img {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      position: absolute; inset: 0;
-      border-radius: 50%;
-    }
-
-    .logo-placeholder .upload-hint {
-      font-size: 0.6rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: rgba(59, 130, 246,0.6);
-      margin-top: 0.3rem;
-      text-align: center;
-      line-height: 1.3;
-    }
-
-    #logo-input { display: none; }
-
     /* Reset */
     .reset-btn {
       width: 100%;
@@ -414,7 +370,7 @@
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
     @media (max-width: 500px) { .grid-2 { grid-template-columns: 1fr; } }
 
-    /* Cross icon for currency */
+    /* Currency symbol */
     .currency-wrap { position: relative; }
     .currency-wrap::before {
       content: '₦';
