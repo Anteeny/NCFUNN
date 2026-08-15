@@ -284,7 +284,7 @@ serve(async (req) => {
             app_id: onesignalAppId,
             include_external_user_ids: externalIds,
             headings: { "en": "⚠️ NCF Report Reminder" },
-            contents: { "en": `Your NCF G12 report for ${targetServiceDate} is still pending! Please submit it now.` },
+            contents: { "en": `hi, click now to fill your report. forms close by midnight` },
             url: portalUrl
           })
         });
