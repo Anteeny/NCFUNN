@@ -744,11 +744,12 @@
 
       if (!selectedLeader) return;
 
-      // Log device to OneSignal under the leader's canonical lowercase name
+      // Log device to OneSignal under the leader's canonical lowercase name & prompt push
       window.OneSignalDeferred = window.OneSignalDeferred || [];
       OneSignalDeferred.push(async function(OneSignal) {
         const canonical = normalizeLeaderName(selectedLeader).toLowerCase().trim();
         await OneSignal.login(canonical);
+        await OneSignal.Slidedown.promptPush();
       });
 
       const match = cellLeadersList.find(item => 

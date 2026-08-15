@@ -2068,6 +2068,7 @@
             window.OneSignalDeferred = window.OneSignalDeferred || [];
             OneSignalDeferred.push(async function(OneSignal) {
               await OneSignal.login(canonical);
+              await OneSignal.Slidedown.promptPush();
             });
           }
         });
@@ -2084,11 +2085,12 @@
             if (normalizeLeaderName(sel.options[i].value) === normalizedParamLeader) {
               sel.selectedIndex = i;
               
-              // Log pre-filled G12 leader into OneSignal
+              // Log pre-filled G12 leader into OneSignal & prompt push
               const canonical = normalizedParamLeader.toLowerCase().trim();
               window.OneSignalDeferred = window.OneSignalDeferred || [];
               OneSignalDeferred.push(async function(OneSignal) {
                 await OneSignal.login(canonical);
+                await OneSignal.Slidedown.promptPush();
               });
               break;
             }
