@@ -2058,17 +2058,38 @@
     window.addEventListener('DOMContentLoaded', async () => {
       selectedCategory = 'G12';
       await populateLeaders();
+
+      const sel = document.getElementById('leaderSelect');
+      if (sel) {
+        sel.addEventListener('change', (e) => {
+          const leaderVal = e.target.value;
+          if (leaderVal) {
+            const canonical = normalizeLeaderName(leaderVal).toLowerCase().trim();
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            OneSignalDeferred.push(async function(OneSignal) {
+              await OneSignal.login(canonical);
+            });
+          }
+        });
+      }
+
       const urlParams = new URLSearchParams(window.location.search);
       const paramLeader = urlParams.get('leader');
 
       if (paramLeader) {
-        const sel = document.getElementById('leaderSelect');
         const normalizedParamLeader = normalizeLeaderName(paramLeader);
 
         setTimeout(() => {
           for (let i = 0; i < sel.options.length; i++) {
             if (normalizeLeaderName(sel.options[i].value) === normalizedParamLeader) {
               sel.selectedIndex = i;
+              
+              // Log pre-filled G12 leader into OneSignal
+              const canonical = normalizedParamLeader.toLowerCase().trim();
+              window.OneSignalDeferred = window.OneSignalDeferred || [];
+              OneSignalDeferred.push(async function(OneSignal) {
+                await OneSignal.login(canonical);
+              });
               break;
             }
           }

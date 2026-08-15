@@ -7,23 +7,16 @@
   <link rel="icon" type="image/png" href="images.png?v=3">
   <link rel="shortcut icon" type="image/x-icon" href="images.png?v=3">
   <link rel="apple-touch-icon" href="images.png?v=3">
- 
+  <!-- OneSignal Web Push SDK -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        for (let registration of registrations) {
-          registration.unregister();
-        }
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "031e7145-9dec-47e3-9020-9ccd9658bdaa",
       });
-    }
-    const cleanOneSignal = () => {
-      document.querySelectorAll('#onesignal-bell-container, #onesignal-slidedown-container, [id*="onesignal"], [class*="onesignal"], iframe[src*="onesignal"]').forEach(el => el.remove());
-    };
-    cleanOneSignal();
-    document.addEventListener('DOMContentLoaded', cleanOneSignal);
-    new MutationObserver(cleanOneSignal).observe(document.documentElement, { childList: true, subtree: true });
-  </script>
-
+    });
+  </script> 
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <script src="https://cdn.tailwindcss.com"></script>
 
@@ -40,25 +33,7 @@
     }
 
     * { box-sizing: border-box; }
-    #onesignal-bell-container,
-    #onesignal-slidedown-container,
-    #onesignal-slidedown-dialog,
-    .onesignal-bell-launcher,
-    .onesignal-bell-launcher-button,
-    .onesignal-bell-container,
-    .onesignal-slidedown-container,
-    .onesignal-slidedown-dialog,
-    iframe[src*="onesignal"],
-    [id*="onesignal"],
-    [class*="onesignal"] {
-      display: none !important;
-      pointer-events: none !important;
-      visibility: hidden !important;
-      opacity: 0 !important;
-      width: 0 !important;
-      height: 0 !important;
-      z-index: -9999 !important;
-    }
+
 
      body {
       font-family: 'DM Sans', sans-serif;
@@ -562,8 +537,8 @@
 
 <script>
     // 2. CONFIGURATION - Declared ONLY ONCE
-   const supabaseUrl = 'https://tnqymsbbkggkefmsfndh.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRucXltc2Jia2dna2VmbXNmbmRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDAzMDY5NTYsImV4cCI6MjA1NTg4Mjk1Nn0.bC637494fUp92Fm3d6a9aM8aG0i9H1b0mK2eN3p4q5r6s7t8u9v0w1x2y3z4a5b6c7d8e9f0';
+   const supabaseUrl = 'https://cjbedftdexzcsydwayig.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmVkZnRkZXh6Y3N5ZHdheWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTUwMjgsImV4cCI6MjA5MzYzMTAyOH0.xsvtG5NmI_9TDZQ5-MhcjtX4UIIAiH2kyOlpIPDkCdg';
     
     // We use 'db' or keep 'supabase' but ensure no other line says 'const supabase'
     const supabaseConnection = supabase.createClient(supabaseUrl, supabaseKey);
@@ -685,6 +660,27 @@
       }
     }
 
+    function normalizeAreaName(name) {
+      if (!name) return '';
+      const clean = name.trim();
+      const lower = clean.toLowerCase();
+      if (lower.includes('hostel')) return 'Hostel';
+      if (lower.includes('hilltop')) return 'Hilltop';
+      if (lower.includes('odim')) return 'Odim';
+      if (lower.includes('odenigwe')) return 'Odenigwe';
+      if (lower.includes('greenhouse')) return 'Greenhouse';
+      if (lower.includes('jsq')) return 'JSQ';
+      if (lower.includes('franco')) return 'Franco';
+      if (lower.includes('hq')) return 'HQ';
+      return clean;
+    }
+
+    function normalizeLeaderName(name) {
+      if (!name) return '';
+      const clean = name.replace(/^(Pastor|Bro|Sis|Deacon|Minister|Pst|Brother|Sister)\.?\s+/i, '');
+      return clean.replace(/\s+/g, ' ').trim();
+    }
+
     function handleZoneChange() {
       const selectedZone = (document.getElementById('zone-select')?.value || '').trim();
       const cellNameSelect = document.getElementById('cell-name-select');
@@ -708,7 +704,12 @@
       );
 
       // Populate unique locations (Area / Hostel) for this zone
-      const locations = [...new Set(matchingItems.map(item => item.cell_name || item.name || item.location || item.cell_address).filter(Boolean))];
+      const rawLocations = matchingItems.map(item => {
+        const rawName = item.cell_name || item.name || item.location || item.cell_address;
+        return normalizeAreaName(rawName);
+      }).filter(Boolean);
+      const locations = [...new Set(rawLocations)];
+
       locations.forEach(loc => {
         const opt = document.createElement('option');
         opt.value = loc;
@@ -743,13 +744,20 @@
 
       if (!selectedLeader) return;
 
+      // Log device to OneSignal under the leader's canonical lowercase name
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        const canonical = normalizeLeaderName(selectedLeader).toLowerCase().trim();
+        await OneSignal.login(canonical);
+      });
+
       const match = cellLeadersList.find(item => 
         (item.zone || '').trim().toLowerCase() === selectedZone.toLowerCase() &&
         (item.cell_leader || item.leader || item.leader_name || '').trim().toLowerCase() === selectedLeader.toLowerCase()
       );
 
       if (match) {
-        const locationVal = match.cell_name || match.name || match.location;
+        const locationVal = normalizeAreaName(match.cell_name || match.name || match.location);
         const addressVal = match.cell_address || match.address || match.location;
         if (locationVal && cellNameSelect) {
           let exists = false;
@@ -783,7 +791,7 @@
 
       const matches = cellLeadersList.filter(item => 
         (item.zone || '').trim().toLowerCase() === selectedZone.toLowerCase() &&
-        (item.cell_name || item.name || item.location || '').trim().toLowerCase() === selectedCellName.toLowerCase()
+        normalizeAreaName(item.cell_name || item.name || item.location || '').trim().toLowerCase() === selectedCellName.toLowerCase()
       );
 
       if (matches.length > 0) {
@@ -869,10 +877,7 @@
             .from('cell_reports')
             .insert([
                 {
-                    zone: zone,
-                    cell_name: cellName,
                     leader_name: leader,
-                    cell_address: cellAddress,
                     location: fullLocation,
                     time_in: timeIn,
                     time_out: timeOut,

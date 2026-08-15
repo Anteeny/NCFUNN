@@ -347,7 +347,7 @@
 
     const { data, error } = await supabaseClient
         .from('members')
-        .select('member_name, department, zone, School_Address');
+        .select('*');
 
     if (error) {
         console.error('Error fetching personnel:', error.message);
