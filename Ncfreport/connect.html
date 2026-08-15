@@ -8,10 +8,9 @@
 <link rel="shortcut icon" type="image/x-icon" href="images.png?v=3">
 <link rel="apple-touch-icon" href="images.png?v=3">
  
-<script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <script src="https://cdn.tailwindcss.com"></script>
- 
+
  <style>
     :root {
       --gold: #3b82f6;
@@ -25,7 +24,25 @@
     }
 
     * { box-sizing: border-box; }
-    #onesignal-bell-container, #onesignal-slidedown-container, .onesignal-bell-launcher { display: none !important; }
+    #onesignal-bell-container,
+    #onesignal-slidedown-container,
+    #onesignal-slidedown-dialog,
+    .onesignal-bell-launcher,
+    .onesignal-bell-launcher-button,
+    .onesignal-bell-container,
+    .onesignal-slidedown-container,
+    .onesignal-slidedown-dialog,
+    iframe[src*="onesignal"],
+    [id*="onesignal"],
+    [class*="onesignal"] {
+      display: none !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      width: 0 !important;
+      height: 0 !important;
+      z-index: -9999 !important;
+    }
 
      body {
       font-family: 'DM Sans', sans-serif;
@@ -63,11 +80,6 @@
       width: 58px; height: 58px; border-radius: 50%;
       background: #FFFFFF; display: flex; align-items: center; justify-content: center;
       flex-shrink: 0; border: 2.5px solid var(--gold); overflow: hidden;
-      animation: pulse-ring 3s ease-in-out infinite;
-    }
-    @keyframes pulse-ring {
-      0%, 100% { box-shadow: 0 0 0 0px rgba(59, 130, 246,0.5); }
-      50%       { box-shadow: 0 0 0 8px rgba(59, 130, 246,0); }
     }
     .logo-wrap img { width: 50px; height: 50px; object-fit: contain; }
     .header-text { text-align: left; }
@@ -607,9 +619,25 @@
         });
     }
 
-    // 5. CELL LEADERS DATA & CASCADING DROPDOWNS
-    let cellLeadersList = [];
+    // 5. HELPER FORMATTING FUNCTIONS
+    function formatTime(val) {
+        if (!val) return '—';
+        const parts = val.split(':');
+        if (parts.length < 2) return val;
+        const hour = parseInt(parts[0]);
+        const m = parts[1];
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const disp = hour % 12 === 0 ? 12 : hour % 12;
+        return `${disp}:${m} ${ampm}`;
+    }
 
+    function formatCurrency(val) {
+        const num = parseFloat(val);
+        if (isNaN(num)) return '₦0.00';
+        return '₦' + num.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // 6. CELL LEADERS DATA & CASCADING DROPDOWNS
     const FALLBACK_CELL_LEADERS = [
       // HQ ZONE
       { zone: 'HQ', cell_name: 'Hostel', cell_leader: 'Umeadi Ifeyinwa', assistant: 'Anieke Cynthia', cell_address: 'Ọkpara Hostel' },
@@ -667,6 +695,9 @@
       { zone: 'Greenhouse', cell_name: 'Greenhouse', cell_leader: 'Eze Divine Favour', assistant: '—', cell_address: 'RM 4C Holy Lodge Greenhouse' }
     ];
 
+    // Initialize immediately with fallback data so form is NEVER empty or blocked
+    let cellLeadersList = [...FALLBACK_CELL_LEADERS];
+
     async function initCellLeadersData() {
       try {
         const { data, error } = await supabaseConnection
@@ -674,11 +705,9 @@
           .select('*');
         if (!error && data && data.length > 0) {
           cellLeadersList = data;
-        } else {
-          cellLeadersList = FALLBACK_CELL_LEADERS;
         }
       } catch (e) {
-        cellLeadersList = FALLBACK_CELL_LEADERS;
+        console.warn("Supabase cell_leaders load note:", e);
       }
     }
 
@@ -725,7 +754,7 @@
       leaders.forEach(item => {
         const opt = document.createElement('option');
         opt.value = item.leader;
-        opt.textContent = item.leader + ' (' + (item.address || item.location || '') + ')';
+        opt.textContent = item.leader + (item.address ? ' (' + item.address + ')' : '');
         opt.style.background = '#1e293b';
         opt.style.color = '#f8fafc';
         leaderSelect.appendChild(opt);
@@ -784,7 +813,6 @@
       );
 
       if (matches.length > 0) {
-        // If there's only one match, auto-populate leader and address
         if (matches.length === 1) {
           const match = matches[0];
           const leaderVal = match.cell_leader || match.leader;
@@ -796,15 +824,15 @@
             addressInput.value = addressVal;
           }
         } else {
-          // If multiple matches (e.g. multiple hostels named "Hostel"), filter the leader dropdown to show only leaders in this hostel
           if (leaderSelect) {
             leaderSelect.innerHTML = '<option value="" disabled selected style="background:#0f172a; color:#94a3b8;">-- Select Cell Leader --</option>';
             matches.forEach(match => {
               const leaderVal = match.cell_leader || match.leader;
+              const addressVal = match.cell_address || match.address || match.location;
               if (leaderVal) {
                 const opt = document.createElement('option');
                 opt.value = leaderVal;
-                opt.textContent = leaderVal;
+                opt.textContent = leaderVal + (addressVal ? ' (' + addressVal + ')' : '');
                 opt.style.background = '#1e293b';
                 opt.style.color = '#f8fafc';
                 leaderSelect.appendChild(opt);
@@ -819,7 +847,7 @@
       initCellLeadersData();
     });
 
-    // 6. THE MAIN SUBMIT FUNCTION
+    // 7. THE MAIN SUBMIT FUNCTION
    async function submitReport() {
     const zone = (document.getElementById('zone-select')?.value || '').trim();
     const cellName = (document.getElementById('cell-name-select')?.value || '').trim();

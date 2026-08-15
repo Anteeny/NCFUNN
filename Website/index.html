@@ -33,6 +33,25 @@
       margin: 0;
       padding: 0
     }
+    #onesignal-bell-container,
+    #onesignal-slidedown-container,
+    #onesignal-slidedown-dialog,
+    .onesignal-bell-launcher,
+    .onesignal-bell-launcher-button,
+    .onesignal-bell-container,
+    .onesignal-slidedown-container,
+    .onesignal-slidedown-dialog,
+    iframe[src*="onesignal"],
+    [id*="onesignal"],
+    [class*="onesignal"] {
+      display: none !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      width: 0 !important;
+      height: 0 !important;
+      z-index: -9999 !important;
+    }
 
     :root {
       --gold: #38bdf8;
