@@ -9356,8 +9356,13 @@
       showToast("Contact deleted from Supabase.");
     }
 
-    async function promoteMvpToMember(mvpId) {
-      const mvp = (_mvpData || []).find((m, idx) => (m.id || idx) === mvpId || m.id === mvpId);
+    async function promoteMvpToMember(identifier) {
+      let mvp;
+      if (typeof identifier === 'number') {
+        mvp = (_mvpData || []).find(m => m.id === identifier);
+      } else {
+        mvp = (_mvpData || []).find(m => (m['Name'] || m['name'] || '').toLowerCase() === String(identifier).toLowerCase());
+      }
       if (!mvp) return;
 
       const name = mvp['Name'] || mvp['name'] || mvp['full_name'] || 'Unnamed';
@@ -9394,19 +9399,32 @@
       _renderMvpTable();
     }
 
-    async function deleteMvp(mvpId) {
+    async function deleteMvp(identifier) {
       if (!confirm("Are you sure you want to delete this MVP record?")) return;
-      const mvp = (_mvpData || []).find((m, idx) => (m.id || idx) === mvpId || m.id === mvpId);
+      
+      let mvp;
+      if (typeof identifier === 'number') {
+        mvp = (_mvpData || []).find(m => m.id === identifier);
+      } else {
+        mvp = (_mvpData || []).find(m => (m['Name'] || m['name'] || '').toLowerCase() === String(identifier).toLowerCase());
+      }
+
+      if (!mvp) {
+        showToast("Error: Record not found.");
+        return;
+      }
 
       try {
-        if (mvp && mvp.id) {
+        if (mvp.id) {
           await supabaseClient.from('mvps').delete().eq('id', mvp.id);
-        } else if (mvp && mvp['Name']) {
-          await supabaseClient.from('mvps').delete().eq('Name', mvp['Name']);
+        } else {
+          await supabaseClient.from('mvps').delete().eq('Name', mvp['Name'] || mvp['name']);
         }
-      } catch (e) { }
+      } catch (e) {
+        console.error("Delete Supabase error:", e);
+      }
 
-      _mvpData = (_mvpData || []).filter((m, idx) => (m.id || idx) !== mvpId && m.id !== mvpId);
+      _mvpData = (_mvpData || []).filter(m => m !== mvp);
       _renderMvpTable();
       showToast("MVP record deleted.");
     }
@@ -10426,9 +10444,23 @@
 
       try {
         // 1. Fetch visitors from mvps table
-        const { data: mvpData, error: mvpError } = await supabaseClient.from('mvps').select('*');
+        const { data: mvpData, error: mvpError } = await supabaseClient
+          .from('mvps')
+          .select('*');
         if (mvpError) throw mvpError;
         const allVisitors = mvpData || [];
+        
+        // Sort by Date Visited descending safely in Javascript
+        allVisitors.sort((a, b) => {
+          const tA = new Date(a['Date Visited'] || a['date_visited'] || a['joined_date'] || 0).getTime();
+          const tB = new Date(b['Date Visited'] || b['date_visited'] || b['joined_date'] || 0).getTime();
+          if (tA === 0 && tB === 0) return 0;
+          return tB - tA;
+        });
+        // If all dates are missing, fallback to reversing the default insert order (last joined first)
+        if (allVisitors.every(v => !v['Date Visited'] && !v['date_visited'] && !v['joined_date'])) {
+          allVisitors.reverse();
+        }
 
         // 2. Fetch members and reports to calculate lapsed members
         const { data: membersData, error: mErr } = await supabaseClient.from('members').select('*');
@@ -10764,13 +10796,25 @@
       tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px"><i class="ti ti-loader" style="font-size:24px;opacity:0.3"></i></td></tr>`;
 
       try {
-        // No ordering by created_at — that column doesn't exist
+        // Fetch visitors
         const { data, error } = await supabaseClient
           .from('mvps')
           .select('*');
 
         if (error) throw error;
         _mvpData = data || [];
+        
+        // Sort by Date Visited descending safely in Javascript
+        _mvpData.sort((a, b) => {
+          const tA = new Date(a['Date Visited'] || a['date_visited'] || a['joined_date'] || 0).getTime();
+          const tB = new Date(b['Date Visited'] || b['date_visited'] || b['joined_date'] || 0).getTime();
+          if (tA === 0 && tB === 0) return 0;
+          return tB - tA;
+        });
+        // If all dates are missing, fallback to reversing the default insert order (last joined first)
+        if (_mvpData.every(v => !v['Date Visited'] && !v['date_visited'] && !v['joined_date'])) {
+          _mvpData.reverse();
+        }
 
         // ── Auto-promote to follow-up ──────────────────────────────────────────
         _mvpData.forEach(mvp => {
@@ -10896,6 +10940,9 @@
         const cleanPhone = String(phone).replace(/[^0-9+]/g, '');
         const safeJson = JSON.stringify({ Name: name, 'Phone Number': phone, Requests: prayerPoints }).replace(/"/g, '&quot;');
 
+        const deleteArg = m.id ? m.id : `'${name.replace(/'/g, "\\'")}'`;
+        const promoteArg = m.id ? m.id : `'${name.replace(/'/g, "\\'")}'`;
+
         return `<tr>
                 <td style="color:var(--gold); font-weight:600;">${i + 1}</td>
                 <td><strong style="color:#fff;">${name}</strong></td>
@@ -10908,14 +10955,14 @@
                 <td style="font-size:12px; color:var(--text-muted); max-width:180px;">${comments}</td>
                  <td>
                   <div style="display:flex; gap:6px; align-items:center;">
-                    <button class="btn btn-sm btn-gold" style="font-size:11px; padding:3px 8px; white-space:nowrap;" onclick="promoteMvpToMember(${m.id || i})" title="Promote to Full Member">
+                    <button class="btn btn-sm btn-gold" style="font-size:11px; padding:3px 8px; white-space:nowrap;" onclick="promoteMvpToMember(${promoteArg})" title="Promote to Full Member">
                       <i class="ti ti-star"></i> Promote to Member
                     </button>
                     <button class="btn btn-sm btn-outline" style="font-size:11px; padding:3px 8px; white-space:nowrap;" onclick="promoteMvpToFollowup('${safeJson.replace(/'/g, '&#39;')}')" title="Follow-Up">
                       <i class="ti ti-arrow-right"></i> Follow-Up
                     </button>
                     ${cleanPhone ? `<a href="https://wa.me/${cleanPhone.replace('+', '')}?text=Hello+${encodeURIComponent(name)}" target="_blank" class="btn btn-sm btn-outline" style="border-color:#25D366; color:#25D366; padding:3px 6px;" title="WhatsApp Chat"><i class="ti ti-brand-whatsapp"></i></a>` : ''}
-                    <button class="btn btn-sm btn-danger" onclick="deleteMvp(${m.id || i})" title="Delete MVP" style="padding:3px 6px;">
+                    <button class="btn btn-sm btn-danger" onclick="deleteMvp(${deleteArg})" title="Delete MVP" style="padding:3px 6px;">
                       <i class="ti ti-trash"></i>
                     </button>
                   </div>

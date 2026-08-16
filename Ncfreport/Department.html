@@ -194,6 +194,8 @@
     <div class="progress-dot done" id="dot1"></div>
     <div class="progress-line"></div>
     <div class="progress-dot" id="dot2"></div>
+    <div class="progress-line" id="line2" style="display:none;"></div>
+    <div class="progress-dot" id="dot3" style="display:none;"></div>
   </div>
 
   <!-- Step 1: Select Department & Service Date -->
@@ -216,6 +218,12 @@
         <option value="Deep Oasis">Deep Oasis</option>
       </select>
 
+      <label>Zone filter</label>
+      <select id="zoneFilter">
+        <option value="HQ">HQ Only</option>
+        <option value="ALL">All Zones</option>
+      </select>
+
       <label>Service Date</label>
       <input type="date" id="reportDate">
 
@@ -228,8 +236,30 @@
     <div class="card">
       <h2 class="step-title">Unit Personnel</h2>
       <div id="personnelList"></div>
+      
+      <!-- New Joiners Question -->
+      <div style="margin-top: 24px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 20px;">
+        <label style="font-weight:600; color:var(--gold-light);">How many new people joined the department today?</label>
+        <input type="number" id="newPeopleCount" min="0" value="0" style="width: 100%; padding: 12px; border-radius: 8px; background: rgba(0,0,0,0.2); border: 1px solid rgba(59,130,246,0.3); color: white;" />
+      </div>
+
       <button class="btn-primary" style="margin-top:20px" onclick="submitDeptReport()">Submit Departmental Report</button>
       <button class="btn-ghost" onclick="goStep(1)">Back</button>
+    </div>
+  </div>
+
+  <!-- Step 3: New Joiners Details -->
+  <div class="step" id="step3">
+    <div class="card">
+      <h2 class="step-title" style="color: var(--gold-light);">🆕 New Joiner Details</h2>
+      <p style="font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5;">
+        Please provide the contact details of the new members who joined your department today so the administration team can follow up with them.
+      </p>
+      
+      <div id="newPeopleInputsContainer"></div>
+      
+      <button class="btn-primary" style="margin-top:10px" onclick="submitNewJoiners()">Submit Details & Finish</button>
+      <button class="btn-ghost" onclick="goStep(2)">Back</button>
     </div>
   </div>
 
@@ -265,12 +295,32 @@
         renderPersonnel();
     }
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-    document.getElementById('step' + n)?.classList.add('active');
-    if(n === 'success') document.getElementById('successStep').classList.add('active');
     
-    // Update dots
-    document.getElementById('dot1').classList.toggle('done', n >= 1);
-    document.getElementById('dot2').classList.toggle('done', n >= 2);
+    if (n === 'success') {
+      document.getElementById('successStep').classList.add('active');
+    } else {
+      document.getElementById('step' + n)?.classList.add('active');
+    }
+    
+    // Update dots and line dynamically
+    document.getElementById('dot1').classList.toggle('done', n >= 1 || n === 'success');
+    document.getElementById('dot2').classList.toggle('done', n >= 2 || n === 'success');
+    
+    const count = parseInt(document.getElementById('newPeopleCount')?.value || '0');
+    const dot3 = document.getElementById('dot3');
+    const line2 = document.getElementById('line2');
+    
+    if (dot3 && line2) {
+      if (count > 0) {
+        dot3.style.display = 'block';
+        line2.style.display = 'block';
+        dot3.classList.toggle('done', n >= 3 || n === 'success');
+      } else {
+        dot3.style.display = 'none';
+        line2.style.display = 'none';
+      }
+    }
+    
     currentStep = n;
   }
 
@@ -302,9 +352,7 @@
 
     const { data, error } = await supabaseClient
       .from('members')
-      .select('department')
-      .neq('department', null)
-      .neq('department', '');
+      .select('department, zone, campus_zone, school_address');
 
     if (error) {
       console.error('Error fetching departments:', error.message);
@@ -313,7 +361,7 @@
     const deptSet = new Set(defaultDepts);
     if (data) {
       data.forEach(item => {
-        if (item.department && item.department.trim() !== '') {
+        if (isHqMember(item) && item.department && item.department.trim() !== '') {
           deptSet.add(normalizeDepartmentName(item.department));
         }
       });
@@ -342,8 +390,9 @@
 
   async function renderPersonnel() {
     const dept = document.getElementById('deptSelect').value;
+    const zoneFilter = document.getElementById('zoneFilter')?.value || 'HQ';
     const listDiv = document.getElementById('personnelList');
-    listDiv.innerHTML = 'Loading HQ members...';
+    listDiv.innerHTML = `Loading ${zoneFilter === 'HQ' ? 'HQ' : 'all'} members...`;
 
     const { data, error } = await supabaseClient
         .from('members')
@@ -360,14 +409,17 @@
     const filtered = (data || []).filter(m => {
       if (!m.department || m.department.trim() === '') return false;
       if (normalizeDepartmentName(m.department) !== canonicalSelected) return false;
-      return isHqMember(m);
+      if (zoneFilter === 'HQ') {
+        return isHqMember(m);
+      }
+      return true;
     });
 
     reportData = filtered.map(d => ({ name: d.member_name, status: null, reason: "" }));
     
     listDiv.innerHTML = '';
     if (reportData.length === 0) {
-        listDiv.innerHTML = `<p style="color: var(--muted); font-size: 14px;">No HQ members found in ${dept}.</p>`;
+        listDiv.innerHTML = `<p style="color: var(--muted); font-size: 14px;">No ${zoneFilter === 'HQ' ? 'HQ ' : ''}members found in ${dept}.</p>`;
         return;
     }
 
@@ -451,8 +503,133 @@
     btn.textContent = originalText;
     btn.disabled = false;
 
-    if (error) alert(error.message);
-    else goStep('success');
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    const newPeopleCount = parseInt(document.getElementById('newPeopleCount')?.value || '0');
+    if (newPeopleCount > 0) {
+      renderNewPeopleForm(newPeopleCount);
+      goStep(3);
+    } else {
+      goStep('success');
+    }
+  }
+
+  function renderNewPeopleForm(count) {
+    const container = document.getElementById('newPeopleInputsContainer');
+    container.innerHTML = '';
+    
+    for (let i = 0; i < count; i++) {
+      const personDiv = document.createElement('div');
+      personDiv.style.marginBottom = '24px';
+      personDiv.style.padding = '15px';
+      personDiv.style.background = 'rgba(255,255,255,0.03)';
+      personDiv.style.border = '1px solid rgba(59, 130, 246, 0.2)';
+      personDiv.style.borderRadius = '12px';
+      
+      personDiv.innerHTML = `
+        <h3 style="font-size: 14px; font-weight: 700; color: var(--gold); margin-bottom: 12px;">New Person #${i + 1}</h3>
+        <label>Full Name *</label>
+        <input type="text" id="new_person_name_${i}" placeholder="e.g. Brother Samuel" style="margin-bottom: 12px;" required />
+        
+        <label>Phone Number *</label>
+        <input type="tel" id="new_person_phone_${i}" placeholder="e.g. 08012345678" style="margin-bottom: 12px;" required />
+        
+        <label>School Address (Hostel & Room No) *</label>
+        <input type="text" id="new_person_address_${i}" placeholder="e.g. Room 12, Presidential Hostel" style="margin-bottom: 0;" required />
+      `;
+      container.appendChild(personDiv);
+    }
+  }
+
+  async function submitNewJoiners() {
+    const count = parseInt(document.getElementById('newPeopleCount').value) || 0;
+    const dept = document.getElementById('deptSelect').value;
+    const todayISO = new Date().toISOString().split('T')[0];
+    
+    const newJoiners = [];
+    for (let i = 0; i < count; i++) {
+      const name = document.getElementById(`new_person_name_${i}`).value.trim();
+      const phone = document.getElementById(`new_person_phone_${i}`).value.trim();
+      const address = document.getElementById(`new_person_address_${i}`).value.trim();
+      
+      if (!name || !phone || !address) {
+        alert(`Please fill in all details for Person #${i + 1}.`);
+        return;
+      }
+      
+      newJoiners.push({ name, phone, address });
+    }
+    
+    // Provide loading state
+    const btn = document.querySelector('#step3 .btn-primary');
+    const originalText = btn.textContent;
+    btn.textContent = 'Submitting Details...';
+    btn.disabled = true;
+    
+    let successCount = 0;
+    let lastError = null;
+    for (const person of newJoiners) {
+      try {
+        const mvpPayload = {
+          'Name': person.name,
+          'Phone Number': person.phone,
+          'Address': person.address,
+          'Open to Visitation': 'Yes',
+          'Dept Interest': dept,
+          'Complains / Comments': 'Joined department today'
+        };
+        
+        const legacyPayload = {
+          ...mvpPayload,
+          'Visitation': 'Yes',
+          'Department Joined': dept,
+          'Department in School': dept,
+          'Comments': 'Joined department today',
+          'Date Visited': todayISO
+        };
+        
+        const memberPayload = {
+          member_name: person.name,
+          member_phone: person.phone,
+          School_Address: person.address,
+          department: dept,
+          is_mvp: true,
+          joined_date: todayISO
+        };
+        
+        // 1. Insert into 'mvps' table (with fallback for legacy fields)
+        let { error: mvpErr } = await supabaseClient.from('mvps').insert([legacyPayload]);
+        if (mvpErr) {
+          console.warn("MVP table insert error, trying standard payload:", mvpErr.message);
+          const { error: retryErr } = await supabaseClient.from('mvps').insert([mvpPayload]);
+          mvpErr = retryErr;
+        }
+        if (mvpErr) throw mvpErr;
+        
+        // 2. Insert into 'members' table for general database synchronization
+        await supabaseClient.from('members').insert([memberPayload]);
+        successCount++;
+      } catch (e) {
+        console.error("Error saving new joiner:", e);
+        lastError = e.message || e;
+      }
+    }
+    
+    btn.textContent = originalText;
+    btn.disabled = false;
+    
+    if (successCount === count) {
+      alert(`Successfully registered all ${count} new joiners!`);
+      goStep('success');
+    } else if (successCount > 0) {
+      alert(`Registered ${successCount} of ${count} new joiners successfully. (Some failed: ${lastError})`);
+      goStep('success');
+    } else {
+      alert(`Failed to submit joiners to the database. Error details: ${lastError}. Please try again.`);
+    }
   }
 
   document.getElementById('reportDate').valueAsDate = new Date();
