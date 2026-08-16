@@ -4826,6 +4826,7 @@
                 <th style="width: 160px;">Cell Leader</th>
                 <th style="width: 140px;">Assistant Leader</th>
                 <th>Cell Address (Room & Lodge)</th>
+                <th style="width: 150px;">Meeting Schedule</th>
                 <th style="width: 90px; text-align: center;">Actions</th>
               </tr>
             </thead>
@@ -5610,46 +5611,144 @@
       }
     }
 
+    function queuePendingSync(id, action, data) {
+      let queue = [];
+      try {
+        const stored = localStorage.getItem('ncf_pending_cell_syncs');
+        if (stored) queue = JSON.parse(stored);
+      } catch (e) {}
+
+      // Remove existing queued items for this cell ID to avoid duplicate/stale actions
+      queue = queue.filter(item => item.id !== id);
+
+      queue.push({ id, action, data });
+      localStorage.setItem('ncf_pending_cell_syncs', JSON.stringify(queue));
+    }
+
+    function removeFromPendingSync(id) {
+      let queue = [];
+      try {
+        const stored = localStorage.getItem('ncf_pending_cell_syncs');
+        if (stored) queue = JSON.parse(stored);
+      } catch (e) {}
+
+      const filtered = queue.filter(item => item.id !== id);
+      if (filtered.length < queue.length) {
+        localStorage.setItem('ncf_pending_cell_syncs', JSON.stringify(filtered));
+      }
+    }
+
+    async function syncPendingCellChanges() {
+      let queue = [];
+      try {
+        const stored = localStorage.getItem('ncf_pending_cell_syncs');
+        if (stored) queue = JSON.parse(stored);
+      } catch (e) { return; }
+
+      if (queue.length === 0) return;
+
+      console.log(`Syncing ${queue.length} pending cell changes to Supabase...`);
+      let remainingQueue = [];
+
+      for (const item of queue) {
+        try {
+          if (item.action === 'upsert') {
+            const { error } = await supabaseClient.from('cell_leaders').upsert([item.data]);
+            if (error) throw error;
+          } else if (item.action === 'delete') {
+            const { error } = await supabaseClient.from('cell_leaders').delete().eq('id', String(item.id));
+            if (error) throw error;
+          }
+        } catch (err) {
+          console.warn(`Failed to sync cell change for ID ${item.id}:`, err);
+          remainingQueue.push(item);
+        }
+      }
+
+      if (remainingQueue.length > 0) {
+        localStorage.setItem('ncf_pending_cell_syncs', JSON.stringify(remainingQueue));
+      } else {
+        localStorage.removeItem('ncf_pending_cell_syncs');
+        showToast("All offline changes synced with database successfully!");
+      }
+    }
+
+    // Attempt to sync automatically when network connectivity returns
+    window.addEventListener('online', () => {
+      syncPendingCellChanges().catch(err => console.error("Sync error on reconnection:", err));
+    });
+
+    function mapToSupabasePayload(data) {
+      return {
+        id: String(data.id),
+        zone: data.zone || 'HQ',
+        cell_name: data.cell_name || data.name || '',
+        cell_leader: data.cell_leader || data.leader || '',
+        cell_address: data.cell_address || data.location || '',
+        assistant: data.assistant || '—',
+        schedule: data.schedule || 'Saturdays 5:00 PM'
+      };
+    }
+
     async function fetchConnectCellsFromSupabase() {
+      try {
+        await syncPendingCellChanges();
+      } catch (e) {
+        console.warn("Pre-fetch sync failed:", e);
+      }
+
       try {
         const { data, error } = await supabaseClient
           .from('cell_leaders')
           .select('*');
         if (!error && data) {
+          // Load local storage cells once to merge custom fields (assistant and schedule)
+          let localCells = [];
+          try {
+            const stored = localStorage.getItem('ncf_connect_cells');
+            if (stored) localCells = JSON.parse(stored);
+          } catch (e) {}
+
           if (data.length === 0) {
             console.log("Supabase cell_leaders table is empty. Seeding cells...");
             await seed41CellsToSupabase();
             const { data: refetched } = await supabaseClient.from('cell_leaders').select('*');
             if (refetched && refetched.length > 0) {
-              const formatted = refetched.map(sc => ({
-                id: String(sc.id),
-                zone: sc.zone || 'HQ',
-                name: sc.cell_name || sc.name || 'Cell',
-                cell_name: sc.cell_name || sc.name || 'Cell',
-                leader: sc.cell_leader || sc.leader || 'Leader',
-                cell_leader: sc.cell_leader || sc.leader || 'Leader',
-                assistant: sc.assistant || '—',
-                location: sc.cell_address || sc.location || 'Address',
-                cell_address: sc.cell_address || sc.location || 'Address',
-                schedule: sc.schedule || 'Saturdays 5:00 PM'
-              }));
+              const formatted = refetched.map(sc => {
+                const localCell = Array.isArray(localCells) ? localCells.find(lc => lc.id === String(sc.id)) : null;
+                return {
+                  id: String(sc.id),
+                  zone: sc.zone || 'HQ',
+                  name: sc.cell_name || sc.name || 'Cell',
+                  cell_name: sc.cell_name || sc.name || 'Cell',
+                  leader: sc.cell_leader || sc.leader || 'Leader',
+                  cell_leader: sc.cell_leader || sc.leader || 'Leader',
+                  assistant: sc.assistant || (localCell ? localCell.assistant : '—') || '—',
+                  location: sc.cell_address || sc.location || 'Address',
+                  cell_address: sc.cell_address || sc.location || 'Address',
+                  schedule: sc.schedule || (localCell ? localCell.schedule : 'Saturdays 5:00 PM') || 'Saturdays 5:00 PM'
+                };
+              });
               localStorage.setItem('ncf_connect_cells', JSON.stringify(formatted));
               return formatted;
             }
           }
 
-          const formatted = data.map(sc => ({
-            id: String(sc.id),
-            zone: sc.zone || 'HQ',
-            name: sc.cell_name || sc.name || 'Cell',
-            cell_name: sc.cell_name || sc.name || 'Cell',
-            leader: sc.cell_leader || sc.leader || 'Leader',
-            cell_leader: sc.cell_leader || sc.leader || 'Leader',
-            assistant: sc.assistant || '—',
-            location: sc.cell_address || sc.location || 'Address',
-            cell_address: sc.cell_address || sc.location || 'Address',
-            schedule: sc.schedule || 'Saturdays 5:00 PM'
-          }));
+          const formatted = data.map(sc => {
+            const localCell = Array.isArray(localCells) ? localCells.find(lc => lc.id === String(sc.id)) : null;
+            return {
+              id: String(sc.id),
+              zone: sc.zone || 'HQ',
+              name: sc.cell_name || sc.name || 'Cell',
+              cell_name: sc.cell_name || sc.name || 'Cell',
+              leader: sc.cell_leader || sc.leader || 'Leader',
+              cell_leader: sc.cell_leader || sc.leader || 'Leader',
+              assistant: sc.assistant || (localCell ? localCell.assistant : '—') || '—',
+              location: sc.cell_address || sc.location || 'Address',
+              cell_address: sc.cell_address || sc.location || 'Address',
+              schedule: sc.schedule || (localCell ? localCell.schedule : 'Saturdays 5:00 PM') || 'Saturdays 5:00 PM'
+            };
+          });
           localStorage.setItem('ncf_connect_cells', JSON.stringify(formatted));
           return formatted;
         }
@@ -6073,7 +6172,7 @@
       if (badge) badge.textContent = `${filtered.length} of ${cells.length} Cells`;
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:30px; color:var(--text-muted);"><i class="ti ti-folder-off" style="font-size:24px; opacity:0.3;"></i><br><span style="margin-top:6px; display:inline-block;">No cell records match your filter.</span></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:30px; color:var(--text-muted);"><i class="ti ti-folder-off" style="font-size:24px; opacity:0.3;"></i><br><span style="margin-top:6px; display:inline-block;">No cell records match your filter.</span></td></tr>`;
         return;
       }
 
@@ -6091,10 +6190,13 @@
                   <input type="text" id="db-cell-name-${c.id}" value="${c.name || ''}" style="width:100%; padding:6px 8px; border-radius:6px; background:#0f172a; color:#fff; border:1px solid rgba(255,255,255,0.15); font-size:12px; font-weight:600;">
                 </td>
                 <td>
-                  <input type="text" id="db-cell-location-${c.id}" value="${c.location || ''}" style="width:100%; padding:6px 8px; border-radius:6px; background:#0f172a; color:#fff; border:1px solid rgba(255,255,255,0.15); font-size:12px;">
+                  <input type="text" id="db-cell-leader-${c.id}" value="${c.leader || ''}" style="width:100%; padding:6px 8px; border-radius:6px; background:#0f172a; color:#fff; border:1px solid rgba(255,255,255,0.15); font-size:12px;">
                 </td>
                 <td>
-                  <input type="text" id="db-cell-leader-${c.id}" value="${c.leader || ''}" style="width:100%; padding:6px 8px; border-radius:6px; background:#0f172a; color:#fff; border:1px solid rgba(255,255,255,0.15); font-size:12px;">
+                  <input type="text" id="db-cell-assistant-${c.id}" value="${c.assistant || '—'}" style="width:100%; padding:6px 8px; border-radius:6px; background:#0f172a; color:#fff; border:1px solid rgba(255,255,255,0.15); font-size:12px;">
+                </td>
+                <td>
+                  <input type="text" id="db-cell-location-${c.id}" value="${c.location || ''}" style="width:100%; padding:6px 8px; border-radius:6px; background:#0f172a; color:#fff; border:1px solid rgba(255,255,255,0.15); font-size:12px;">
                 </td>
                 <td>
                   <input type="text" id="db-cell-schedule-${c.id}" value="${c.schedule || 'Saturdays 5:00 PM'}" style="width:100%; padding:6px 8px; border-radius:6px; background:#0f172a; color:#fff; border:1px solid rgba(255,255,255,0.15); font-size:12px;">
@@ -6116,28 +6218,62 @@
       const newName = (document.getElementById(`db-cell-name-${cellId}`)?.value || '').trim();
       const newLoc = (document.getElementById(`db-cell-location-${cellId}`)?.value || '').trim();
       const newLeader = (document.getElementById(`db-cell-leader-${cellId}`)?.value || '').trim();
+      const newAssistant = (document.getElementById(`db-cell-assistant-${cellId}`)?.value || '').trim();
+      const newSchedule = (document.getElementById(`db-cell-schedule-${cellId}`)?.value || 'Saturdays 5:00 PM').trim();
 
       if (!newName || !newLoc || !newLeader) {
         alert("Cell Name, Cell Address, and Cell Leader cannot be empty.");
         return;
       }
 
+      const updateData = {
+        id: String(cellId),
+        zone: newZone,
+        cell_name: newName,
+        cell_leader: newLeader,
+        cell_address: newLoc,
+        assistant: newAssistant,
+        schedule: newSchedule
+      };
+
+      const dbPayload = mapToSupabasePayload(updateData);
+      let savedToSupabase = false;
       try {
-        const { error } = await supabaseClient.from('cell_leaders').upsert([{
+        const { error } = await supabaseClient.from('cell_leaders').upsert([dbPayload]);
+        if (error) {
+          console.error("Database Error: " + error.message);
+        } else {
+          savedToSupabase = true;
+        }
+      } catch (e) {
+        console.error("Database Exception: " + e.message);
+      }
+
+      // Always save locally to avoid losing changes
+      let cells = getConnectCells();
+      const idx = cells.findIndex(c => c.id === String(cellId));
+      if (idx !== -1) {
+        cells[idx] = {
           id: String(cellId),
           zone: newZone,
+          name: newName,
           cell_name: newName,
+          leader: newLeader,
           cell_leader: newLeader,
-          cell_address: newLoc
-        }]);
-        if (error) {
-          alert("Database Error: " + error.message);
-          return;
-        }
+          assistant: newAssistant || '—',
+          location: newLoc,
+          cell_address: newLoc,
+          schedule: newSchedule
+        };
+        localStorage.setItem('ncf_connect_cells', JSON.stringify(cells));
+      }
+
+      if (savedToSupabase) {
+        removeFromPendingSync(String(cellId));
         showToast(`Updated "${newName}" in Supabase!`);
-      } catch (e) {
-        alert("Database Exception: " + e.message);
-        return;
+      } else {
+        queuePendingSync(String(cellId), 'upsert', dbPayload);
+        showToast(`Updated "${newName}" locally! (Queued for database sync)`);
       }
 
       await renderConnectPage();
@@ -6152,16 +6288,31 @@
 
       if (!confirm(`Are you sure you want to permanently delete "${cellName}"?`)) return;
 
+      let deletedFromSupabase = false;
       try {
         const { error } = await supabaseClient.from('cell_leaders').delete().eq('id', String(cellId));
         if (error) {
-          alert("Database Error: " + error.message);
-          return;
+          console.error("Database Error: " + error.message);
+        } else {
+          deletedFromSupabase = true;
         }
-        showToast(`Deleted "${cellName}".`);
       } catch (e) {
-        alert("Database Exception: " + e.message);
-        return;
+        console.error("Database Exception: " + e.message);
+      }
+
+      // Always save locally
+      const idx = cells.findIndex(c => c.id === cellId);
+      if (idx !== -1) {
+        cells.splice(idx, 1);
+        localStorage.setItem('ncf_connect_cells', JSON.stringify(cells));
+      }
+
+      if (deletedFromSupabase) {
+        removeFromPendingSync(String(cellId));
+        showToast(`Deleted "${cellName}" from Supabase!`);
+      } else {
+        queuePendingSync(String(cellId), 'delete', null);
+        showToast(`Deleted "${cellName}" locally! (Queued for database sync)`);
       }
 
       await renderConnectPage();
@@ -6172,8 +6323,10 @@
     async function saveNewCellFromDatabaseSheet() {
       const zone = document.getElementById('db-new-zone')?.value || 'HQ';
       const name = (document.getElementById('db-new-name')?.value || '').trim();
-      const location = (document.getElementById('db-new-location')?.value || '').trim();
+      const location = (document.getElementById('db-new-address')?.value || '').trim();
       const leader = (document.getElementById('db-new-leader')?.value || '').trim();
+      const assistant = (document.getElementById('db-new-assistant')?.value || '').trim();
+      const schedule = (document.getElementById('db-new-schedule')?.value || 'Saturdays 5:00 PM').trim();
 
       if (!name || !location || !leader) {
         alert("Please fill in Cell Name, Cell Address, and Cell Leader.");
@@ -6181,29 +6334,59 @@
       }
 
       const cellId = 'c-' + Date.now();
+      const newCellData = {
+        id: cellId,
+        zone: zone,
+        cell_name: name,
+        cell_leader: leader,
+        cell_address: location,
+        assistant: assistant,
+        schedule: schedule
+      };
 
+      const dbPayload = mapToSupabasePayload(newCellData);
+      let savedToSupabase = false;
       try {
-        const { data, error } = await supabaseClient.from('cell_leaders').insert([{
-          id: cellId,
-          zone: zone,
-          cell_name: name,
-          cell_leader: leader,
-          cell_address: location
-        }]).select();
-
+        const { data, error } = await supabaseClient.from('cell_leaders').insert([dbPayload]).select();
         if (error) {
-          alert("Database Error: " + error.message);
-          return;
+          console.error("Database Error: " + error.message);
+        } else {
+          savedToSupabase = true;
         }
-        showToast(`Saved "${name}" to Supabase!`);
       } catch (e) {
-        alert("Database Exception: " + e.message);
-        return;
+        console.error("Database Exception: " + e.message);
+      }
+
+      // Always save locally to avoid losing changes
+      const cells = getConnectCells();
+      const formattedCell = {
+        id: String(cellId),
+        zone: zone,
+        name: name,
+        cell_name: name,
+        leader: leader,
+        cell_leader: leader,
+        assistant: assistant || '—',
+        location: location,
+        cell_address: location,
+        schedule: schedule
+      };
+      cells.push(formattedCell);
+      localStorage.setItem('ncf_connect_cells', JSON.stringify(cells));
+
+      if (savedToSupabase) {
+        removeFromPendingSync(String(cellId));
+        showToast(`Saved "${name}" to Supabase!`);
+      } else {
+        queuePendingSync(String(cellId), 'upsert', dbPayload);
+        showToast(`Saved "${name}" locally! (Queued for database sync)`);
       }
 
       document.getElementById('db-new-name').value = '';
-      document.getElementById('db-new-location').value = '';
+      if (document.getElementById('db-new-address')) document.getElementById('db-new-address').value = '';
       document.getElementById('db-new-leader').value = '';
+      if (document.getElementById('db-new-assistant')) document.getElementById('db-new-assistant').value = '';
+      if (document.getElementById('db-new-schedule')) document.getElementById('db-new-schedule').value = 'Saturdays 5:00 PM';
 
       toggleAddNewCellForm();
       await renderConnectPage();
@@ -6371,6 +6554,7 @@
       const zone = document.getElementById('new-cell-zone').value;
       const location = document.getElementById('new-cell-location').value.trim();
       const leader = document.getElementById('new-cell-leader').value.trim();
+      const schedule = (document.getElementById('new-cell-schedule')?.value || 'Saturdays 5:00 PM').trim();
 
       if (!name || !location || !leader) {
         alert("Please fill in Area / Hostel, Cell Address (Room & Lodge), and Cell Leader.");
@@ -6378,33 +6562,61 @@
       }
 
       const cellId = 'c-' + Date.now();
+      const newCellData = {
+        id: cellId,
+        zone: zone,
+        cell_name: name,
+        cell_leader: leader,
+        cell_address: location,
+        assistant: '—',
+        schedule: schedule
+      };
 
+      const dbPayload = mapToSupabasePayload(newCellData);
+      let savedToSupabase = false;
       try {
-        const { data, error } = await supabaseClient.from('cell_leaders').insert([{
-          id: cellId,
-          zone: zone,
-          cell_name: name,
-          cell_leader: leader,
-          cell_address: location
-        }]).select();
-
+        const { data, error } = await supabaseClient.from('cell_leaders').insert([dbPayload]).select();
         if (error) {
           console.error("Supabase cell_leaders insert error:", error);
-          alert("Database Error: " + error.message);
-          return;
+        } else {
+          savedToSupabase = true;
         }
-        console.log("Successfully inserted cell into Supabase cell_leaders:", data);
-        showToast(`Saved "${name}" to Supabase!`);
       } catch (e) {
         console.error("Supabase cell_leaders insert exception:", e);
-        alert("Database Exception: " + e.message);
-        return;
+      }
+
+      // Always save locally to avoid losing changes
+      const cells = getConnectCells();
+      const formattedCell = {
+        id: String(cellId),
+        zone: zone,
+        name: name,
+        cell_name: name,
+        leader: leader,
+        cell_leader: leader,
+        assistant: '—',
+        location: location,
+        cell_address: location,
+        schedule: schedule
+      };
+      cells.push(formattedCell);
+      localStorage.setItem('ncf_connect_cells', JSON.stringify(cells));
+
+      if (savedToSupabase) {
+        removeFromPendingSync(String(cellId));
+        showToast(`Saved "${name}" to Supabase!`);
+      } else {
+        queuePendingSync(String(cellId), 'upsert', dbPayload);
+        showToast(`Saved "${name}" locally! (Queued for database sync)`);
       }
 
       closeModal('add-connect-cell');
       document.getElementById('new-cell-name').value = '';
       document.getElementById('new-cell-location').value = '';
       document.getElementById('new-cell-leader').value = '';
+      if (document.getElementById('new-cell-schedule')) {
+        document.getElementById('new-cell-schedule').value = 'Saturdays 5:00 PM';
+      }
 
       await renderConnectPage();
       if (typeof renderCellStatsTable === 'function') renderCellStatsTable();
@@ -6420,6 +6632,9 @@
       document.getElementById('edit-cell-zone').value = cell.zone;
       document.getElementById('edit-cell-location').value = cell.cell_address || cell.location;
       document.getElementById('edit-cell-leader').value = cell.cell_leader || cell.leader;
+      if (document.getElementById('edit-cell-schedule')) {
+        document.getElementById('edit-cell-schedule').value = cell.schedule || 'Saturdays 5:00 PM';
+      }
 
       openModal('edit-connect-cell');
     }
@@ -6430,31 +6645,64 @@
       const newZone = document.getElementById('edit-cell-zone').value;
       const newLoc = document.getElementById('edit-cell-location').value.trim();
       const newLeader = document.getElementById('edit-cell-leader').value.trim();
+      const newSchedule = (document.getElementById('edit-cell-schedule')?.value || 'Saturdays 5:00 PM').trim();
 
       if (!newName || !newLoc || !newLeader) {
         alert("Please fill in Cell Name, Cell Address, and Cell Leader.");
         return;
       }
 
-      try {
-        const { error } = await supabaseClient.from('cell_leaders').upsert([{
-          id: String(id),
-          zone: newZone,
-          cell_name: newName,
-          cell_leader: newLeader,
-          cell_address: newLoc
-        }]);
+      const cells = getConnectCells();
+      const existingCell = cells.find(c => c.id === id);
+      const assistant = existingCell ? (existingCell.assistant || '—') : '—';
 
+      const updateData = {
+        id: String(id),
+        zone: newZone,
+        cell_name: newName,
+        cell_leader: newLeader,
+        cell_address: newLoc,
+        assistant: assistant,
+        schedule: newSchedule
+      };
+
+      const dbPayload = mapToSupabasePayload(updateData);
+      let savedToSupabase = false;
+      try {
+        const { error } = await supabaseClient.from('cell_leaders').upsert([dbPayload]);
         if (error) {
           console.error("Supabase cell_leaders update error:", error);
-          alert("Database Error: " + error.message);
-          return;
+        } else {
+          savedToSupabase = true;
         }
-        showToast(`Updated "${newName}" in Supabase!`);
       } catch (e) {
         console.error("Supabase cell_leaders update exception:", e);
-        alert("Database Exception: " + e.message);
-        return;
+      }
+
+      // Always save locally to avoid losing changes
+      const idx = cells.findIndex(c => c.id === String(id));
+      if (idx !== -1) {
+        cells[idx] = {
+          id: String(id),
+          zone: newZone,
+          name: newName,
+          cell_name: newName,
+          leader: newLeader,
+          cell_leader: newLeader,
+          assistant: assistant,
+          location: newLoc,
+          cell_address: newLoc,
+          schedule: newSchedule
+        };
+        localStorage.setItem('ncf_connect_cells', JSON.stringify(cells));
+      }
+
+      if (savedToSupabase) {
+        removeFromPendingSync(String(id));
+        showToast(`Updated "${newName}" in Supabase!`);
+      } else {
+        queuePendingSync(String(id), 'upsert', dbPayload);
+        showToast(`Updated "${newName}" locally! (Queued for database sync)`);
       }
 
       closeModal('edit-connect-cell');
@@ -6476,18 +6724,31 @@
 
       if (!confirm(`Are you sure you want to permanently delete "${name}"?`)) return;
 
+      let deletedFromSupabase = false;
       try {
         const { error } = await supabaseClient.from('cell_leaders').delete().eq('id', String(cellId));
         if (error) {
           console.error("Supabase cell_leaders delete error:", error);
-          alert("Database Delete Error: " + error.message);
-          return;
+        } else {
+          deletedFromSupabase = true;
         }
-        showToast(`Deleted "${name}".`);
       } catch (e) {
         console.error("Supabase delete exception:", e);
-        alert("Database Exception: " + e.message);
-        return;
+      }
+
+      // Always save locally
+      const idx = cells.findIndex(c => c.id === cellId);
+      if (idx !== -1) {
+        cells.splice(idx, 1);
+        localStorage.setItem('ncf_connect_cells', JSON.stringify(cells));
+      }
+
+      if (deletedFromSupabase) {
+        removeFromPendingSync(String(cellId));
+        showToast(`Deleted "${name}" from Supabase!`);
+      } else {
+        queuePendingSync(String(cellId), 'delete', null);
+        showToast(`Deleted "${name}" locally! (Queued for database sync)`);
       }
 
       await renderConnectPage();
