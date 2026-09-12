@@ -1,24 +1,25 @@
-# PowerShell script to set Supabase Edge Function environment variables
+# PowerShell script to set Supabase Edge Function environment variables for send-reminders
 # Run this script from the root of your Attendance Tracker project.
 # Prerequisites:
 #   - Supabase CLI installed (npm i -g supabase)
 #   - Logged in (`supabase login`)
-#   - You are in the project directory containing supabase/config.toml
+#   - Linked to your project (`supabase link --project-ref cjbedftdexzcsydwayig`)
 
-# Define your variables below. Replace the placeholder values with the real ones.
 $envVars = @{
-    "META_ACCESS_TOKEN"         = "YOUR_META_ACCESS_TOKEN"  # Paste token from Meta Dev Console
-    "META_PHONE_NUMBER_ID"      = "1242999625564267"       # NCF UNN App Phone Number ID
-    "META_TEMPLATE_NAME"        = "hello_world"            # Use 'hello_world' for dev testing, or 'ncf_report_reminder'
-    "NCF_PORTAL_URL"            = "http://localhost:8000"
+    "WHAPI_API_KEY"             = "YOUR_WHAPI_API_TOKEN"            # Whapi.cloud API Token for admin@ncf channel
+    "ADMIN_PHONE"               = "2348106939820"                   # Tony Ubagu (NCF Admin Phone)
+    "NCF_PORTAL_URL"            = "https://reports.ncfunn.site"     # Base URL for attendance reporting portal
     "SUPABASE_URL"              = "https://cjbedftdexzcsydwayig.supabase.co"
-    "SUPABASE_SERVICE_ROLE_KEY" = "YOUR_SERVICE_ROLE_KEY"
+    "SUPABASE_SERVICE_ROLE_KEY" = "YOUR_SERVICE_ROLE_KEY"           # Service Role Key for background queries
+    # "MAKE_WEBHOOK_URL"        = "https://hook.eu2.make.com/..."   # Optional Make.com webhook URL
 }
+
+Write-Host "`n=== Setting Supabase Edge Function Secrets ===" -ForegroundColor Cyan
 
 foreach ($key in $envVars.Keys) {
     $value = $envVars[$key]
     if ($value.StartsWith("YOUR_")) {
-        Write-Host "⚠️  Please replace the placeholder for $key before running the script." -ForegroundColor Yellow
+        Write-Host "⚠️  Please replace the placeholder for $key before setting." -ForegroundColor Yellow
         continue
     }
     Write-Host "Setting $key..." -NoNewline
@@ -30,5 +31,8 @@ foreach ($key in $envVars.Keys) {
     }
 }
 
-Write-Host "All done. You may need to redeploy the function to apply the new env vars:"
+Write-Host "`nAll done! Deploy or redeploy the function to apply changes:"
 Write-Host "   supabase functions deploy send-reminders" -ForegroundColor Cyan
+Write-Host "`nTo trigger a test run:"
+Write-Host "   curl -X POST https://cjbedftdexzcsydwayig.supabase.co/functions/v1/send-reminders?force=true&dryRun=true" -ForegroundColor Yellow
+Write-Host "   curl -X POST https://cjbedftdexzcsydwayig.supabase.co/functions/v1/send-reminders?action=birthdays&dryRun=true`n" -ForegroundColor Yellow

@@ -1,8 +1,92 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// Helper: E.164 Nigerian Phone Normalizer for WhatsApp
+function formatWhatsAppPhone(phone: string): string {
+  if (!phone) return '';
+  let clean = phone.replace(/[^0-9]/g, '');
+  if (clean.startsWith('0') && clean.length === 11) {
+    clean = '234' + clean.slice(1);
+  } else if (clean.length === 10 && !clean.startsWith('234')) {
+    clean = '234' + clean;
+  }
+  if (!clean.endsWith('@s.whatsapp.net')) {
+    clean += '@s.whatsapp.net';
+  }
+  return clean;
+}
+
+// Helper: Parse member birthday across various formats
+function parseMemberBirthday(val: unknown): { month: number; day: number } | null {
+  if (!val) return null;
+  const str = String(val).trim();
+  if (!str) return null;
+
+  // Standard YYYY-MM-DD or MM/DD/YYYY
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    return { month: d.getUTCMonth() + 1, day: d.getUTCDate() };
+  }
+
+  // DD/MM/YYYY or DD-MM-YYYY
+  const dmMatch = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})(?:[\/\-\.](\d{2,4}))?$/);
+  if (dmMatch) {
+    const day = parseInt(dmMatch[1], 10);
+    const month = parseInt(dmMatch[2], 10);
+    if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+      return { month, day };
+    }
+  }
+
+  // Text month e.g. "12th August", "August 12"
+  const months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+  const mIndex = months.findIndex(m => str.toLowerCase().includes(m));
+  if (mIndex !== -1) {
+    const dayMatch = str.match(/\d{1,2}/);
+    if (dayMatch) {
+      return { month: mIndex + 1, day: parseInt(dayMatch[0], 10) };
+    }
+  }
+
+  return null;
+}
+
+// Helper: Normalize leader names to prevent casing/alias issues
+function normalizeLeaderName(name: string): string {
+  if (!name) return '';
+  const clean = name.replace(/^(Pastor|Bro|Sis|Deacon|Minister|Pst|Brother|Sister)\.?\s+/i, '');
+  return clean.replace(/\s+/g, ' ').trim();
+}
+
+// Helper: Send WhatsApp text message via Whapi.cloud
+async function sendWhapiMessage(toJid: string, message: string, whapiApiKey: string): Promise<boolean> {
+  if (!whapiApiKey || !toJid) return false;
+  try {
+    const response = await fetch("https://gate.whapi.cloud/messages/text", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${whapiApiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        to: toJid,
+        body: message
+      })
+    });
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error(`Whapi error sending to ${toJid}:`, errText);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error(`Failed to dispatch Whapi message to ${toJid}:`, err);
+    return false;
+  }
+}
+
 serve(async (req) => {
-  // Handle CORS preflight request
+  // CORS Preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', {
       headers: {
@@ -14,305 +98,344 @@ serve(async (req) => {
   }
 
   try {
-    // 1. Get environment variables
-    const metaToken = Deno.env.get('META_ACCESS_TOKEN');
-    const phoneNumberId = Deno.env.get('META_PHONE_NUMBER_ID');
-    const templateName = Deno.env.get('META_TEMPLATE_NAME') ?? 'ncf_report_reminder';
-    const portalUrl = Deno.env.get('NCF_PORTAL_URL') ?? 'http://localhost:8000';
-
-    // Supabase variables
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-
-    // 2. Initialize Supabase client
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // 3. Fetch G12 reports
-    const { data: g12Reports, error: g12Error } = await supabase
-      .from('g12_reports')
-      .select('*');
-    if (g12Error) throw g12Error;
-    const reports = g12Reports || [];
-
-    // Helper functions
-    const getServiceDate = (dateStr: string) => {
-      if (!dateStr) return 'Unknown Date';
-      let y: number | undefined, m: number | undefined, d: number | undefined;
-      const parts = dateStr.split('T')[0].split('-');
-      if (parts.length === 3) {
-        y = parseInt(parts[0], 10);
-        m = parseInt(parts[1], 10) - 1;
-        d = parseInt(parts[2], 10);
+    // 1. Environment & Config
+    const whapiApiKey = Deno.env.get('WHAPI_API_KEY') || '';
+    const adminPhone = Deno.env.get('ADMIN_PHONE') || '2348106939820';
+    const portalBaseUrl = (Deno.env.get('NCF_PORTAL_URL') || 'https://reports.ncfunn.site').replace(/\/+$/, '');
+    
+    // Parse Trigger Parameters (Query Params or JSON Body)
+    const url = new URL(req.url);
+    let bodyParams: Record<string, any> = {};
+    if (req.method === 'POST') {
+      try {
+        bodyParams = await req.json();
+      } catch (_) {
+        bodyParams = {};
       }
-      let dt: Date;
-      if (y !== undefined && !isNaN(y)) {
-        dt = new Date(y, m!, d!);
-      } else {
-        dt = new Date(dateStr);
-      }
-      if (isNaN(dt.getTime())) return 'Unknown Date';
-      const dayOfWeek = dt.getDay();
-      const target = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
-      if (dayOfWeek === 0 || dayOfWeek === 1 || dayOfWeek === 2) {
-        target.setDate(target.getDate() - dayOfWeek);
-      } else {
-        target.setDate(target.getDate() - (dayOfWeek - 3));
-      }
-      const yr = target.getFullYear();
-      const mo = String(target.getMonth() + 1).padStart(2, '0');
-      const da = String(target.getDate()).padStart(2, '0');
-      return `${yr}-${mo}-${da}`;
-    };
-
-    const normalizeLeaderName = (name: string) => {
-      if (!name) return '';
-      const clean = name.replace(/^(Pastor|Bro|Sis|Deacon|Minister|Pst|Brother|Sister)\.?\s+/i, '');
-      return clean.replace(/\s+/g, ' ').trim();
-    };
-
-    // Find the latest service date window
-    const allServiceDates = reports
-      .map(r => getServiceDate(r.report_date || r.meeting_date))
-      .filter(d => d !== 'Unknown Date');
-
-    if (allServiceDates.length === 0) {
-      return new Response(
-        JSON.stringify({ message: "No services logged yet. No reminders sent." }),
-        { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
-      );
     }
 
-    allServiceDates.sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
-    const targetServiceDate = allServiceDates[0];
+    const makeWebhookUrl = bodyParams.makeWebhookUrl || url.searchParams.get('makeWebhookUrl') || Deno.env.get('MAKE_WEBHOOK_URL') || 'https://hook.eu1.make.com/ivxypx8qbm9udwb1f7kqq84rptyc7wfx';
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || 'https://cjbedftdexzcsydwayig.supabase.co';
+    const defaultAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmVkZnRkZXh6Y3N5ZHdheWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTUwMjgsImV4cCI6MjA5MzYzMTAyOH0.xsvtG5NmI_9TDZQ5-MhcjtX4UIIAiH2kyOlpIPDkCdg';
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || Deno.env.get('SUPABASE_ANON_KEY') || defaultAnonKey;
 
-    // Collect the unique leader folder names submitted on this date
-    const foldersSubmittedSet = new Set<string>();
-    reports.forEach(r => {
-      const sDate = getServiceDate(r.report_date || r.meeting_date);
-      if (sDate === targetServiceDate && r.leader_name) {
-        foldersSubmittedSet.add(normalizeLeaderName(r.leader_name).toLowerCase().trim());
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const action = (bodyParams.action || url.searchParams.get('action') || 'reminders').toLowerCase();
+    const force = bodyParams.force === true || url.searchParams.get('force') === 'true';
+    const dryRun = bodyParams.dryRun === true || url.searchParams.get('dryRun') === 'true';
+
+    // Current Time in West Africa Time (WAT: UTC+1)
+    const nowUtc = new Date();
+    const nowWat = new Date(nowUtc.getTime() + 1 * 60 * 60 * 1000);
+    const dayOfWeek = nowWat.getUTCDay(); // 0 = Sunday, 3 = Wednesday
+    const hourWat = nowWat.getUTCHours();
+    const currentWatDateStr = nowWat.toISOString().split('T')[0];
+
+    // =========================================================================
+    // ACTION 1: DAILY BIRTHDAY ALERTS
+    // =========================================================================
+    if (action === 'birthdays') {
+      const currentMonth = nowWat.getUTCMonth() + 1;
+      const currentDay = nowWat.getUTCDate();
+
+      // Fetch all members with birthdays and assigned G12 leaders
+      const { data: members, error: mErr } = await supabase
+        .from('members')
+        .select('id, member_name, member_phone, birthday, g12_leader, g12_phone');
+
+      if (mErr) {
+        throw new Error("Members query error: " + mErr.message);
+      }
+
+      // Build leader phone directory for quick lookup
+      const leaderPhoneMap = new Map<string, string>();
+      members?.forEach(m => {
+        if (m.member_name) {
+          const canonical = normalizeLeaderName(m.member_name).toLowerCase();
+          const phone = m.member_phone || m.phone || m.g12_phone;
+          if (phone) leaderPhoneMap.set(canonical, phone);
+        }
+      });
+
+      const celebrants: Array<{
+        name: string;
+        phone: string;
+        g12Leader: string;
+        g12LeaderPhone: string;
+      }> = [];
+
+      members?.forEach(m => {
+        const rawBday = m.birthday || m.dob || m.date_of_birth;
+        const parsed = parseMemberBirthday(rawBday);
+        if (parsed && parsed.month === currentMonth && parsed.day === currentDay) {
+          const celebrantPhone = m.member_phone || m.phone || '';
+          const leaderName = m.g12_leader ? normalizeLeaderName(m.g12_leader) : '';
+          const leaderPhone = m.g12_phone || leaderPhoneMap.get(leaderName.toLowerCase()) || '';
+
+          celebrants.push({
+            name: m.member_name || 'Member',
+            phone: celebrantPhone,
+            g12Leader: leaderName,
+            g12LeaderPhone: leaderPhone
+          });
+        }
+      });
+
+      if (celebrants.length === 0) {
+        return new Response(JSON.stringify({
+          success: true,
+          message: `No birthdays found for today (${currentMonth}/${currentDay}).`,
+          celebrantsCount: 0
+        }), {
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        });
+      }
+
+      let alertsSent = 0;
+      const adminJid = formatWhatsAppPhone(adminPhone);
+
+      for (const c of celebrants) {
+        // Message 1: Alert to Admin (08106939820)
+        const adminMsg = `🎂 *Today's Birthday Alert!*\n\nToday is *${c.name}*'s birthday! 🎉\n📞 *Phone:* ${c.phone || 'N/A'}\n👥 *G12 Leader:* ${c.g12Leader || 'Unassigned'}\n\nReach out and celebrate them today! ✨`;
+
+        if (!dryRun && adminJid) {
+          const sent = await sendWhapiMessage(adminJid, adminMsg, whapiApiKey);
+          if (sent) alertsSent++;
+        }
+
+        // Message 2: Alert to Celebrant's G12 Leader
+        if (c.g12Leader && c.g12LeaderPhone) {
+          const leaderJid = formatWhatsAppPhone(c.g12LeaderPhone);
+          const leaderMsg = `🎂 *Birthday Alert in Your G12 Cell!*\n\nHi *${c.g12Leader}*, your member *${c.name}* is celebrating their birthday today! 🎉\n📞 *Phone:* ${c.phone || 'N/A'}\n\nKindly reach out to pray with and celebrate them today! 🙏✨`;
+
+          if (!dryRun && leaderJid) {
+            const sent = await sendWhapiMessage(leaderJid, leaderMsg, whapiApiKey);
+            if (sent) alertsSent++;
+          }
+        }
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        action: 'birthdays',
+        date: `${currentMonth}/${currentDay}`,
+        celebrantsCount: celebrants.length,
+        celebrants,
+        alertsDispatched: alertsSent,
+        dryRun
+      }), {
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      });
+    }
+
+    // =========================================================================
+    // ACTION 2: SERVICE DAY REMINDERS (WEDNESDAYS & SUNDAYS)
+    // =========================================================================
+    // Check if today is a service day (Wednesday = 3, Sunday = 0)
+    const isServiceDay = dayOfWeek === 0 || dayOfWeek === 3;
+    if (!isServiceDay && !force) {
+      return new Response(JSON.stringify({
+        success: false,
+        message: `Today is not a service day (Wednesdays & Sundays only). Current WAT Day: ${dayOfWeek}. Use ?force=true to override for testing.`
+      }), {
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      });
+    }
+
+    // Determine Run Mode: '7pm' (first call) or '11pm' (final urgent call)
+    let mode = (bodyParams.mode || url.searchParams.get('mode') || '').toLowerCase();
+    if (!mode) {
+      // Auto-detect based on current WAT hour: if 21:00 or later -> 11pm final call
+      mode = hourWat >= 21 ? '11pm' : '7pm';
+    }
+
+    const targetServiceDate = currentWatDateStr;
+
+    // 1. Fetch submitted G12 Reports for today
+    const { data: g12Submissions, error: g12Err } = await supabase
+      .from('g12_reports')
+      .select('leader_name, report_date');
+    if (g12Err) {
+      console.warn("Notice querying g12_reports:", g12Err.message);
+    }
+
+    const g12SubmittedSet = new Set<string>();
+    g12Submissions?.forEach(r => {
+      const d = (r.report_date || '').split('T')[0];
+      if (d === targetServiceDate && r.leader_name) {
+        g12SubmittedSet.add(normalizeLeaderName(r.leader_name).toLowerCase());
       }
     });
 
-    // 4. Fetch all expected leaders from members table including email and phone
+    // 2. Fetch submitted Departmental Reports for today
+    const { data: deptSubmissions, error: deptErr } = await supabase
+      .from('dept_reports')
+      .select('dept_name, report_date');
+    if (deptErr) {
+      console.warn("Could not query dept_reports:", deptErr.message);
+    }
+
+    const deptSubmittedSet = new Set<string>();
+    deptSubmissions?.forEach(r => {
+      const d = (r.report_date || '').split('T')[0];
+      if (d === targetServiceDate && r.dept_name) {
+        deptSubmittedSet.add(r.dept_name.trim().toLowerCase());
+      }
+    });
+
+    // 3. Fetch Expected G12 Leaders from members table
     const { data: membersData, error: membersError } = await supabase
       .from('members')
-      .select('g12_leader, leader_type, g12_phone, email, member_name');
-    if (membersError) throw membersError;
-    const members = membersData || [];
+      .select('member_name, g12_leader, leader_type, g12_phone, member_phone, department');
+    if (membersError) {
+      throw new Error("Members query error: " + membersError.message);
+    }
 
-    const expectedG12 = new Set<string>();
-    const expectedDH = new Set<string>();
-    const leaderPhones: Record<string, string> = {};
-    const leaderEmails: Record<string, string> = {};
+    const g12LeadersMap = new Map<string, string>(); // canonicalName -> phone
+    const deptLeadersList: Array<{ name: string; dept: string; phone: string }> = [];
 
-    members.forEach(m => {
+    membersData?.forEach(m => {
       if (m.g12_leader) {
         const canonical = normalizeLeaderName(m.g12_leader);
         if (canonical && canonical.toLowerCase() !== 'unassigned') {
-          const type = m.leader_type || 'G12';
-          if (type === 'G12') expectedG12.add(canonical);
-          else if (type === 'DH') expectedDH.add(canonical);
-
-          if (m.g12_phone && m.g12_phone.trim() !== '') {
-            leaderPhones[canonical.toLowerCase().trim()] = m.g12_phone.trim();
-          }
-          if (m.email && m.email.trim() !== '') {
-            leaderEmails[canonical.toLowerCase().trim()] = m.email.trim();
+          const phone = m.g12_phone || m.member_phone || '';
+          if (phone && !g12LeadersMap.has(canonical)) {
+            g12LeadersMap.set(canonical, phone);
           }
         }
       }
     });
 
-    // Compute missing leaders with their email and phone numbers
-    const missingLeaders: Array<{ name: string; type: string; phone: string; email: string }> = [];
+    // Fetch Departmental Leaders from dedicated department_leaders table
+    const { data: dbDeptLeaders, error: deptTableErr } = await supabase
+      .from('department_leaders')
+      .select('department_name, leader_name, phone');
 
-    expectedG12.forEach(name => {
-      if (!foldersSubmittedSet.has(name.toLowerCase().trim())) {
-        missingLeaders.push({
-          name,
-          type: 'G12',
-          phone: leaderPhones[name.toLowerCase().trim()] || "",
-          email: leaderEmails[name.toLowerCase().trim()] || ""
-        });
-      }
-    });
-
-    expectedDH.forEach(name => {
-      if (!foldersSubmittedSet.has(name.toLowerCase().trim())) {
-        missingLeaders.push({
-          name,
-          type: 'DH',
-          phone: leaderPhones[name.toLowerCase().trim()] || "",
-          email: leaderEmails[name.toLowerCase().trim()] || ""
-        });
-      }
-    });
-
-    // If no one is missing, stop silently!
-    if (missingLeaders.length === 0) {
-      return new Response(
-        JSON.stringify({ message: "All expected reports submitted! No reminders sent." }),
-        { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
-      );
-    }
-
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    const senderEmail = Deno.env.get('SENDER_EMAIL') || 'onboarding@resend.dev';
-    let emailsSentCount = 0;
-
-    // Send targeted email notifications to each missing leader's email address
-    if (resendApiKey) {
-      for (const leader of missingLeaders) {
-        if (leader.email) {
-          try {
-            const resendResponse = await fetch('https://api.resend.com/emails', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${resendApiKey}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                from: `NCF Attendance <${senderEmail}>`,
-                to: [leader.email],
-                subject: `⚠️ Reminder: NCF ${leader.type} Report Pending (${targetServiceDate})`,
-                html: `
-                  <div style="font-family: Arial, sans-serif; padding: 24px; background: #0f172a; color: #f8fafc; border-radius: 12px;">
-                    <h2 style="color: #f59e0b; margin-top: 0;">Hi ${leader.name},</h2>
-                    <p style="font-size: 15px; line-height: 1.6;">This is an automated reminder that your <strong>NCF ${leader.type} Folder Report</strong> for today's service (<strong>${targetServiceDate}</strong>) has not been submitted yet.</p>
-                    <p style="font-size: 14px; color: #94a3b8;">Please click below to access the portal and complete your report submission.</p>
-                    <div style="margin: 24px 0;">
-                      <a href="${portalUrl}" style="background: #f59e0b; color: #0f172a; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; display: inline-block;">Fill Out Report Now →</a>
-                    </div>
-                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 30px;">
-                    <p style="font-size: 11px; color: #64748b;">NCF UNN Discipleship & Attendance Tracker</p>
-                  </div>
-                `
-              })
-            });
-            if (resendResponse.ok) emailsSentCount++;
-          } catch (e) {
-            console.error(`Failed to send email to ${leader.email}:`, e);
-          }
-        }
-      }
-    }
-
-    // Helper: E.164 International Phone Normalizer
-    const formatWhatsAppPhone = (phone: string): string => {
-      if (!phone) return '';
-      let clean = phone.replace(/[^0-9]/g, '');
-      if (clean.startsWith('0') && clean.length === 11) {
-        clean = '234' + clean.slice(1);
-      } else if (clean.length === 10 && !clean.startsWith('234')) {
-        clean = '234' + clean;
-      }
-      return clean;
-    };
-
-    let whatsappSentCount = 0;
-    if (metaToken && phoneNumberId) {
-      const sendPromises = missingLeaders
-        .map(leader => ({ ...leader, formattedPhone: formatWhatsAppPhone(leader.phone) }))
-        .filter(leader => leader.formattedPhone && leader.formattedPhone.length >= 10)
-        .map(async (leader) => {
-          const cleanPhone = leader.formattedPhone;
-
-          let messagePayload: any = {
-            messaging_product: "whatsapp",
-            to: cleanPhone
-          };
-
-          if (templateName === 'text' || templateName === 'direct') {
-            messagePayload.type = "text";
-            messagePayload.text = {
-              body: `Hi ${leader.name}, this is a friendly reminder to please submit your NCF ${leader.type} folder report for today's service. Thank you!`
-            };
-          } else {
-            messagePayload.type = "template";
-            messagePayload.template = {
-              name: templateName,
-              language: { code: "en" }
-            };
-            if (templateName !== 'hello_world') {
-              messagePayload.template.components = [
-                {
-                  type: "body",
-                  parameters: [
-                    { type: "text", text: leader.name },
-                    { type: "text", text: leader.type }
-                  ]
-                }
-              ];
-            }
-          }
-
-          const metaResponse = await fetch(`https://graph.facebook.com/v17.0/${phoneNumberId}/messages`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${metaToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(messagePayload)
+    if (dbDeptLeaders && dbDeptLeaders.length > 0) {
+      dbDeptLeaders.forEach(dl => {
+        if (dl.department_name && dl.phone) {
+          deptLeadersList.push({
+            name: dl.leader_name || 'Department Leader',
+            dept: dl.department_name,
+            phone: dl.phone
           });
-
-          return metaResponse.ok;
-        });
-
-      const results = await Promise.all(sendPromises);
-      whatsappSentCount = results.filter(Boolean).length;
+        }
+      });
+    } else {
+      // Graceful fallback if table is newly created
+      const fallbackDepts = [
+        { name: "Emmanuella Okonkwo", dept: "Administration", phone: "07019319034" },
+        { name: "Kosisochukwu Mbamalu", dept: "Ushering", phone: "08119513436" },
+        { name: "Janefrancis Igwilo", dept: "MVP", phone: "07046716901" },
+        { name: "Kosisochukwu Onyibor", dept: "NCF Angels", phone: "07072136541" },
+        { name: "Ifeyinwa Umeadi", dept: "Temple tenders", phone: "09130530238" },
+        { name: "Udochukwu Aneke", dept: "Technical Unit", phone: "08104697634" },
+        { name: "Faithfulness Onu", dept: "Finances", phone: "08140286257" },
+        { name: "Nelson Okeke", dept: "Media Unit", phone: "08124498675" },
+        { name: "Godreigns Anyachebelu", dept: "Intercessory", phone: "09161975291" }
+      ];
+      fallbackDepts.forEach(fd => deptLeadersList.push(fd));
     }
 
-    // --- OneSignal Push Notifications ---
-    let pushSentCount = 0;
-    const onesignalApiKey = Deno.env.get("ONESIGNAL_API_KEY") || "";
-    const onesignalAppId = Deno.env.get("ONESIGNAL_APP_ID") || "031e7145-9dec-47e3-9020-9ccd9658bdaa";
+    // 4. Identify Missing G12 Leaders
+    const missingG12Leaders: Array<{ name: string; phone: string }> = [];
+    for (const [leaderName, phone] of g12LeadersMap.entries()) {
+      if (!g12SubmittedSet.has(leaderName.toLowerCase())) {
+        missingG12Leaders.push({ name: leaderName, phone });
+      }
+    }
 
-    if (missingLeaders.length > 0) {
-      // Target leaders by their canonical name (External ID)
-      const externalIds = missingLeaders.map(l => l.name.toLowerCase().trim());
-      externalIds.push("tubagu6@gmail.com"); // TEST EMAIL target
+    // 5. Identify Missing Departmental Leaders
+    const missingDeptLeaders: Array<{ name: string; dept: string; phone: string }> = [];
+    deptLeadersList.forEach(dl => {
+      if (!deptSubmittedSet.has(dl.dept.toLowerCase())) {
+        missingDeptLeaders.push(dl);
+      }
+    });
 
+    const g12PortalUrl = `${portalBaseUrl}/G12report.html`;
+    const deptPortalUrl = `${portalBaseUrl}/Department.html`;
+
+    let totalDispatched = 0;
+    const dispatchedLogs: Array<{ recipient: string; phone: string; type: string }> = [];
+
+    // Dispatch G12 Reminders
+    for (const leader of missingG12Leaders) {
+      if (!leader.phone) continue;
+      const jid = formatWhatsAppPhone(leader.phone);
+
+      const msg = mode === '11pm'
+        ? `⚠️ *Urgent: NCF G12 Report Pending*\n\nHi *${leader.name}*,\n\nYour G12 report for today's service (${targetServiceDate}) has not been received yet. The reporting portal closes by midnight ⏰.\n\nPlease submit it now:\n👉 ${g12PortalUrl}\n\nThank you!`
+        : `👋 Good evening, *${leader.name}*!\n\nFriendly reminder to submit your *NCF G12 Report* for today's service (${targetServiceDate}) 📝.\n\n🔗 *Report Portal:* ${g12PortalUrl}\n⏰ *Target:* Before 11:00 PM tonight\n\nThank you for your faithful leadership! 🙏`;
+
+      if (!dryRun && jid) {
+        const sent = await sendWhapiMessage(jid, msg, whapiApiKey);
+        if (sent) totalDispatched++;
+      }
+      dispatchedLogs.push({ recipient: leader.name, phone: leader.phone, type: 'G12' });
+    }
+
+    // Dispatch Departmental Reminders
+    for (const dLeader of missingDeptLeaders) {
+      if (!dLeader.phone) continue;
+      const jid = formatWhatsAppPhone(dLeader.phone);
+
+      const msg = mode === '11pm'
+        ? `⚠️ *Urgent: Departmental Report Pending*\n\nHi *${dLeader.name}*,\n\nThe *${dLeader.dept}* report for today's service (${targetServiceDate}) is still pending before midnight ⏰.\n\nPlease take a moment to submit it now:\n👉 ${deptPortalUrl}\n\nThank you!`
+        : `👋 Good evening, *${dLeader.name}*!\n\nFriendly reminder to submit your *NCF Departmental Report* (${dLeader.dept}) for today's service (${targetServiceDate}) 📋.\n\n🔗 *Report Portal:* ${deptPortalUrl}\n⏰ *Target:* Before 11:00 PM tonight\n\nThank you for your diligent service! 🙏`;
+
+      if (!dryRun && jid) {
+        const sent = await sendWhapiMessage(jid, msg, whapiApiKey);
+        if (sent) totalDispatched++;
+      }
+      dispatchedLogs.push({ recipient: `${dLeader.name} (${dLeader.dept})`, phone: dLeader.phone, type: 'Departmental' });
+    }
+
+    // Optional: Forward summary to Make.com Webhook if configured
+    if (makeWebhookUrl && !dryRun) {
       try {
-        const osResponse = await fetch("https://onesignal.com/api/v1/notifications", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Basic ${onesignalApiKey}`
-          },
+        await fetch(makeWebhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            app_id: onesignalAppId,
-            include_external_user_ids: externalIds,
-            headings: { "en": "⚠️ NCF Report Reminder" },
-            contents: { "en": `Hi, click now to fill your report 📝. forms close by midnight ⏰` },
-            url: portalUrl
+            serviceDate: targetServiceDate,
+            mode,
+            missingG12Count: missingG12Leaders.length,
+            missingDeptCount: missingDeptLeaders.length,
+            missingG12Leaders,
+            missingDeptLeaders
           })
         });
-        if (osResponse.ok) {
-          pushSentCount = externalIds.length;
-        } else {
-          console.error("OneSignal push error:", await osResponse.text());
-        }
-      } catch (e) {
-        console.error("Failed to send OneSignal push:", e);
+      } catch (makeErr) {
+        console.warn("Make.com forward notice:", makeErr);
       }
     }
 
-    return new Response(
-      JSON.stringify({
-        message: `Calculated missing reports for ${missingLeaders.length} leader(s).`,
-        missingLeaders,
-        emailsSent: emailsSentCount,
-        whatsappSent: whatsappSentCount,
-        pushSent: pushSentCount
-      }),
-      { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" } }
-    );
+    return new Response(JSON.stringify({
+      success: true,
+      action: 'reminders',
+      mode,
+      serviceDate: targetServiceDate,
+      missingG12Count: missingG12Leaders.length,
+      missingDeptCount: missingDeptLeaders.length,
+      totalDispatched,
+      dispatchedLogs,
+      dryRun
+    }), {
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+    });
 
-  } catch (error: any) {
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }, status: 500 }
-    );
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error 
+      ? err.message 
+      : (typeof err === 'object' && err !== null && 'message' in err)
+        ? (err as any).message
+        : JSON.stringify(err);
+    console.error("send-reminders execution failed:", errorMsg);
+    return new Response(JSON.stringify({ success: false, error: errorMsg }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+    });
   }
-})
+});
