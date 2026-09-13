@@ -1175,18 +1175,20 @@
     }
 
     .portal-header-card {
-      margin: 20px 24px 0 24px !important;
+      margin: 22px 28px 0 28px !important;
       display: flex !important;
       align-items: center !important;
       justify-content: space-between !important;
-      gap: 16px !important;
-      padding: 18px 24px !important;
-      background: linear-gradient(135deg, rgba(37, 99, 235, 0.18) 0%, rgba(15, 23, 42, 0.88) 100%) !important;
-      backdrop-filter: blur(20px) !important;
-      -webkit-backdrop-filter: blur(20px) !important;
-      border: 1px solid rgba(59, 130, 246, 0.28) !important;
-      border-radius: 18px !important;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+      gap: 20px !important;
+      padding: 26px 36px !important;
+      min-height: 106px !important;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.22) 0%, rgba(15, 23, 42, 0.92) 100%) !important;
+      backdrop-filter: blur(24px) !important;
+      -webkit-backdrop-filter: blur(24px) !important;
+      border: 1.5px solid rgba(59, 130, 246, 0.32) !important;
+      border-radius: 22px !important;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45), 0 0 35px rgba(37, 99, 235, 0.12) !important;
+      transition: all 0.3s ease;
     }
 
     .portal-header-left {
@@ -1194,30 +1196,73 @@
       min-width: 0;
     }
 
+    .portal-header-brand {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      min-width: 0;
+    }
+
+    .portal-header-logo-box {
+      width: 62px;
+      height: 62px;
+      min-width: 62px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1.5px solid rgba(255, 255, 255, 0.22);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      flex-shrink: 0;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .portal-header-logo-box:hover {
+      transform: scale(1.05);
+      box-shadow: 0 10px 28px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .portal-header-logo {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+    }
+
+    .portal-header-text {
+      flex: 1;
+      min-width: 0;
+    }
+
     .portal-header-left .ann-title {
-      font-size: 20px;
-      font-weight: 700;
+      font-size: 25px;
+      font-weight: 800;
       color: #ffffff !important;
-      line-height: 1.25;
-      letter-spacing: -0.01em;
+      line-height: 1.22;
+      letter-spacing: -0.02em;
     }
 
     .portal-header-left .ann-sub {
-      font-size: 13px;
-      color: rgba(255, 255, 255, 0.72) !important;
-      margin-top: 4px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.78) !important;
+      margin-top: 5px;
+      line-height: 1.4;
     }
 
     .portal-header-right {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 16px;
       flex-shrink: 0;
     }
 
     .portal-header-right .topbar-date {
       color: #94a3b8;
-      font-size: 13px;
+      font-size: 13.5px;
       font-weight: 500;
       white-space: nowrap;
     }
@@ -1227,36 +1272,36 @@
       background: rgba(59, 130, 246, 0.25) !important;
       color: #60a5fa !important;
       border: 1px solid rgba(59, 130, 246, 0.4) !important;
-      padding: 5px 12px;
+      padding: 6px 14px;
       border-radius: 20px;
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 600;
       white-space: nowrap;
     }
 
     .header-menu-btn {
       background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       color: #ffffff;
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
+      width: 50px;
+      height: 50px;
+      border-radius: 14px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      font-size: 22px;
+      font-size: 25px;
       cursor: pointer;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
       flex-shrink: 0;
     }
 
     .header-menu-btn:hover {
-      background: rgba(59, 130, 246, 0.25);
-      border-color: rgba(59, 130, 246, 0.5);
+      background: rgba(59, 130, 246, 0.3);
+      border-color: rgba(59, 130, 246, 0.6);
       color: #60a5fa;
-      transform: translateY(-1px);
-      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
     }
 
     .header-menu-btn:active {
@@ -1295,9 +1340,9 @@
       border: 1px solid rgba(255, 255, 255, 0.08) !important;
       border-radius: 14px !important;
       padding: 0 20px;
-      height: 44px;
+      height: 48px;
       overflow: hidden;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
       display: flex;
       align-items: center;
       gap: 0;
@@ -1305,14 +1350,15 @@
     }
 
     .dash-ticker-label {
-      font-size: 10px;
+      font-size: 10.5px;
       font-weight: 700;
       letter-spacing: 0.1em;
       color: var(--gold);
       text-transform: uppercase;
       white-space: nowrap;
-      margin-right: 14px;
+      margin-right: 16px;
       flex-shrink: 0;
+      transition: color 0.3s ease;
     }
 
     .dash-ticker-track {
@@ -1325,7 +1371,7 @@
       display: flex;
       gap: 32px;
       white-space: nowrap;
-      animation: tickerScroll 24s linear infinite;
+      animation: tickerScroll 28s linear infinite;
     }
 
     .dash-ticker-inner:hover {
@@ -1336,9 +1382,42 @@
       display: inline-flex;
       align-items: center;
       gap: 7px;
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.85);
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.88);
       flex-shrink: 0;
+    }
+
+    .dash-ticker-item.bday-today {
+      background: rgba(245, 158, 11, 0.18);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      padding: 3px 12px;
+      border-radius: 16px;
+      color: #fde047;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .dash-ticker-item.bday-today:hover {
+      background: rgba(245, 158, 11, 0.32);
+      border-color: #f59e0b;
+      transform: scale(1.02);
+    }
+
+    .dash-ticker-item.bday-upcoming {
+      background: rgba(59, 130, 246, 0.14);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      padding: 3px 10px;
+      border-radius: 16px;
+      color: #93c5fd;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .dash-ticker-item.bday-upcoming:hover {
+      background: rgba(59, 130, 246, 0.26);
+      border-color: #60a5fa;
+      transform: scale(1.02);
     }
 
     .dash-ticker-item .zone-dot {
@@ -1569,19 +1648,33 @@
 
       .portal-header-card {
         margin: 12px 12px 0 12px !important;
-        padding: 14px 16px !important;
-        gap: 10px !important;
+        padding: 16px 18px !important;
+        gap: 12px !important;
         flex-direction: row !important;
         align-items: center !important;
         justify-content: space-between !important;
+        min-height: auto !important;
+        border-radius: 18px !important;
+      }
+
+      .portal-header-brand {
+        gap: 12px !important;
+      }
+
+      .portal-header-logo-box {
+        width: 46px !important;
+        height: 46px !important;
+        min-width: 46px !important;
+        border-radius: 12px !important;
+        padding: 4px !important;
       }
 
       .portal-header-left .ann-title {
-        font-size: 16px !important;
+        font-size: 17px !important;
       }
 
       .portal-header-left .ann-sub {
-        font-size: 11px !important;
+        font-size: 11.5px !important;
       }
 
       .portal-header-right {
@@ -1594,9 +1687,10 @@
       }
 
       .header-menu-btn {
-        width: 40px !important;
-        height: 40px !important;
-        font-size: 20px !important;
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 22px !important;
+        border-radius: 12px !important;
       }
 
       /* Single Column G12/DH Leaders Grid for Mobile */
@@ -2897,7 +2991,7 @@
     }
   </style>
 
-  <div id="login-screen" class="login-screen" style="display: none;">
+  <div id="login-screen" class="login-screen">
     <div class="login-backdrop"></div>
     <div class="login-container">
 
@@ -3261,11 +3355,18 @@
     </nav>
 
     <div class="main">
-      <!-- UPDATED PORTAL HEADER CARD WITH 3-LINE MENU ON RIGHT -->
+      <!-- UPDATED PORTAL HEADER CARD WITH LOGO & 3-LINE MENU ON RIGHT -->
       <div class="announcement-banner portal-header-card">
         <div class="portal-header-left">
-          <div class="ann-title" id="main-header-title">Welcome back to NCF UNN Portal</div>
-          <div class="ann-sub" id="main-header-sub">Track your congregation, follow-ups, and growth all in one place</div>
+          <div class="portal-header-brand">
+            <div class="portal-header-logo-box">
+              <img src="images.png" alt="NCF UNN Logo" class="portal-header-logo">
+            </div>
+            <div class="portal-header-text">
+              <div class="ann-title" id="main-header-title">Welcome back to NCF UNN Portal</div>
+              <div class="ann-sub" id="main-header-sub">Track your congregation, follow-ups, and growth all in one place</div>
+            </div>
+          </div>
         </div>
         <div class="portal-header-right">
           <span class="topbar-date" id="today-date"></span>
@@ -5371,6 +5472,7 @@
       populateG12LeadersDatalist();
       if (typeof renderDatabasePage === 'function') renderDatabasePage();
       if (typeof renderBirthdayAlert === 'function') renderBirthdayAlert();
+      if (typeof renderDashboardTicker === 'function') renderDashboardTicker();
       if (typeof renderG12 === 'function') renderG12();
     }
 
@@ -5584,20 +5686,34 @@
         alert("Login failed: " + error.message);
       } else {
         isAuthenticated = true;
+        try { localStorage.setItem('ncf_active_page', 'dashboard'); } catch(e) {}
         toggleAppVisibility(true);
+        showPage('dashboard');
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
         showToast('Signed in successfully!');
         logActivity('Admin signed in', 'navy', 'ti-login');
         testConnection(); // Test connection after authenticated login
-        loadAllData(); // Load all dashboard data
+        loadAllData(true); // Load all dashboard data and guarantee dashboard view
+        setTimeout(() => {
+          showPage('dashboard');
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        }, 80);
       }
     }
 
     function bypassLogin() {
       isAuthenticated = true;
+      try { localStorage.setItem('ncf_active_page', 'dashboard'); } catch(e) {}
       toggleAppVisibility(true);
+      showPage('dashboard');
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       showToast('Preview mode enabled!');
       logActivity('Preview mode enabled', 'gold', 'ti-eye');
-      loadAllData();
+      loadAllData(true);
+      setTimeout(() => {
+        showPage('dashboard');
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      }, 80);
     }
 
     async function logoutAdmin() {
@@ -7775,29 +7891,105 @@
       if (!inner) return;
       const ZONES = ['HQ', 'Odenigwe', 'Odim', 'Hilltop', 'Franco', 'JSQ', 'Greenhouse'];
       try {
-        const { data } = await supabaseClient
-          .from('service_reports')
-          .select('zone, total_attendance, date, service_type')
-          .order('date', { ascending: false })
-          .limit(50);
-        if (!data || data.length === 0) return;
-        const latestDate = data[0].date;
-        const latestServiceType = data[0].service_type || '';
-        const latest = data.filter(r => r.date === latestDate);
-        const zoneMap = {};
-        latest.forEach(r => {
-          const z = (r.zone || '').trim();
-          zoneMap[z] = (zoneMap[z] || 0) + (parseInt(r.total_attendance) || 0);
-        });
-        const total = Object.values(zoneMap).reduce((a, b) => a + b, 0);
-        const dateStr = new Date(latestDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        const items = [
-          `<span class="dash-ticker-item"><span class="zone-dot" style="background:#edbf3e"></span> <span class="zone-val">${latestServiceType || 'Service'}</span> · ${dateStr}</span>`,
-          `<span class="dash-ticker-item"><span class="zone-dot" style="background:#4caf7c"></span> Total: <span class="zone-val">${total}</span></span>`,
-          ...ZONES.filter(z => zoneMap[z] > 0).map(z =>
-            `<span class="dash-ticker-item"><span class="zone-dot"></span> ${z}: <span class="zone-val">${zoneMap[z]}</span></span>`
-          )
-        ];
+        // 1. Gather Birthday Alerts for the Live Ticker
+        const birthdayItems = [];
+        const allMembers = state.members || [];
+        const todayCelebrants = [];
+        const upcoming7Days = [];
+        const allCelebrantsSorted = [];
+
+        if (typeof parseMemberBirthday === 'function' && typeof calculateNextBirthdayDays === 'function') {
+          allMembers.forEach(m => {
+            const bdayObj = parseMemberBirthday(m.birthday || m.dob || m.date_of_birth);
+            if (!bdayObj) return;
+            const days = calculateNextBirthdayDays(bdayObj);
+            const label = typeof formatBirthdayLabel === 'function' ? formatBirthdayLabel(bdayObj) : '';
+            const item = { ...m, bdayObj, days, label };
+            allCelebrantsSorted.push(item);
+            if (days === 0) {
+              todayCelebrants.push(item);
+            } else if (days > 0 && days <= 7) {
+              upcoming7Days.push(item);
+            }
+          });
+        }
+
+        if (todayCelebrants.length > 0) {
+          todayCelebrants.forEach(c => {
+            const deptStr = c.department ? ` (${c.department})` : '';
+            birthdayItems.push(
+              `<span class="dash-ticker-item bday-today" onclick="openBirthdayCalendarModal()" title="Today's Birthday! Click to view calendar"><span class="zone-dot" style="background:#f59e0b;box-shadow:0 0 8px #f59e0b"></span> 🎂 TODAY'S BIRTHDAY: <span class="zone-val" style="color:#ffffff;text-decoration:underline dotted #f59e0b">${c.member_name}</span>${deptStr} 🎉</span>`
+            );
+          });
+        }
+
+        if (upcoming7Days.length > 0) {
+          upcoming7Days.sort((a, b) => a.days - b.days);
+          upcoming7Days.slice(0, 4).forEach(u => {
+            const dayStr = u.days === 1 ? 'Tomorrow' : `in ${u.days} days`;
+            birthdayItems.push(
+              `<span class="dash-ticker-item bday-upcoming" onclick="openBirthdayCalendarModal()" title="Upcoming Birthday! Click to view calendar"><span class="zone-dot" style="background:#3b82f6"></span> 🎂 Upcoming Birthday: <span class="zone-val" style="color:#ffffff">${u.member_name}</span> (${u.label} · ${dayStr})</span>`
+            );
+          });
+        } else if (todayCelebrants.length === 0 && allCelebrantsSorted.length > 0) {
+          allCelebrantsSorted.sort((a, b) => a.days - b.days);
+          const nextC = allCelebrantsSorted[0];
+          if (nextC) {
+            birthdayItems.push(
+              `<span class="dash-ticker-item bday-upcoming" onclick="openBirthdayCalendarModal()" title="Next Birthday"><span class="zone-dot" style="background:#eab308"></span> 🎂 Next Birthday: <span class="zone-val" style="color:#ffffff">${nextC.member_name}</span> (${nextC.label} · in ${nextC.days} days)</span>`
+            );
+          }
+        }
+
+        // Update live ticker label indicator if birthdays are active
+        const tickerLabel = document.querySelector('.dash-ticker-label');
+        if (tickerLabel) {
+          if (todayCelebrants.length > 0) {
+            tickerLabel.innerHTML = `🔴 Live · 🎂 Today's Birthday`;
+            tickerLabel.style.color = '#f59e0b';
+          } else if (upcoming7Days.length > 0) {
+            tickerLabel.innerHTML = `🔴 Live · 🎂 Birthday Alert`;
+            tickerLabel.style.color = '#fde047';
+          } else {
+            tickerLabel.innerHTML = `🔴 Live`;
+            tickerLabel.style.color = 'var(--gold)';
+          }
+        }
+
+        // 2. Query Service Reports for Attendance Numbers
+        let attendanceItems = [];
+        try {
+          const { data } = await supabaseClient
+            .from('service_reports')
+            .select('zone, total_attendance, date, service_type')
+            .order('date', { ascending: false })
+            .limit(50);
+          if (data && data.length > 0) {
+            const latestDate = data[0].date;
+            const latestServiceType = data[0].service_type || '';
+            const latest = data.filter(r => r.date === latestDate);
+            const zoneMap = {};
+            latest.forEach(r => {
+              const z = (r.zone || '').trim();
+              zoneMap[z] = (zoneMap[z] || 0) + (parseInt(r.total_attendance) || 0);
+            });
+            const total = Object.values(zoneMap).reduce((a, b) => a + b, 0);
+            const dateStr = new Date(latestDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            attendanceItems = [
+              `<span class="dash-ticker-item"><span class="zone-dot" style="background:#edbf3e"></span> <span class="zone-val">${latestServiceType || 'Service'}</span> · ${dateStr}</span>`,
+              `<span class="dash-ticker-item"><span class="zone-dot" style="background:#4caf7c"></span> Total: <span class="zone-val">${total}</span></span>`,
+              ...ZONES.filter(z => zoneMap[z] > 0).map(z =>
+                `<span class="dash-ticker-item"><span class="zone-dot"></span> ${z}: <span class="zone-val">${zoneMap[z]}</span></span>`
+              )
+            ];
+          }
+        } catch (err) {
+          console.warn('Attendance ticker fetch error', err);
+        }
+
+        const items = [...birthdayItems, ...attendanceItems];
+        if (items.length === 0) return;
+
         // Duplicate items for seamless loop
         const allItems = [...items, ...items].join('<span style="color:rgba(255,255,255,0.25);margin:0 8px">·</span>');
         inner.innerHTML = allItems;
@@ -13640,6 +13832,12 @@
         if (loginScreen) loginScreen.style.display = 'none';
         if (appContainer) appContainer.style.display = 'flex';
         stopAnnSlider();
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        if (appContainer) appContainer.scrollTop = 0;
+        const main = document.querySelector('.main');
+        if (main) main.scrollTop = 0;
       } else {
         if (loginScreen) loginScreen.style.display = 'flex';
         if (appContainer) appContainer.style.display = 'none';
@@ -13827,28 +14025,75 @@
       }
     }
 
-    function loadAllData() {
+    function loadAllData(forceDashboard = false) {
+      if (!isAuthenticated) return;
+
       renderDashboard();
       updateBadges();
       populateUnitDropdowns();
       fetchAndRenderMembers();
       renderContacts();
-      renderReports();
+      if (typeof renderMvp === 'function') renderMvp();
+      if (typeof renderReports === 'function') renderReports();
+      if (typeof renderBirthdayAlert === 'function') renderBirthdayAlert();
       setupRealtimeListener();
       calculateFollowupsCount(); // Silently calculate followups counts for badges
       initBrowserNotificationScheduler(); // Initialize 7PM & 9PM push notification scheduler
+
+      if (forceDashboard) {
+        showPage('dashboard');
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        return;
+      }
+
+      // Restore active page on page refresh or default to dashboard
+      try {
+        const hashPage = window.location.hash.replace('#', '').trim();
+        const savedPage = hashPage || localStorage.getItem('ncf_active_page') || 'dashboard';
+        if (savedPage) {
+          showPage(savedPage);
+        } else {
+          showPage('dashboard');
+        }
+      } catch (e) {
+        showPage('dashboard');
+      }
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     }
 
     async function checkSession() {
       try {
+        let hasStoredToken = false;
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.includes('-auth-token')) {
+              hasStoredToken = true;
+              break;
+            }
+          }
+        } catch (e) { }
+
+        // If no token in localStorage, immediately show login page without waiting
+        if (!hasStoredToken) {
+          isAuthenticated = false;
+          toggleAppVisibility(false);
+          return;
+        }
+
         const { data } = await Promise.race([
           supabaseClient.auth.getSession(),
-          new Promise(resolve => setTimeout(() => resolve({ data: { session: null } }), 2000))
+          new Promise(resolve => setTimeout(() => resolve({ data: { session: null } }), 1200))
         ]);
         const session = data?.session || null;
         if (session) {
           isAuthenticated = true;
           toggleAppVisibility(true);
+          showPage('dashboard');
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+          loadAllData(true);
         } else {
           isAuthenticated = false;
           toggleAppVisibility(false);
@@ -15833,32 +16078,13 @@
       document.body.removeChild(a);
     }
 
-    function loadAllData() {
-      fetchAndRenderMembers();
-      renderContacts();
-      if (typeof renderMvp === 'function') renderMvp();
-      renderDashboard();
-      if (typeof renderBirthdayAlert === 'function') renderBirthdayAlert();
-
-      // Restore active page on page refresh
-      try {
-        const hashPage = window.location.hash.replace('#', '').trim();
-        const savedPage = hashPage || localStorage.getItem('ncf_active_page') || 'dashboard';
-        if (savedPage) {
-          showPage(savedPage);
-        }
-      } catch (e) { }
-    }
-
     async function initApp() {
       try {
         initDate();
-        if (typeof renderBirthdayAlert === 'function') renderBirthdayAlert();
         await checkSession();
       } catch (e) {
         console.warn("initApp initialization notice:", e);
-      } finally {
-        loadAllData();
+        toggleAppVisibility(false);
       }
     }
 
