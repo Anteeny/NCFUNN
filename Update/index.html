@@ -324,8 +324,8 @@
       <i class="ti ti-link"></i>
     </div>
     <div>
-      <div class="magic-title">Generate Magic Profile Update Link</div>
-      <div class="magic-sub">Search members in 'everyone_details' table to view missing fields and create 1-click update links.</div>
+      <div class="magic-title">Generate Member Profile Update Link</div>
+      <div class="magic-sub">Search members to check profile details and create their personalized update link.</div>
     </div>
   </div>
 
@@ -353,7 +353,7 @@
   <!-- Output Box when a person is selected -->
   <div id="magic-output-box" class="magic-output-box">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <span style="font-size: 13px; font-weight: 700; color: #fff;">Magic Link Generated</span>
+      <span style="font-size: 13px; font-weight: 700; color: #fff;">Unique Link Generated</span>
       <span id="magic-selected-name" style="font-size: 12.5px; color: #fde047; font-weight: 700;"></span>
     </div>
 
@@ -547,17 +547,12 @@
     const missingItems = colStatus.filter(c => c.isMissing);
     const missingCount = missingItems.length;
 
-    const badgeHtml = missingCount > 0
-      ? `<span class="missing-pill-badge pill-missing-alert">⚠️ ${missingCount} of 11 questions missing</span>`
-      : `<span class="missing-pill-badge pill-complete">✓ All 11 questions complete</span>`;
-
-    const name = person.member_name || person.name || 'Unnamed Member';
-    const phone = person.member_phone || person.phone || '';
-    const dept = person.department || '';
-    const leader = person.g12_leader || '';
-
-    // Summary of missing column names
+    // Summary of missing field names
     const missingSummary = missingItems.map(m => m.label).slice(0, 4).join(', ') + (missingCount > 4 ? ` +${missingCount - 4} more` : '');
+
+    const badgeHtml = missingCount > 0
+      ? `<span class="missing-pill-badge pill-missing-alert">⚠️ ${missingCount} field${missingCount > 1 ? 's' : ''} to complete</span>`
+      : `<span class="missing-pill-badge pill-complete">✓ Profile Complete</span>`;
 
     div.innerHTML = `
       <div style="flex: 1; min-width: 0;">
@@ -579,7 +574,7 @@
     return div;
   }
 
-  // 3. Select Person & Map UUID into Secure Magic URL
+  // 3. Select Person & Map UUID into Secure Unique URL
   function selectMagicPerson(person) {
     _selectedRecord = person;
     const colStatus = inspectAllColumns(person);
@@ -589,7 +584,7 @@
     const activeEl = document.getElementById(`magic-item-${person.id}`);
     if (activeEl) activeEl.classList.add('selected');
 
-    // Clean, modern short URL format: https://membertracker-eight.vercel.app/u/{ID}
+    // Clean, modern short URL format: https://members.ncfunn.site/u/{ID}
     const magicUrl = `${window.location.origin}/u/${encodeURIComponent(person.id)}`;
 
     const outputBox = document.getElementById('magic-output-box');
@@ -604,11 +599,11 @@
     linkEl.textContent = magicUrl;
     testBtn.href = magicUrl;
 
-    // Build comprehensive checklist of ALL 11 columns
+    // Field completion status
     let checklistHtml = `
       <div style="width: 100%; margin-bottom: 6px; font-size: 12px; font-weight: 700; color: #e2e8f0; display: flex; justify-content: space-between;">
-        <span>Checked All 11 Table Questions:</span>
-        <span style="color: ${missingItems.length > 0 ? '#f87171' : '#34d399'};">${11 - missingItems.length} Filled / ${missingItems.length} Missing</span>
+        <span>Member Information Status:</span>
+        <span style="color: ${missingItems.length > 0 ? '#f87171' : '#34d399'};">${11 - missingItems.length} Complete / ${missingItems.length} Missing</span>
       </div>
       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 6px; width: 100%;">
     `;
