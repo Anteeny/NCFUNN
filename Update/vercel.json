@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/", "destination": "/magic-link-admin-component.html" },
+    { "source": "/admin", "destination": "/magic-link-admin-component.html" },
+    { "source": "/update-profile", "destination": "/update-profile.html" }
+  ]
+}
