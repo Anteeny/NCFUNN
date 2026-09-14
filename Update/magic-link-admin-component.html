@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Admin — Magic Profile Update Link Generator</title>
+  <link rel="icon" type="image/png" href="images.png?v=3" />
+
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
+  <!-- Official Supabase JS v2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #090e1a;
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.18) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.12) 0px, transparent 50%);
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .magic-card {
+      background: #0f172a;
+      border: 1px solid rgba(59, 130, 246, 0.28);
+      border-radius: 20px;
+      padding: 28px 26px;
+      color: #f8fafc;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(37, 99, 235, 0.12);
+      width: 100%;
+      max-width: 650px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .magic-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .magic-header-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.3) 0%, rgba(245, 158, 11, 0.25) 100%);
+      border: 1.5px solid rgba(59, 130, 246, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: #60a5fa;
+      flex-shrink: 0;
+    }
+
+    .magic-title {
+      font-size: 19px;
+      font-weight: 700;
+      color: #ffffff;
+      line-height: 1.25;
+    }
+
+    .magic-sub {
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 3px;
+    }
+
+    .magic-search-wrap {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .magic-search-input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px solid rgba(255, 255, 255, 0.14);
+      border-radius: 12px;
+      padding: 13px 16px;
+      color: #ffffff;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .magic-search-input:focus {
+      border-color: #3b82f6;
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    }
+
+    .magic-search-btn {
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 0 22px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    }
+
+    .magic-search-btn:hover {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      transform: translateY(-1px);
+    }
+
+    .magic-search-btn:active {
+      transform: scale(0.98);
+    }
+
+    /* Candidate Duplicate Results List */
+    .magic-results-container {
+      max-height: 290px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-right: 4px;
+    }
+
+    .magic-results-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    .magic-results-container::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+    }
+    .magic-results-container::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+    }
+
+    .magic-person-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 14px;
+      padding: 14px 18px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .magic-person-item:hover {
+      background: rgba(37, 99, 235, 0.12);
+      border-color: rgba(59, 130, 246, 0.4);
+      transform: translateY(-1px);
+    }
+
+    .magic-person-item.selected {
+      background: rgba(37, 99, 235, 0.22);
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+    }
+
+    .person-info-main {
+      font-weight: 700;
+      font-size: 14.5px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .person-info-sub {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-top: 4px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .missing-pill-badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .pill-missing-alert {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #f87171;
+    }
+
+    .pill-complete {
+      background: rgba(16, 185, 129, 0.18);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #34d399;
+    }
+
+    /* Generated Link Card */
+    .magic-output-box {
+      background: rgba(15, 23, 42, 0.98);
+      border: 1.5px solid #3b82f6;
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-top: 16px;
+      display: none;
+      animation: fadeIn 0.25s ease;
+      box-shadow: 0 10px 28px rgba(37, 99, 235, 0.2);
+    }
+
+    .magic-link-display {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px;
+      color: #60a5fa;
+      word-break: break-all;
+      margin: 12px 0;
+      font-family: monospace;
+    }
+
+    .magic-action-btn-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .action-btn-copy {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 9px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: all 0.15s ease;
+    }
+
+    .action-btn-copy:hover {
+      background: #1d4ed8;
+    }
+
+    .action-btn-wa {
+      background: #25D366;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 9px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .action-btn-wa:hover {
+      background: #1eb954;
+    }
+
+    .action-btn-test {
+      color: #94a3b8;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 9px 14px;
+      text-decoration: none;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.15s ease;
+    }
+
+    .action-btn-test:hover {
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ADMIN UI COMPONENT -->
+<div class="magic-card">
+  <div class="magic-header">
+    <div class="magic-header-icon">
+      <i class="ti ti-link"></i>
+    </div>
+    <div>
+      <div class="magic-title">Generate Magic Profile Update Link</div>
+      <div class="magic-sub">Search members in 'everyone_details' table to view missing fields and create 1-click update links.</div>
+    </div>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="magic-search-wrap">
+    <input 
+      type="text" 
+      id="magic-search-input" 
+      class="magic-search-input" 
+      placeholder="Type member name (e.g. Samuel, Emmanuel, Grace)..." 
+      onkeydown="if(event.key === 'Enter') searchMagicMembers()"
+    />
+    <button class="magic-search-btn" onclick="searchMagicMembers()">
+      <i class="ti ti-search"></i>
+      <span>Search</span>
+    </button>
+  </div>
+
+  <!-- Results List (Handles Duplicates & Multiple Matches) -->
+  <div id="magic-results-container" class="magic-results-container" style="display: none;"></div>
+
+  <!-- Status / Error / Feedback Message -->
+  <div id="magic-status-msg" style="font-size: 13px; color: #94a3b8; text-align: center; padding: 10px 0; display: none;"></div>
+
+  <!-- Output Box when a person is selected -->
+  <div id="magic-output-box" class="magic-output-box">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 13px; font-weight: 700; color: #fff;">Magic Link Generated</span>
+      <span id="magic-selected-name" style="font-size: 12.5px; color: #fde047; font-weight: 700;"></span>
+    </div>
+
+    <!-- Missing Column Status Breakdown -->
+    <div id="magic-breakdown-tags" style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;"></div>
+
+    <div class="magic-link-display" id="magic-link-url"></div>
+
+    <div class="magic-action-btn-row">
+      <button class="action-btn-copy" id="copy-magic-btn" onclick="copyGeneratedLink()">
+        <i class="ti ti-copy"></i>
+        <span>Copy Link</span>
+      </button>
+      <a href="#" target="_blank" id="wa-magic-btn" class="action-btn-wa" style="display: none;">
+        <i class="ti ti-brand-whatsapp"></i>
+        <span>Send via WhatsApp</span>
+      </a>
+      <a href="#" target="_blank" id="test-magic-btn" class="action-btn-test">
+        <i class="ti ti-external-link"></i>
+        <span>Test Link</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- JAVASCRIPT LOGIC -->
+<script>
+  // ==========================================================================
+  // CONFIGURATION & CREDENTIALS
+  // ==========================================================================
+  const MAGIC_BASE_URL = window.location.origin + "/update-profile.html";
+
+  const SUPABASE_URL = "https://cjbedftdexzcsydwayig.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmVkZnRkZXh6Y3N5ZHdheWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTUwMjgsImV4cCI6MjA5MzYzMTAyOH0.xsvtG5NmI_9TDZQ5-MhcjtX4UIIAiH2kyOlpIPDkCdg";
+
+  let _selectedRecord = null;
+
+  // Safe Supabase Client Initializer (prevents null reference error)
+  async function getSupabaseInstance() {
+    if (window.supabaseClient && typeof window.supabaseClient.from === 'function') {
+      return window.supabaseClient;
+    }
+
+    // If global supabase library is loaded
+    if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
+      window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      return window.supabaseClient;
+    }
+
+    // Dynamically inject script if not yet loaded
+    try {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+      if (typeof supabase !== 'undefined' && typeof supabase.createClient === 'function') {
+        window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        return window.supabaseClient;
+      }
+    } catch (e) {
+      console.error("Failed to load Supabase CDN script:", e);
+    }
+
+    return null;
+  }
+
+  // 1. Search Members from 'everyone_details' table
+  async function searchMagicMembers() {
+    const input = document.getElementById('magic-search-input');
+    const query = input.value.trim();
+    const resultsContainer = document.getElementById('magic-results-container');
+    const statusMsg = document.getElementById('magic-status-msg');
+    const outputBox = document.getElementById('magic-output-box');
+
+    if (!query) {
+      alert("Please enter a name to search.");
+      return;
+    }
+
+    outputBox.style.display = 'none';
+    resultsContainer.innerHTML = '';
+    resultsContainer.style.display = 'none';
+    statusMsg.style.display = 'block';
+    statusMsg.textContent = 'Connecting to database...';
+
+    // Ensure Supabase client is ready
+    const client = await getSupabaseInstance();
+    if (!client) {
+      statusMsg.textContent = "Error: Supabase client could not be initialized. Please verify your internet connection.";
+      return;
+    }
+
+    statusMsg.textContent = 'Searching members table...';
+
+    try {
+      // Query the actual 'members' table from Supabase
+      let { data, error } = await client
+        .from('members')
+        .select('*')
+        .ilike('member_name', `%${query}%`)
+        .limit(30);
+
+      // Fallback if schema uses 'name' instead of 'member_name'
+      if (error && error.message && error.message.includes('member_name')) {
+        const fallback = await client
+          .from('members')
+          .select('*')
+          .ilike('name', `%${query}%`)
+          .limit(30);
+        data = fallback.data;
+        error = fallback.error;
+      }
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        statusMsg.textContent = `No member found matching "${query}".`;
+        return;
+      }
+
+      statusMsg.style.display = 'none';
+      resultsContainer.style.display = 'flex';
+
+      // Display all duplicate / matching results
+      data.forEach(person => {
+        const itemEl = renderPersonItem(person);
+        resultsContainer.appendChild(itemEl);
+      });
+
+      // If only 1 result returned, auto-select it
+      if (data.length === 1) {
+        selectMagicPerson(data[0]);
+      }
+
+    } catch (err) {
+      console.error("Search error:", err);
+      statusMsg.textContent = "Error searching database: " + (err.message || err);
+    }
+  }
+
+  // EXACT 11 COLUMNS FROM THE 'members' TABLE
+  const MEMBER_COLUMNS = [
+    { key: 'member_name', alt: ['name'], label: 'Member Name', icon: 'ti-user' },
+    { key: 'member_phone', alt: ['phone', 'phone_number'], label: 'Member Phone', icon: 'ti-phone' },
+    { key: 'birthday', alt: ['dob', 'date_of_birth'], label: 'Birthday', icon: 'ti-cake' },
+    { key: 'course_of_study', alt: ['course', 'dept_in_school'], label: 'Course of Study', icon: 'ti-school' },
+    { key: 'level', alt: ['lvl', 'level_of_study'], label: 'Level', icon: 'ti-stairs' },
+    { key: 'department', alt: ['dept', 'function'], label: 'Department', icon: 'ti-building' },
+    { key: 'g12_leader', alt: ['leader'], label: 'G12 Leader', icon: 'ti-crown' },
+    { key: 'leader_type', alt: [], label: 'Leader Type', icon: 'ti-award' },
+    { key: 'School_Address', alt: ['school_address', 'sch_address', 'address'], label: 'School Address', icon: 'ti-map-pin' },
+    { key: 'Home_Address', alt: ['home_address'], label: 'Home Address', icon: 'ti-home' },
+    { key: 'g12_phone', alt: ['g12_leader_phone'], label: 'G12 Phone', icon: 'ti-phone-call' }
+  ];
+
+  // Helper: Inspect EVERY column in the members table
+  function inspectAllColumns(person) {
+    return MEMBER_COLUMNS.map(col => {
+      let val = person[col.key];
+      if ((val === undefined || val === null || String(val).trim() === '') && col.alt) {
+        for (const altKey of col.alt) {
+          if (person[altKey] !== undefined && person[altKey] !== null && String(person[altKey]).trim() !== '') {
+            val = person[altKey];
+            break;
+          }
+        }
+      }
+      const strVal = (val !== undefined && val !== null) ? String(val).trim() : '';
+      const isMissing = !strVal || strVal.toLowerCase() === 'unassigned' || strVal === '—' || strVal === '-';
+      return {
+        key: col.key,
+        label: col.label,
+        icon: col.icon,
+        value: strVal,
+        isMissing: isMissing
+      };
+    });
+  }
+
+  // 2. Render Duplicate / Matched Candidate Card
+  function renderPersonItem(person) {
+    const div = document.createElement('div');
+    div.className = 'magic-person-item';
+    div.id = `magic-item-${person.id}`;
+
+    const colStatus = inspectAllColumns(person);
+    const missingItems = colStatus.filter(c => c.isMissing);
+    const missingCount = missingItems.length;
+
+    const badgeHtml = missingCount > 0
+      ? `<span class="missing-pill-badge pill-missing-alert">⚠️ ${missingCount} of 11 questions missing</span>`
+      : `<span class="missing-pill-badge pill-complete">✓ All 11 questions complete</span>`;
+
+    const name = person.member_name || person.name || 'Unnamed Member';
+    const phone = person.member_phone || person.phone || '';
+    const dept = person.department || '';
+    const leader = person.g12_leader || '';
+
+    // Summary of missing column names
+    const missingSummary = missingItems.map(m => m.label).slice(0, 4).join(', ') + (missingCount > 4 ? ` +${missingCount - 4} more` : '');
+
+    div.innerHTML = `
+      <div style="flex: 1; min-width: 0;">
+        <div class="person-info-main">
+          <span>${name}</span>
+          ${dept ? `<span style="font-size:11px;background:rgba(59,130,246,0.2);color:#93c5fd;padding:1px 6px;border-radius:4px;font-weight:500;">${dept}</span>` : ''}
+          ${person.level ? `<span style="font-size:11px;background:rgba(245,158,11,0.2);color:#fde047;padding:1px 6px;border-radius:4px;font-weight:500;">${person.level} lvl</span>` : ''}
+        </div>
+        <div class="person-info-sub">
+          <span>📞 ${phone || '<em style="color:#ef4444">No phone</em>'}</span>
+          <span>👤 Leader: ${leader || '<em style="color:#ef4444">None</em>'}</span>
+        </div>
+        ${missingCount > 0 ? `<div style="font-size: 11px; color: #f87171; margin-top: 5px;"><i class="ti ti-alert-circle"></i> Needs: ${missingSummary}</div>` : ''}
+      </div>
+      <div>${badgeHtml}</div>
+    `;
+
+    div.onclick = () => selectMagicPerson(person);
+    return div;
+  }
+
+  // 3. Select Person & Map UUID into Secure Magic URL
+  function selectMagicPerson(person) {
+    _selectedRecord = person;
+    const colStatus = inspectAllColumns(person);
+    const missingItems = colStatus.filter(c => c.isMissing);
+
+    document.querySelectorAll('.magic-person-item').forEach(el => el.classList.remove('selected'));
+    const activeEl = document.getElementById(`magic-item-${person.id}`);
+    if (activeEl) activeEl.classList.add('selected');
+
+    // Secure URL format: https://yourwebsite.com/update-profile.html?token={UUID}
+    const magicUrl = `${MAGIC_BASE_URL}?token=${encodeURIComponent(person.id)}`;
+
+    const outputBox = document.getElementById('magic-output-box');
+    const nameEl = document.getElementById('magic-selected-name');
+    const linkEl = document.getElementById('magic-link-url');
+    const tagsEl = document.getElementById('magic-breakdown-tags');
+    const waBtn = document.getElementById('wa-magic-btn');
+    const testBtn = document.getElementById('test-magic-btn');
+
+    const displayName = person.member_name || person.name || 'Member';
+    nameEl.textContent = `Selected: ${displayName}`;
+    linkEl.textContent = magicUrl;
+    testBtn.href = magicUrl;
+
+    // Build comprehensive checklist of ALL 11 columns
+    let checklistHtml = `
+      <div style="width: 100%; margin-bottom: 6px; font-size: 12px; font-weight: 700; color: #e2e8f0; display: flex; justify-content: space-between;">
+        <span>Checked All 11 Table Questions:</span>
+        <span style="color: ${missingItems.length > 0 ? '#f87171' : '#34d399'};">${11 - missingItems.length} Filled / ${missingItems.length} Missing</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 6px; width: 100%;">
+    `;
+
+    colStatus.forEach(col => {
+      if (col.isMissing) {
+        checklistHtml += `
+          <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 5px 8px; font-size: 11px; display: flex; align-items: center; gap: 5px; color: #fca5a5;">
+            <i class="ti ti-x" style="color: #ef4444; font-weight: bold;"></i>
+            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${col.label}">${col.label}</span>
+          </div>
+        `;
+      } else {
+        checklistHtml += `
+          <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 5px 8px; font-size: 11px; display: flex; align-items: center; gap: 5px; color: #6ee7b7;">
+            <i class="ti ti-check" style="color: #10b981; font-weight: bold;"></i>
+            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${col.label}: ${col.value}">${col.label}</span>
+          </div>
+        `;
+      }
+    });
+
+    checklistHtml += `</div>`;
+    tagsEl.innerHTML = checklistHtml;
+
+    // Configure WhatsApp Button if phone exists
+    const phone = person.member_phone || person.phone;
+    if (phone) {
+      const cleanPhone = String(phone).replace(/[^0-9]/g, '');
+      const waPhone = cleanPhone.startsWith('0') ? '234' + cleanPhone.slice(1) : cleanPhone;
+      const firstName = displayName.split(' ')[0];
+      const message = `Hello ${firstName}! 👋 Please take 1 minute to update your fellowship records with us by clicking your secure personal link:\n\n${magicUrl}\n\nThank you and God bless you! - NCF UNN`;
+      
+      waBtn.href = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`;
+      waBtn.style.display = 'inline-flex';
+    } else {
+      waBtn.style.display = 'none';
+    }
+
+    outputBox.style.display = 'block';
+  }
+
+  // 4. One-Click Copy Link
+  function copyGeneratedLink() {
+    const linkEl = document.getElementById('magic-link-url');
+    const text = linkEl.textContent;
+    const btn = document.getElementById('copy-magic-btn');
+
+    navigator.clipboard.writeText(text).then(() => {
+      btn.innerHTML = '<i class="ti ti-check"></i> <span>Copied!</span>';
+      setTimeout(() => {
+        btn.innerHTML = '<i class="ti ti-copy"></i> <span>Copy Link</span>';
+      }, 2500);
+    }).catch(() => {
+      prompt("Copy your link manually:", text);
+    });
+  }
+</script>
+
+</body>
+</html>

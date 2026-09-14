@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Update Your Profile — NCF UNN</title>
+  <link rel="icon" type="image/png" href="images.png?v=3" />
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
+  <!-- Official Supabase JS v2 CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --bg-dark: #070d18;
+      --card-bg: rgba(15, 23, 42, 0.82);
+      --card-border: rgba(59, 130, 246, 0.22);
+      --accent: #2563eb;
+      --accent-glow: rgba(37, 99, 235, 0.35);
+      --gold: #f59e0b;
+      --gold-glow: rgba(245, 158, 11, 0.3);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --danger: #ef4444;
+      --radius-lg: 20px;
+      --radius-md: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      min-height: 100vh;
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.18) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(245, 158, 11, 0.12) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.95) 0px, transparent 100%);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 640px;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Card Wrapper */
+    .update-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1.5px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 35px rgba(37, 99, 235, 0.12);
+      padding: 36px 32px;
+      transition: all 0.3s ease;
+    }
+
+    /* Header & Branding */
+    .card-brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .brand-logo-box {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+    }
+
+    .brand-logo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+      line-height: 1.2;
+    }
+
+    .brand-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Status & Info Banners */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .badge-info {
+      background: rgba(37, 99, 235, 0.16);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      color: #93c5fd;
+    }
+
+    .badge-missing {
+      background: rgba(245, 158, 11, 0.16);
+      border: 1px solid rgba(245, 158, 11, 0.4);
+      color: #fde047;
+    }
+
+    /* Form Styles */
+    .form-group {
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .form-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 8px;
+    }
+
+    .field-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .tag-missing {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .tag-present {
+      background: rgba(16, 185, 129, 0.16);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrap i {
+      position: absolute;
+      left: 14px;
+      color: var(--text-muted);
+      font-size: 18px;
+      pointer-events: none;
+      transition: color 0.2s ease;
+    }
+
+    .form-control {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-md);
+      padding: 13px 14px 13px 44px;
+      font-size: 14px;
+      color: #ffffff;
+      outline: none;
+      transition: all 0.25s ease;
+    }
+
+    .form-control:focus {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    }
+
+    .form-control:focus + i,
+    .form-control:focus ~ i {
+      color: #60a5fa;
+    }
+
+    .form-control.highlight-missing {
+      border-color: rgba(245, 158, 11, 0.5);
+      background: rgba(245, 158, 11, 0.03);
+    }
+
+    textarea.form-control {
+      padding-left: 14px;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .helper-text {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 5px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-group.full {
+      grid-column: span 2;
+    }
+
+    select.form-control {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 14px;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+
+    select.form-control option {
+      background: #0f172a;
+      color: #ffffff;
+    }
+
+    @media (max-width: 640px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      .form-group.full {
+        grid-column: span 1;
+      }
+    }
+
+    /* Submit Button */
+    .submit-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 15px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+      transition: all 0.25s ease;
+      margin-top: 28px;
+    }
+
+    .submit-btn:hover {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.45);
+    }
+
+    .submit-btn:active {
+      transform: scale(0.98);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Loading Spinner */
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2.5px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* State Screens */
+    .state-screen {
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    .state-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      margin: 0 auto 20px;
+    }
+
+    .state-icon.success {
+      background: rgba(16, 185, 129, 0.18);
+      color: #10b981;
+      border: 2px solid rgba(16, 185, 129, 0.35);
+      box-shadow: 0 0 30px rgba(16, 185, 129, 0.25);
+    }
+
+    .state-icon.error {
+      background: rgba(239, 68, 68, 0.18);
+      color: #ef4444;
+      border: 2px solid rgba(239, 68, 68, 0.35);
+      box-shadow: 0 0 30px rgba(239, 68, 68, 0.25);
+    }
+
+    .state-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: #ffffff;
+    }
+
+    .state-msg {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      max-width: 380px;
+      margin: 0 auto 24px;
+    }
+
+    .footer-note {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    @media (max-width: 600px) {
+      .update-card {
+        padding: 28px 20px;
+        border-radius: 18px;
+      }
+      .brand-title {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="update-card" id="card-container">
+      
+      <!-- BRAND HEADER -->
+      <div class="card-brand">
+        <div class="brand-logo-box">
+          <img src="images.png" alt="NCF Logo" onerror="this.src='https://placehold.co/80x80/2563eb/ffffff?text=NCF'">
+        </div>
+        <div>
+          <div class="brand-title">NCF UNN Community</div>
+          <div class="brand-sub">Member Profile Verification & Update</div>
+        </div>
+      </div>
+
+      <!-- LOADING STATE -->
+      <div id="loading-state" class="state-screen">
+        <div class="spinner" style="width: 44px; height: 44px; border-width: 3.5px; margin: 30px auto;"></div>
+        <div class="state-title">Loading your record…</div>
+        <div class="state-msg">Validating your magic link and retrieving profile details.</div>
+      </div>
+
+      <!-- ERROR / INVALID TOKEN STATE -->
+      <div id="error-state" class="state-screen" style="display: none;">
+        <div class="state-icon error">
+          <i class="ti ti-alert-circle"></i>
+        </div>
+        <div class="state-title" id="error-title">Invalid or Expired Link</div>
+        <div class="state-msg" id="error-msg">This magic update link is invalid or incomplete. Please request a new link from your fellowship administrator.</div>
+      </div>
+
+      <!-- SUCCESS STATE -->
+      <div id="success-state" class="state-screen" style="display: none;">
+        <div class="state-icon success">
+          <i class="ti ti-circle-check"></i>
+        </div>
+        <div class="state-title">Thank you! Profile updated successfully! 🎉</div>
+        <div class="state-msg">Your information has been securely synchronized with the church database. God bless you!</div>
+      </div>
+
+      <!-- MAIN UPDATE FORM -->
+      <form id="profile-form" style="display: none;" onsubmit="handleFormSubmit(event)">
+        
+        <div id="missing-alert-box" class="status-badge badge-missing" style="display: none; width: 100%; justify-content: center;">
+          <i class="ti ti-alert-triangle"></i>
+          <span id="missing-count-text">Please review and complete your missing details below:</span>
+        </div>
+
+        <div class="form-grid">
+
+          <!-- 1. FULL NAME -->
+          <div class="form-group full">
+            <div class="form-label">
+              <span>Member Name *</span>
+              <span class="field-tag" id="tag-name"></span>
+            </div>
+            <div class="input-wrap">
+              <input type="text" id="field-name" class="form-control" placeholder="First and last name" required />
+              <i class="ti ti-user"></i>
+            </div>
+          </div>
+
+          <!-- 2. PHONE NUMBER -->
+          <div class="form-group">
+            <div class="form-label">
+              <span>Member Phone *</span>
+              <span class="field-tag" id="tag-phone"></span>
+            </div>
+            <div class="input-wrap">
+              <input type="tel" id="field-phone" class="form-control" placeholder="e.g. 08012345678" required />
+              <i class="ti ti-phone"></i>
+            </div>
+          </div>
+
+          <!-- 3. BIRTHDAY -->
+          <div class="form-group">
+            <div class="form-label">
+              <span>Birthday</span>
+              <span class="field-tag" id="tag-birthday"></span>
+            </div>
+            <div class="input-wrap">
+              <input type="date" id="field-birthday" class="form-control" />
+              <i class="ti ti-cake"></i>
+            </div>
+          </div>
+
+          <!-- 4. COURSE OF STUDY -->
+          <div class="form-group">
+            <div class="form-label">
+              <span>Course of Study</span>
+              <span class="field-tag" id="tag-course"></span>
+            </div>
+            <div class="input-wrap">
+              <input type="text" id="field-course" class="form-control" placeholder="e.g. Computer Science" />
+              <i class="ti ti-school"></i>
+            </div>
+          </div>
+
+          <!-- 5. LEVEL -->
+          <div class="form-group">
+            <div class="form-label">
+              <span>Level</span>
+              <span class="field-tag" id="tag-level"></span>
+            </div>
+            <div class="input-wrap">
+              <select id="field-level" class="form-control">
+                <option value="">Select level</option>
+                <option value="100">100 lvl</option>
+                <option value="200">200 lvl</option>
+                <option value="300">300 lvl</option>
+                <option value="400">400 lvl</option>
+                <option value="500">500 lvl</option>
+                <option value="600">600 lvl</option>
+                <option value="Graduate">Graduate</option>
+                <option value="Postgraduate">Postgraduate</option>
+              </select>
+              <i class="ti ti-stairs"></i>
+            </div>
+          </div>
+
+          <!-- 6. DEPARTMENT -->
+          <div class="form-group">
+            <div class="form-label">
+              <span>Department</span>
+              <span class="field-tag" id="tag-department"></span>
+            </div>
+            <div class="input-wrap">
+              <select id="field-department" class="form-control">
+                <option value="">Select department</option>
+                <option value="NCF Angels">NCF Angels</option>
+                <option value="Media Unit">Media Unit</option>
+                <option value="Technical Unit">Technical Unit</option>
+                <option value="Ushers">Ushers</option>
+                <option value="Temple tenders">Temple tenders</option>
+                <option value="Administration">Administration</option>
+                <option value="MVP">MVP</option>
+                <option value="Intercessory">Intercessory</option>
+                <option value="Greeters">Greeters</option>
+                <option value="Evangelism">Evangelism</option>
+                <option value="Deep Oasis">Deep Oasis</option>
+              </select>
+              <i class="ti ti-building"></i>
+            </div>
+          </div>
+
+          <!-- 7. G12 LEADER -->
+          <div class="form-group">
+            <div class="form-label">
+              <span>G12 Leader</span>
+              <span class="field-tag" id="tag-leader"></span>
+            </div>
+            <div class="input-wrap">
+              <input type="text" id="field-leader" class="form-control" placeholder="Leader name" />
+              <i class="ti ti-crown"></i>
+            </div>
+          </div>
+
+          <!-- 8. LEADER TYPE -->
+          <div class="form-group">
+            <div class="form-label">
+              <span>Leader Type</span>
+              <span class="field-tag" id="tag-leader-type"></span>
+            </div>
+            <div class="input-wrap">
+              <select id="field-leader-type" class="form-control">
+                <option value="">Select type</option>
+                <option value="DH">DH</option>
+                <option value="G12">G12</option>
+              </select>
+              <i class="ti ti-award"></i>
+            </div>
+          </div>
+
+          <!-- 9. G12 PHONE -->
+          <div class="form-group">
+            <div class="form-label">
+              <span>G12 Phone</span>
+              <span class="field-tag" id="tag-g12-phone"></span>
+            </div>
+            <div class="input-wrap">
+              <input type="tel" id="field-g12-phone" class="form-control" placeholder="Leader phone number" />
+              <i class="ti ti-phone-call"></i>
+            </div>
+          </div>
+
+          <!-- 10. SCHOOL ADDRESS -->
+          <div class="form-group full">
+            <div class="form-label">
+              <span>School Address (Hostel / Lodge)</span>
+              <span class="field-tag" id="tag-school-address"></span>
+            </div>
+            <div class="input-wrap">
+              <textarea id="field-school-address" class="form-control" rows="2" placeholder="e.g. Room 204, Franco Hostel, UNN or Hilltop Lodge..."></textarea>
+            </div>
+          </div>
+
+          <!-- 11. HOME ADDRESS -->
+          <div class="form-group full">
+            <div class="form-label">
+              <span>Home Address (Permanent City/State)</span>
+              <span class="field-tag" id="tag-home-address"></span>
+            </div>
+            <div class="input-wrap">
+              <textarea id="field-home-address" class="form-control" rows="2" placeholder="e.g. 14 Awolowo Road, Ikeja, Lagos"></textarea>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- SUBMIT BUTTON -->
+        <button type="submit" id="submit-btn" class="submit-btn">
+          <span>Save & Update Profile</span>
+          <i class="ti ti-arrow-right"></i>
+        </button>
+      </form>
+
+      <div class="footer-note">
+        🔒 Powered by NCF UNN Digital Systems · Secure verified link
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // ==========================================================================
+    // SUPABASE CONFIGURATION
+    // Connected to NCF UNN Supabase project
+    // ==========================================================================
+    const SUPABASE_URL = "https://cjbedftdexzcsydwayig.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmVkZnRkZXh6Y3N5ZHdheWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTUwMjgsImV4cCI6MjA5MzYzMTAyOH0.xsvtG5NmI_9TDZQ5-MhcjtX4UIIAiH2kyOlpIPDkCdg";
+
+    // Initialize Supabase Client using official v2 library
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Track active record
+    let currentRecordId = null;
+
+    // Run on page load
+    document.addEventListener('DOMContentLoaded', async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token') || urlParams.get('id');
+
+      if (!token) {
+        showError("Missing Link Token", "No security token was detected in the URL. Please click the exact link shared with you.");
+        return;
+      }
+
+      currentRecordId = token.trim();
+      await fetchMemberDetails(currentRecordId);
+    });
+
+    // Fetch existing record from 'members' table
+    async function fetchMemberDetails(id) {
+      try {
+        const { data, error } = await supabaseClient
+          .from('members')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (error || !data) {
+          console.error("Fetch error:", error);
+          showError("Profile Not Found", "We could not find a member profile associated with this link. It may have been removed or already updated.");
+          return;
+        }
+
+        populateForm(data);
+
+      } catch (err) {
+        console.error("System error:", err);
+        showError("Connection Error", "Unable to establish connection with database. Please verify your internet connection and try again.");
+      }
+    }
+
+    // Populate and visually mark present vs missing fields for ALL 11 columns
+    function populateForm(record) {
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('profile-form').style.display = 'block';
+
+      const memberName = record.member_name || record.name || '';
+      const memberPhone = record.member_phone || record.phone || record.phone_number || '';
+      const birthday = record.birthday || record.dob || record.date_of_birth || '';
+      const course = record.course_of_study || record.course || record.dept_in_school || '';
+      const level = record.level || record.lvl || '';
+      const department = record.department || record.dept || record.function || '';
+      const g12Leader = record.g12_leader || '';
+      const leaderType = record.leader_type || '';
+      const schoolAddress = record.school_address || record.School_Address || record.sch_address || record.address || '';
+      const homeAddress = record.home_address || record.Home_Address || '';
+      const g12Phone = record.g12_phone || record.g12_leader_phone || '';
+
+      const fields = [
+        { inputId: 'field-name', tagId: 'tag-name', val: memberName, isRequired: true },
+        { inputId: 'field-phone', tagId: 'tag-phone', val: memberPhone, isRequired: true },
+        { inputId: 'field-birthday', tagId: 'tag-birthday', val: birthday },
+        { inputId: 'field-course', tagId: 'tag-course', val: course },
+        { inputId: 'field-level', tagId: 'tag-level', val: level },
+        { inputId: 'field-department', tagId: 'tag-department', val: department },
+        { inputId: 'field-leader', tagId: 'tag-leader', val: g12Leader },
+        { inputId: 'field-leader-type', tagId: 'tag-leader-type', val: leaderType },
+        { inputId: 'field-g12-phone', tagId: 'tag-g12-phone', val: g12Phone },
+        { inputId: 'field-school-address', tagId: 'tag-school-address', val: schoolAddress },
+        { inputId: 'field-home-address', tagId: 'tag-home-address', val: homeAddress }
+      ];
+
+      let missingCount = 0;
+
+      fields.forEach(f => {
+        const input = document.getElementById(f.inputId);
+        const tag = document.getElementById(f.tagId);
+        const str = f.val ? String(f.val).trim() : '';
+        const hasVal = str !== '' && str.toLowerCase() !== 'unassigned' && str !== '—' && str !== '-';
+
+        if (hasVal) {
+          input.value = str;
+          tag.textContent = 'Existing';
+          tag.className = 'field-tag tag-present';
+          input.classList.remove('highlight-missing');
+        } else {
+          input.value = (str.toLowerCase() !== 'unassigned' && str !== '—' && str !== '-') ? str : '';
+          tag.textContent = 'Missing';
+          tag.className = 'field-tag tag-missing';
+          input.classList.add('highlight-missing');
+          missingCount++;
+        }
+      });
+
+      if (missingCount > 0) {
+        const alertBox = document.getElementById('missing-alert-box');
+        const alertText = document.getElementById('missing-count-text');
+        alertBox.style.display = 'inline-flex';
+        alertText.textContent = `You have ${missingCount} of 11 questions currently missing. Please review and complete them below:`;
+      }
+    }
+
+    // Handle Form Update Submission for ALL 11 columns
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      if (!currentRecordId) return;
+
+      const submitBtn = document.getElementById('submit-btn');
+      const originalBtnHtml = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<div class="spinner"></div> <span>Saving updates…</span>`;
+
+      const memberName = document.getElementById('field-name').value.trim();
+      const memberPhone = document.getElementById('field-phone').value.trim();
+      const birthdayVal = document.getElementById('field-birthday').value || null;
+      const courseVal = document.getElementById('field-course').value.trim() || null;
+      const levelVal = document.getElementById('field-level').value || null;
+      const departmentVal = document.getElementById('field-department').value || null;
+      const leaderVal = document.getElementById('field-leader').value.trim() || 'Unassigned';
+      const leaderTypeVal = document.getElementById('field-leader-type').value || null;
+      const g12PhoneVal = document.getElementById('field-g12-phone').value.trim() || null;
+      const schoolAddressVal = document.getElementById('field-school-address').value.trim() || null;
+      const homeAddressVal = document.getElementById('field-home-address').value.trim() || null;
+
+      const updatedPayload = {
+        member_name: memberName,
+        member_phone: memberPhone,
+        birthday: birthdayVal,
+        course_of_study: courseVal,
+        level: levelVal,
+        department: departmentVal,
+        g12_leader: leaderVal,
+        leader_type: leaderTypeVal,
+        g12_phone: g12PhoneVal,
+        school_address: schoolAddressVal,
+        School_Address: schoolAddressVal,
+        home_address: homeAddressVal,
+        Home_Address: homeAddressVal
+      };
+
+      try {
+        let { error } = await supabaseClient
+          .from('members')
+          .update(updatedPayload)
+          .eq('id', currentRecordId);
+
+        // Fallback in case School_Address / Home_Address column name casing in schema differs
+        if (error && error.message && error.message.includes('column')) {
+          const fallbackPayload = {
+            member_name: memberName,
+            member_phone: memberPhone,
+            birthday: birthdayVal,
+            course_of_study: courseVal,
+            level: levelVal,
+            department: departmentVal,
+            g12_leader: leaderVal,
+            leader_type: leaderTypeVal,
+            g12_phone: g12PhoneVal,
+            school_address: schoolAddressVal,
+            home_address: homeAddressVal
+          };
+          const res = await supabaseClient
+            .from('members')
+            .update(fallbackPayload)
+            .eq('id', currentRecordId);
+          error = res.error;
+        }
+
+        if (error) throw error;
+
+        // Hide form and display success view
+        document.getElementById('profile-form').style.display = 'none';
+        document.getElementById('success-state').style.display = 'block';
+
+      } catch (err) {
+        console.error("Update error:", err);
+        alert("Failed to save changes: " + (err.message || "Please check your network and try again."));
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
+      }
+    }
+
+        if (error) {
+          throw error;
+        }
+
+        // Hide form and display success view
+        document.getElementById('profile-form').style.display = 'none';
+        document.getElementById('success-state').style.display = 'block';
+
+      } catch (err) {
+        console.error("Update error:", err);
+        alert("Failed to save changes: " + (err.message || "Please check your network and try again."));
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
+      }
+    }
+
+    function showError(title, msg) {
+      document.getElementById('loading-state').style.display = 'none';
+      document.getElementById('profile-form').style.display = 'none';
+      document.getElementById('success-state').style.display = 'none';
+      
+      document.getElementById('error-title').textContent = title;
+      document.getElementById('error-msg').textContent = msg;
+      document.getElementById('error-state').style.display = 'block';
+    }
+  </script>
+</body>
+</html>
