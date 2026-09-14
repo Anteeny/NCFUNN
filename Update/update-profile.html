@@ -639,7 +639,7 @@
       }
 
       if (!token) {
-        showError("Missing Link Token", "No security token was detected in the URL. Please click the exact link shared with you.");
+        showError("Invalid Link", "This link seems incomplete. Please use the exact link that was shared with you.");
         return;
       }
 
@@ -658,7 +658,7 @@
 
         if (error || !data) {
           console.error("Fetch error:", error);
-          showError("Profile Not Found", "We could not find a member profile associated with this link. It may have been removed or already updated.");
+          showError("Profile Not Found", "No member record was found for this link. Please contact your fellowship admin for a new link.");
           return;
         }
 
@@ -666,7 +666,7 @@
 
       } catch (err) {
         console.error("System error:", err);
-        showError("Connection Error", "Unable to establish connection with database. Please verify your internet connection and try again.");
+        showError("Connection Error", "Could not connect to the database. Please check your internet and try again.");
       }
     }
 
@@ -727,7 +727,7 @@
         const alertBox = document.getElementById('missing-alert-box');
         const alertText = document.getElementById('missing-count-text');
         alertBox.style.display = 'inline-flex';
-        alertText.textContent = `You have ${missingCount} of 11 questions currently missing. Please review and complete them below:`;
+        alertText.textContent = `You have ${missingCount} field${missingCount > 1 ? 's' : ''} missing. Please fill them in below:`;
       }
     }
 
