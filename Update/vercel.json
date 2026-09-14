@@ -2,10 +2,9 @@
   "version": 2,
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/", "destination": "/index.html" },
+    { "source": "/u/:token", "destination": "/update-profile.html" },
+    { "source": "/update/:token", "destination": "/update-profile.html" },
     { "source": "/admin", "destination": "/index.html" },
-    { "source": "/update-profile", "destination": "/update-profile.html" },
-    { "source": "/u/:token*", "destination": "/update-profile.html" },
-    { "source": "/update/:token*", "destination": "/update-profile.html" }
+    { "source": "/update-profile", "destination": "/update-profile.html" }
   ]
 }
