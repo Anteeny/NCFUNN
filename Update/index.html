@@ -589,8 +589,8 @@
     const activeEl = document.getElementById(`magic-item-${person.id}`);
     if (activeEl) activeEl.classList.add('selected');
 
-    // Secure URL format: https://yourwebsite.com/update-profile.html?token={UUID}
-    const magicUrl = `${MAGIC_BASE_URL}?token=${encodeURIComponent(person.id)}`;
+    // Clean, modern short URL format: https://membertracker-eight.vercel.app/u/{ID}
+    const magicUrl = `${window.location.origin}/u/${encodeURIComponent(person.id)}`;
 
     const outputBox = document.getElementById('magic-output-box');
     const nameEl = document.getElementById('magic-selected-name');

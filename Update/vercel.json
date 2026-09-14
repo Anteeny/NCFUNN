@@ -2,8 +2,10 @@
   "version": 2,
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/", "destination": "/magic-link-admin-component.html" },
-    { "source": "/admin", "destination": "/magic-link-admin-component.html" },
-    { "source": "/update-profile", "destination": "/update-profile.html" }
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/update-profile", "destination": "/update-profile.html" },
+    { "source": "/u/:token*", "destination": "/update-profile.html" },
+    { "source": "/update/:token*", "destination": "/update-profile.html" }
   ]
 }

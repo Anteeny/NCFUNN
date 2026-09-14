@@ -623,8 +623,20 @@
 
     // Run on page load
     document.addEventListener('DOMContentLoaded', async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const token = urlParams.get('token') || urlParams.get('id');
+      let token = null;
+
+      // Check path first: e.g. /u/259 or /update/259
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
+      const uIndex = pathParts.findIndex(p => p.toLowerCase() === 'u' || p.toLowerCase() === 'update');
+      if (uIndex !== -1 && pathParts[uIndex + 1]) {
+        token = decodeURIComponent(pathParts[uIndex + 1]);
+      }
+
+      // Fallback to query param: ?token=259 or ?id=259
+      if (!token) {
+        const urlParams = new URLSearchParams(window.location.search);
+        token = urlParams.get('token') || urlParams.get('id');
+      }
 
       if (!token) {
         showError("Missing Link Token", "No security token was detected in the URL. Please click the exact link shared with you.");
@@ -786,22 +798,6 @@
         }
 
         if (error) throw error;
-
-        // Hide form and display success view
-        document.getElementById('profile-form').style.display = 'none';
-        document.getElementById('success-state').style.display = 'block';
-
-      } catch (err) {
-        console.error("Update error:", err);
-        alert("Failed to save changes: " + (err.message || "Please check your network and try again."));
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnHtml;
-      }
-    }
-
-        if (error) {
-          throw error;
-        }
 
         // Hide form and display success view
         document.getElementById('profile-form').style.display = 'none';
