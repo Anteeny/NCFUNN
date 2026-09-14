@@ -547,6 +547,11 @@
     const missingItems = colStatus.filter(c => c.isMissing);
     const missingCount = missingItems.length;
 
+    const name = person.member_name || person.name || 'Unnamed Member';
+    const phone = person.member_phone || person.phone || '';
+    const dept = person.department || '';
+    const leader = person.g12_leader || '';
+
     // Summary of missing field names
     const missingSummary = missingItems.map(m => m.label).slice(0, 4).join(', ') + (missingCount > 4 ? ` +${missingCount - 4} more` : '');
 
