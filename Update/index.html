@@ -498,19 +498,21 @@
     }
   }
 
-  // EXACT 11 COLUMNS FROM THE 'members' TABLE
+  // EXACT 13 QUESTION FIELDS FOR MEMBER PROFILE
   const MEMBER_COLUMNS = [
-    { key: 'member_name', alt: ['name'], label: 'Member Name', icon: 'ti-user' },
-    { key: 'member_phone', alt: ['phone', 'phone_number'], label: 'Member Phone', icon: 'ti-phone' },
+    { key: 'member_name', alt: ['name'], label: 'Full Name', icon: 'ti-user' },
+    { key: 'member_phone', alt: ['phone', 'phone_number'], label: 'Phone Number', icon: 'ti-phone' },
     { key: 'birthday', alt: ['dob', 'date_of_birth'], label: 'Birthday', icon: 'ti-cake' },
     { key: 'course_of_study', alt: ['course', 'dept_in_school'], label: 'Course of Study', icon: 'ti-school' },
-    { key: 'level', alt: ['lvl', 'level_of_study'], label: 'Level', icon: 'ti-stairs' },
+    { key: 'level', alt: ['lvl', 'level_of_study'], label: 'Level of Study', icon: 'ti-stairs' },
     { key: 'department', alt: ['dept', 'function'], label: 'Department', icon: 'ti-building' },
     { key: 'g12_leader', alt: ['leader'], label: 'G12 Leader', icon: 'ti-crown' },
-    { key: 'leader_type', alt: [], label: 'Leader Type', icon: 'ti-award' },
+    { key: 'membership_level', alt: ['growth_stage'], label: 'Membership Level', icon: 'ti-award' },
+    { key: 'g12_phone', alt: ['g12_leader_phone'], label: 'G12 Phone', icon: 'ti-phone-call' },
     { key: 'School_Address', alt: ['school_address', 'sch_address', 'address'], label: 'School Address', icon: 'ti-map-pin' },
     { key: 'Home_Address', alt: ['home_address'], label: 'Home Address', icon: 'ti-home' },
-    { key: 'g12_phone', alt: ['g12_leader_phone'], label: 'G12 Phone', icon: 'ti-phone-call' }
+    { key: 'zone', alt: [], label: 'Fellowship Zone', icon: 'ti-compass' },
+    { key: 'dc_trainings', alt: ['dc_training', 'dcTrainings'], label: 'DC Trainings', icon: 'ti-certificate' }
   ];
 
   // Helper: Inspect EVERY column in the members table
@@ -608,7 +610,7 @@
     let checklistHtml = `
       <div style="width: 100%; margin-bottom: 6px; font-size: 12px; font-weight: 700; color: #e2e8f0; display: flex; justify-content: space-between;">
         <span>Member Information Status:</span>
-        <span style="color: ${missingItems.length > 0 ? '#f87171' : '#34d399'};">${11 - missingItems.length} Complete / ${missingItems.length} Missing</span>
+        <span style="color: ${missingItems.length > 0 ? '#f87171' : '#34d399'};">${MEMBER_COLUMNS.length - missingItems.length} Complete / ${missingItems.length} Missing</span>
       </div>
       <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 6px; width: 100%;">
     `;

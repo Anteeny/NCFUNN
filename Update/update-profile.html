@@ -267,6 +267,79 @@
       .form-group.full {
         grid-column: span 1;
       }
+    /* Leader Autocomplete Dropdown */
+    .autocomplete-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      right: 0;
+      background: #0f172a;
+      border: 1.5px solid rgba(59, 130, 246, 0.45);
+      border-radius: var(--radius-md);
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.7), 0 0 20px rgba(37, 99, 235, 0.2);
+      max-height: 240px;
+      overflow-y: auto;
+      z-index: 1000;
+      padding: 6px;
+      animation: fadeIn 0.15s ease;
+    }
+
+    .autocomplete-dropdown::-webkit-scrollbar {
+      width: 5px;
+    }
+    .autocomplete-dropdown::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+
+    .autocomplete-item {
+      padding: 9px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.15s ease;
+    }
+
+    .autocomplete-item:hover, .autocomplete-item.active {
+      background: rgba(37, 99, 235, 0.22);
+    }
+
+    .autocomplete-item-name {
+      font-weight: 600;
+      font-size: 13.5px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .autocomplete-item-dept {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    .autocomplete-item-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+
+    .badge-pastor {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fde047;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .badge-dh {
+      background: rgba(59, 130, 246, 0.2);
+      color: #93c5fd;
+      border: 1px solid rgba(59, 130, 246, 0.35);
     }
 
     /* Submit Button */
@@ -530,15 +603,16 @@
           </div>
 
           <!-- 7. G12 LEADER -->
-          <div class="form-group">
+          <div class="form-group" style="position: relative;">
             <div class="form-label">
               <span>G12 Leader</span>
               <span class="field-tag" id="tag-leader"></span>
             </div>
             <div class="input-wrap">
-              <input type="text" id="field-leader" class="form-control" placeholder="Leader name" />
+              <input type="text" id="field-leader" class="form-control" placeholder="Search or type leader name..." autocomplete="off" />
               <i class="ti ti-crown"></i>
             </div>
+            <div id="leader-autocomplete-list" class="autocomplete-dropdown" style="display: none;"></div>
           </div>
 
           <!-- 8. MEMBERSHIP LEVEL -->
@@ -689,7 +763,159 @@
 
       currentRecordId = token.trim();
       await fetchMemberDetails(currentRecordId);
+      await loadG12Leaders();
+      setupLeaderAutocomplete();
     });
+
+    let _availableLeaders = [];
+
+    // Load leaders from DH/Core or Pastor membership levels
+    async function loadG12Leaders() {
+      try {
+        // Query members table for DH/Core and Pastor
+        const { data, error } = await supabaseClient
+          .from('members')
+          .select('id, member_name, member_phone, phone, department, membership_level')
+          .or('membership_level.ilike.%dh%,membership_level.ilike.%core%,membership_level.ilike.%pastor%');
+
+        const map = new Map();
+
+        // 1. Add members explicitly tagged as DH/Core or Pastor in DB
+        if (data && data.length > 0) {
+          data.forEach(m => {
+            const name = (m.member_name || '').trim();
+            if (name) {
+              map.set(name.toLowerCase(), {
+                id: m.id,
+                name: name,
+                phone: m.member_phone || m.phone || '',
+                department: m.department || '',
+                level: (m.membership_level && m.membership_level.toLowerCase().includes('pastor')) ? 'Pastor' : 'DH/Core'
+              });
+            }
+          });
+        }
+
+        // 2. Also check for anyone whose department or name explicitly indicates Pastor
+        const { data: pastorData } = await supabaseClient
+          .from('members')
+          .select('id, member_name, member_phone, phone, department, membership_level')
+          .or('department.ilike.%pastor%,member_name.ilike.%pastor%');
+
+        if (pastorData && pastorData.length > 0) {
+          pastorData.forEach(m => {
+            const name = (m.member_name || '').trim();
+            if (name && !map.has(name.toLowerCase())) {
+              map.set(name.toLowerCase(), {
+                id: m.id,
+                name: name,
+                phone: m.member_phone || m.phone || '',
+                department: m.department || '',
+                level: 'Pastor'
+              });
+            }
+          });
+        }
+
+        _availableLeaders = Array.from(map.values());
+        _availableLeaders.sort((a, b) => a.name.localeCompare(b.name));
+      } catch (e) {
+        console.warn("Could not load leaders list:", e);
+      }
+    }
+
+    // Setup autocomplete dropdown for G12 Leader input
+    function setupLeaderAutocomplete() {
+      const input = document.getElementById('field-leader');
+      const dropdown = document.getElementById('leader-autocomplete-list');
+      const phoneInput = document.getElementById('field-g12-phone');
+      if (!input || !dropdown) return;
+
+      function renderSuggestions(query) {
+        if (!_availableLeaders || _availableLeaders.length === 0) {
+          dropdown.style.display = 'none';
+          return;
+        }
+
+        const q = (query || '').trim().toLowerCase();
+        const matches = q
+          ? _availableLeaders.filter(l => l.name.toLowerCase().includes(q) || (l.department && l.department.toLowerCase().includes(q)))
+          : _availableLeaders.slice(0, 12);
+
+        if (matches.length === 0) {
+          dropdown.innerHTML = `<div style="padding:10px 12px;font-size:12px;color:#94a3b8;text-align:center;">No matching DH/Core or Pastor found. You can type a custom name.</div>`;
+          dropdown.style.display = 'block';
+          return;
+        }
+
+        dropdown.innerHTML = matches.map(l => {
+          const isPastor = l.level === 'Pastor';
+          const badgeClass = isPastor ? 'badge-pastor' : 'badge-dh';
+          const deptText = l.department ? ` · ${l.department}` : '';
+          const phoneText = l.phone ? `📞 ${l.phone}` : 'No phone';
+
+          return `
+            <div class="autocomplete-item" data-name="${encodeURIComponent(l.name)}" data-phone="${encodeURIComponent(l.phone || '')}">
+              <div>
+                <div class="autocomplete-item-name">
+                  <i class="ti ti-crown" style="color:var(--blue);font-size:14px;"></i>
+                  <span>${l.name}</span>
+                </div>
+                <div class="autocomplete-item-dept">${phoneText}${deptText}</div>
+              </div>
+              <span class="autocomplete-item-badge ${badgeClass}">${l.level}</span>
+            </div>
+          `;
+        }).join('');
+
+        dropdown.style.display = 'block';
+
+        dropdown.querySelectorAll('.autocomplete-item').forEach(item => {
+          item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const selName = decodeURIComponent(item.getAttribute('data-name'));
+            const selPhone = decodeURIComponent(item.getAttribute('data-phone'));
+            input.value = selName;
+            if (phoneInput && selPhone) {
+              phoneInput.value = selPhone;
+              const phoneTag = document.getElementById('tag-g12-phone');
+              if (phoneTag) {
+                phoneTag.textContent = 'Auto-filled';
+                phoneTag.className = 'field-tag tag-present';
+              }
+              phoneInput.classList.remove('highlight-missing');
+            }
+            const leaderTag = document.getElementById('tag-leader');
+            if (leaderTag) {
+              leaderTag.textContent = 'Selected';
+              leaderTag.className = 'field-tag tag-present';
+            }
+            input.classList.remove('highlight-missing');
+            dropdown.style.display = 'none';
+          });
+        });
+      }
+
+      input.addEventListener('input', (e) => {
+        renderSuggestions(e.target.value);
+      });
+
+      input.addEventListener('focus', () => {
+        renderSuggestions(input.value);
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+          dropdown.style.display = 'none';
+        }
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          dropdown.style.display = 'none';
+        }
+      });
+    }
 
     // Fetch existing record from 'members' table
     async function fetchMemberDetails(id) {
@@ -714,7 +940,7 @@
       }
     }
 
-    // Populate and visually mark present vs missing fields for ALL 11 columns
+    // Populate and visually mark present vs missing fields for ALL 13 question fields
     function populateForm(record) {
       document.getElementById('loading-state').style.display = 'none';
       document.getElementById('profile-form').style.display = 'block';
@@ -727,8 +953,8 @@
       const department = record.department || record.dept || record.function || '';
       const g12Leader = record.g12_leader || '';
       const membershipLevel = record.membership_level || '';
-      const schoolAddress = record.school_address || record.School_Address || record.sch_address || record.address || '';
-      const homeAddress = record.home_address || record.Home_Address || '';
+      const schoolAddress = record.School_Address || record.school_address || record.sch_address || record.address || '';
+      const homeAddress = record.Home_Address || record.home_address || '';
       const g12Phone = record.g12_phone || record.g12_leader_phone || '';
       const zone = record.zone || '';
 
@@ -746,21 +972,6 @@
         { inputId: 'field-home-address', tagId: 'tag-home-address', val: homeAddress },
         { inputId: 'field-zone', tagId: 'tag-zone', val: zone, isRequired: true }
       ];
-
-      // Populate DC Trainings checkboxes separately
-      const existingDC = (record.dc_trainings || '').split(',').map(s => s.trim().toLowerCase());
-      if (document.getElementById('field-dc-dca'))      document.getElementById('field-dc-dca').checked      = existingDC.includes('dca');
-      if (document.getElementById('field-dc-encounter')) document.getElementById('field-dc-encounter').checked = existingDC.includes('encounter');
-      if (document.getElementById('field-dc-dli'))      document.getElementById('field-dc-dli').checked      = existingDC.includes('dli');
-      // Show tag for dc_trainings
-      const dcTag = document.getElementById('tag-dc-trainings');
-      if (dcTag) {
-        if (record.dc_trainings && record.dc_trainings.trim()) {
-          dcTag.textContent = 'Existing'; dcTag.className = 'field-tag tag-present';
-        } else {
-          dcTag.textContent = 'Missing'; dcTag.className = 'field-tag tag-missing';
-        }
-      }
 
       let missingCount = 0;
 
@@ -784,15 +995,34 @@
         }
       });
 
+      // Populate DC Trainings checkboxes separately (Question Field 13)
+      const existingDC = (record.dc_trainings || '').split(',').map(s => s.trim().toLowerCase());
+      if (document.getElementById('field-dc-dca'))      document.getElementById('field-dc-dca').checked      = existingDC.includes('dca');
+      if (document.getElementById('field-dc-encounter')) document.getElementById('field-dc-encounter').checked = existingDC.includes('encounter');
+      if (document.getElementById('field-dc-dli'))      document.getElementById('field-dc-dli').checked      = existingDC.includes('dli');
+      
+      const hasDC = record.dc_trainings && String(record.dc_trainings).trim() !== '' && record.dc_trainings !== '—' && record.dc_trainings !== '-';
+      const dcTag = document.getElementById('tag-dc-trainings');
+      if (dcTag) {
+        if (hasDC) {
+          dcTag.textContent = 'Existing';
+          dcTag.className = 'field-tag tag-present';
+        } else {
+          dcTag.textContent = 'Missing';
+          dcTag.className = 'field-tag tag-missing';
+          missingCount++;
+        }
+      }
+
       if (missingCount > 0) {
         const alertBox = document.getElementById('missing-alert-box');
         const alertText = document.getElementById('missing-count-text');
         alertBox.style.display = 'inline-flex';
-        alertText.textContent = `You have ${missingCount} field${missingCount > 1 ? 's' : ''} missing. Please fill them in below:`;
+        alertText.textContent = `You have ${missingCount} field${missingCount > 1 ? 's' : ''} missing out of 13. Please fill them in below:`;
       }
     }
 
-    // Handle Form Update Submission for ALL 12 columns
+    // Handle Form Update Submission for ALL 13 question fields
     async function handleFormSubmit(e) {
       e.preventDefault();
       if (!currentRecordId) return;
@@ -820,7 +1050,8 @@
         .map(id => document.getElementById(id).value);
       const dcTrainingsVal = dcChecked.length > 0 ? dcChecked.join(', ') : null;
 
-      const updatedPayload = {
+      // 1. Primary payload using exact column names in Supabase (PascalCase School_Address & Home_Address)
+      const primaryPayload = {
         member_name: memberName,
         member_phone: memberPhone,
         birthday: birthdayVal,
@@ -830,23 +1061,24 @@
         g12_leader: leaderVal,
         membership_level: membershipLevelVal,
         g12_phone: g12PhoneVal,
-        school_address: schoolAddressVal,
         School_Address: schoolAddressVal,
-        home_address: homeAddressVal,
         Home_Address: homeAddressVal,
         zone: zoneVal,
         dc_trainings: dcTrainingsVal
       };
 
       try {
-        let { error } = await supabaseClient
+        let res = await supabaseClient
           .from('members')
-          .update(updatedPayload)
+          .update(primaryPayload)
           .eq('id', currentRecordId);
 
-        // Fallback in case School_Address / Home_Address column name casing in schema differs
-        if (error && error.message && error.message.includes('column')) {
-          const fallbackPayload = {
+        let error = res.error;
+
+        // 2. Fallback: if schema has lowercase school_address / home_address
+        if (error && error.message && (error.message.includes('Address') || error.message.includes('schema cache'))) {
+          console.warn("Retrying with lowercase address column names...");
+          const lowercaseAddrPayload = {
             member_name: memberName,
             member_phone: memberPhone,
             birthday: birthdayVal,
@@ -861,11 +1093,27 @@
             zone: zoneVal,
             dc_trainings: dcTrainingsVal
           };
-          const res = await supabaseClient
+          const res2 = await supabaseClient
             .from('members')
-            .update(fallbackPayload)
+            .update(lowercaseAddrPayload)
             .eq('id', currentRecordId);
-          error = res.error;
+          error = res2.error;
+        }
+
+        // 3. Fallback: if newer optional columns (dc_trainings, membership_level, zone) not yet in schema cache
+        if (error && error.message && error.message.includes('schema cache')) {
+          console.warn("Retrying without missing schema columns:", error.message);
+          const safePayload = { ...primaryPayload };
+          if (error.message.includes('dc_trainings')) delete safePayload.dc_trainings;
+          if (error.message.includes('membership_level')) delete safePayload.membership_level;
+          if (error.message.includes('zone')) delete safePayload.zone;
+          if (error.message.includes('g12_phone')) delete safePayload.g12_phone;
+
+          const res3 = await supabaseClient
+            .from('members')
+            .update(safePayload)
+            .eq('id', currentRecordId);
+          error = res3.error;
         }
 
         if (error) throw error;
