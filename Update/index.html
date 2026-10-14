@@ -218,6 +218,67 @@
       color: #34d399;
     }
 
+    /* Not Found Quick-Add Card */
+    .magic-not-found-box {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1.5px dashed rgba(245, 158, 11, 0.5);
+      border-radius: 16px;
+      padding: 22px 20px;
+      margin-bottom: 16px;
+      animation: fadeIn 0.2s ease;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.4);
+    }
+
+    .not-found-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .not-found-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(245, 158, 11, 0.16);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #fde047;
+      flex-shrink: 0;
+    }
+
+    .not-found-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .not-found-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 5px;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #ffffff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     /* Generated Link Card */
     .magic-output-box {
       background: rgba(15, 23, 42, 0.98);
@@ -424,7 +485,75 @@
     return null;
   }
 
-  // 1. Search Members from 'everyone_details' table
+  let _availableLeaders = [];
+
+  // Load leaders from DH/Core or Pastor levels
+  async function loadLeadersList() {
+    try {
+      const client = await getSupabaseInstance();
+      if (!client) return;
+
+      const { data } = await client
+        .from('members')
+        .select('id, member_name, member_phone, phone, department, membership_level, zone')
+        .or('membership_level.ilike.%dh%,membership_level.ilike.%core%,membership_level.ilike.%pastor%');
+
+      const map = new Map();
+      if (data && data.length > 0) {
+        data.forEach(m => {
+          const name = (m.member_name || '').trim();
+          if (name) {
+            map.set(name.toLowerCase(), {
+              id: m.id,
+              name: name,
+              phone: m.member_phone || m.phone || '',
+              department: m.department || '',
+              level: (m.membership_level && m.membership_level.toLowerCase().includes('pastor')) ? 'Pastor' : 'DH/Core',
+              zone: m.zone || 'HQ'
+            });
+          }
+        });
+      }
+
+      // Fallback for Pastors indicated in department or name
+      const { data: pastorData } = await client
+        .from('members')
+        .select('id, member_name, member_phone, phone, department, membership_level, zone')
+        .or('department.ilike.%pastor%,member_name.ilike.%pastor%');
+
+      if (pastorData && pastorData.length > 0) {
+        pastorData.forEach(m => {
+          const name = (m.member_name || '').trim();
+          if (name && !map.has(name.toLowerCase())) {
+            map.set(name.toLowerCase(), {
+              id: m.id,
+              name: name,
+              phone: m.member_phone || m.phone || '',
+              department: m.department || '',
+              level: 'Pastor',
+              zone: m.zone || 'HQ'
+            });
+          }
+        });
+      }
+
+      _availableLeaders = Array.from(map.values());
+      _availableLeaders.sort((a, b) => a.name.localeCompare(b.name));
+    } catch (e) {
+      console.warn("Could not load leaders list:", e);
+    }
+  }
+
+  // Pre-load leaders on document ready
+  document.addEventListener('DOMContentLoaded', () => {
+    loadLeadersList();
+  });
+
+  function formatTitleCase(str) {
+    return (str || '').replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+  }
+
+  // 1. Search Members from 'members' table with smart multi-word fallback
   async function searchMagicMembers() {
     const input = document.getElementById('magic-search-input');
     const query = input.value.trim();
@@ -450,10 +579,15 @@
       return;
     }
 
+    // Ensure leaders are loaded
+    if (_availableLeaders.length === 0) {
+      await loadLeadersList();
+    }
+
     statusMsg.textContent = 'Searching members table...';
 
     try {
-      // Query the actual 'members' table from Supabase
+      // Step 1: Substring Match
       let { data, error } = await client
         .from('members')
         .select('*')
@@ -473,8 +607,25 @@
 
       if (error) throw error;
 
+      // Step 2: Order-Independent Token Match (e.g. "Emmanuel Chidera" vs "Chidera Emmanuel")
+      if ((!data || data.length === 0) && query.includes(' ')) {
+        const tokens = query.split(/\s+/).filter(t => t.length > 1);
+        if (tokens.length > 1) {
+          let builder = client.from('members').select('*');
+          tokens.forEach(tok => {
+            builder = builder.ilike('member_name', `%${tok}%`);
+          });
+          const tokenRes = await builder.limit(30);
+          if (tokenRes.data && tokenRes.data.length > 0) {
+            data = tokenRes.data;
+          }
+        }
+      }
+
+      // Step 3: Member Not Found -> Render Quick-Add Onboard Card
       if (!data || data.length === 0) {
-        statusMsg.textContent = `No member found matching "${query}".`;
+        statusMsg.style.display = 'none';
+        renderNotFoundQuickAdd(query);
         return;
       }
 
@@ -495,6 +646,113 @@
     } catch (err) {
       console.error("Search error:", err);
       statusMsg.textContent = "Error searching database: " + (err.message || err);
+    }
+  }
+
+  // Render Quick-Add Onboarding Box when search yields 0 matches
+  function renderNotFoundQuickAdd(query) {
+    const resultsContainer = document.getElementById('magic-results-container');
+    const formattedName = formatTitleCase(query);
+
+    let leaderOptionsHtml = '<option value="">-- Select Leader (or Unassigned) --</option>';
+    _availableLeaders.forEach(l => {
+      leaderOptionsHtml += `<option value="${encodeURIComponent(l.name)}">${l.name} (${l.level}${l.department ? ' · ' + l.department : ''})</option>`;
+    });
+
+    resultsContainer.innerHTML = `
+      <div class="magic-not-found-box">
+        <div class="not-found-header">
+          <div class="not-found-icon">
+            <i class="ti ti-user-plus"></i>
+          </div>
+          <div>
+            <div style="font-size: 15px; font-weight: 700; color: #ffffff;">Member Not In Database</div>
+            <div style="font-size: 12.5px; color: #94a3b8; margin-top: 2px;">
+              No record was found for "<strong style="color:#fde047;">${query}</strong>". You can add them to your cell and generate their link right now:
+            </div>
+          </div>
+        </div>
+
+        <div class="not-found-form">
+          <div class="not-found-field">
+            <label>Member Full Name *</label>
+            <input type="text" id="quick-add-name" value="${formattedName}" class="magic-search-input" style="padding:10px 14px; font-size:13px;" />
+          </div>
+
+          <div class="not-found-field">
+            <label>Assign to G12 Leader (DH/Core or Pastor)</label>
+            <select id="quick-add-leader" class="magic-search-input" style="padding:10px 14px; font-size:13px; cursor:pointer;">
+              ${leaderOptionsHtml}
+            </select>
+          </div>
+
+          <div class="not-found-field">
+            <label>Member Phone Number (Optional - for WhatsApp dispatch)</label>
+            <input type="tel" id="quick-add-phone" placeholder="e.g. 08012345678" class="magic-search-input" style="padding:10px 14px; font-size:13px;" />
+          </div>
+
+          <button class="magic-search-btn" id="quick-add-submit-btn" onclick="submitQuickAddMember()" style="width: 100%; justify-content: center; padding: 12px; margin-top: 6px;">
+            <i class="ti ti-user-plus"></i>
+            <span>Add Member & Generate Link</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    resultsContainer.style.display = 'flex';
+  }
+
+  // Handle Quick Add Submission & Transition to Link Output
+  async function submitQuickAddMember() {
+    const nameInput = document.getElementById('quick-add-name');
+    const leaderSelect = document.getElementById('quick-add-leader');
+    const phoneInput = document.getElementById('quick-add-phone');
+    const submitBtn = document.getElementById('quick-add-submit-btn');
+
+    const name = nameInput.value.trim();
+    if (!name) {
+      alert("Please enter the member's full name.");
+      nameInput.focus();
+      return;
+    }
+
+    const selectedLeaderRaw = leaderSelect.value ? decodeURIComponent(leaderSelect.value) : 'Unassigned';
+    const leaderObj = _availableLeaders.find(l => l.name === selectedLeaderRaw);
+    const phone = phoneInput.value.trim() || null;
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<div class="spinner"></div> <span>Creating member profile…</span>';
+
+    try {
+      const client = await getSupabaseInstance();
+      if (!client) throw new Error("Database client not available.");
+
+      const newMemberPayload = {
+        member_name: name,
+        member_phone: phone,
+        g12_leader: leaderObj ? leaderObj.name : 'Unassigned',
+        g12_phone: leaderObj ? leaderObj.phone : null,
+        membership_level: 'MVP',
+        zone: (leaderObj && leaderObj.zone) ? leaderObj.zone : 'HQ'
+      };
+
+      const { data, error } = await client
+        .from('members')
+        .insert([newMemberPayload])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Successfully added! Hide not-found container and display link
+      document.getElementById('magic-results-container').style.display = 'none';
+      selectMagicPerson(data);
+
+    } catch (err) {
+      console.error("Quick add error:", err);
+      alert("Could not create member: " + (err.message || err));
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="ti ti-user-plus"></i> <span>Add Member & Generate Link</span>';
     }
   }
 
@@ -636,18 +894,22 @@
     checklistHtml += `</div>`;
     tagsEl.innerHTML = checklistHtml;
 
-    // Configure WhatsApp Button if phone exists
+    // Configure WhatsApp Button
     const phone = person.member_phone || person.phone;
+    const firstName = displayName.split(' ')[0];
+    const leaderLine = (person.g12_leader && person.g12_leader !== 'Unassigned') ? `\nYour G12 Leader: ${person.g12_leader}` : '';
+    const message = `Hello ${firstName}! 👋 Please take 1 minute to complete your fellowship records with us by clicking your secure personal link:\n\n${magicUrl}${leaderLine}\n\nThank you and God bless you! - NCF UNN`;
+
     if (phone) {
       const cleanPhone = String(phone).replace(/[^0-9]/g, '');
       const waPhone = cleanPhone.startsWith('0') ? '234' + cleanPhone.slice(1) : cleanPhone;
-      const firstName = displayName.split(' ')[0];
-      const message = `Hello ${firstName}! 👋 Please take 1 minute to update your fellowship records with us by clicking your secure personal link:\n\n${magicUrl}\n\nThank you and God bless you! - NCF UNN`;
-      
       waBtn.href = `https://wa.me/${waPhone}?text=${encodeURIComponent(message)}`;
+      waBtn.innerHTML = '<i class="ti ti-brand-whatsapp"></i> <span>Send via WhatsApp</span>';
       waBtn.style.display = 'inline-flex';
     } else {
-      waBtn.style.display = 'none';
+      waBtn.href = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      waBtn.innerHTML = '<i class="ti ti-brand-whatsapp"></i> <span>Share via WhatsApp</span>';
+      waBtn.style.display = 'inline-flex';
     }
 
     outputBox.style.display = 'block';
