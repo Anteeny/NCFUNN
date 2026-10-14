@@ -541,17 +541,21 @@
             </div>
           </div>
 
-          <!-- 8. LEADER TYPE -->
+          <!-- 8. MEMBERSHIP LEVEL -->
           <div class="form-group">
             <div class="form-label">
-              <span>Leader Type</span>
-              <span class="field-tag" id="tag-leader-type"></span>
+              <span>Membership Level</span>
+              <span class="field-tag" id="tag-membership-level"></span>
             </div>
             <div class="input-wrap">
-              <select id="field-leader-type" class="form-control">
-                <option value="">Select type</option>
-                <option value="DH">DH</option>
-                <option value="G12">G12</option>
+              <select id="field-membership-level" class="form-control">
+                <option value="">Select level</option>
+                <option value="MVP">MVP</option>
+                <option value="Occasional Member">Occasional Member</option>
+                <option value="Committed Member">Committed Member</option>
+                <option value="Worker">Worker</option>
+                <option value="DH/Core">DH/Core</option>
+                <option value="Pastor">Pastor</option>
               </select>
               <i class="ti ti-award"></i>
             </div>
@@ -588,6 +592,46 @@
             </div>
             <div class="input-wrap">
               <textarea id="field-home-address" class="form-control" rows="2" placeholder="e.g. 14 Awolowo Road, Ikeja, Lagos"></textarea>
+            </div>
+          </div>
+
+          <!-- 12. ZONE -->
+          <div class="form-group full">
+            <div class="form-label">
+              <span>Select Zone *</span>
+              <span class="field-tag" id="tag-zone"></span>
+            </div>
+            <div class="input-wrap">
+              <select id="field-zone" class="form-control" required>
+                <option value="">Select zone</option>
+                <option value="HQ">HQ</option>
+                <option value="JSQ">JSQ</option>
+                <option value="Odim">Odim</option>
+                <option value="Franco">Franco</option>
+                <option value="Hilltop">Hilltop</option>
+                <option value="Odenigwe">Odenigwe</option>
+                <option value="Greenhouse">Greenhouse</option>
+              </select>
+              <i class="ti ti-map-pin"></i>
+            </div>
+          </div>
+
+          <!-- 13. DC TRAININGS -->
+          <div class="form-group full">
+            <div class="form-label">
+              <span>DC Trainings Attended</span>
+              <span class="field-tag" id="tag-dc-trainings"></span>
+            </div>
+            <div style="display:flex; gap:20px; flex-wrap:wrap; margin-top:8px; padding:14px; background:var(--surface,rgba(255,255,255,0.05)); border-radius:10px; border:1px solid var(--border,rgba(255,255,255,0.1));">
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:500; font-size:15px;">
+                <input type="checkbox" id="field-dc-dca" value="DCA" style="width:17px;height:17px;"> DCA
+              </label>
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:500; font-size:15px;">
+                <input type="checkbox" id="field-dc-encounter" value="Encounter" style="width:17px;height:17px;"> Encounter
+              </label>
+              <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:500; font-size:15px;">
+                <input type="checkbox" id="field-dc-dli" value="DLI" style="width:17px;height:17px;"> DLI
+              </label>
             </div>
           </div>
 
@@ -682,10 +726,11 @@
       const level = record.level || record.lvl || '';
       const department = record.department || record.dept || record.function || '';
       const g12Leader = record.g12_leader || '';
-      const leaderType = record.leader_type || '';
+      const membershipLevel = record.membership_level || '';
       const schoolAddress = record.school_address || record.School_Address || record.sch_address || record.address || '';
       const homeAddress = record.home_address || record.Home_Address || '';
       const g12Phone = record.g12_phone || record.g12_leader_phone || '';
+      const zone = record.zone || '';
 
       const fields = [
         { inputId: 'field-name', tagId: 'tag-name', val: memberName, isRequired: true },
@@ -695,11 +740,27 @@
         { inputId: 'field-level', tagId: 'tag-level', val: level },
         { inputId: 'field-department', tagId: 'tag-department', val: department },
         { inputId: 'field-leader', tagId: 'tag-leader', val: g12Leader },
-        { inputId: 'field-leader-type', tagId: 'tag-leader-type', val: leaderType },
+        { inputId: 'field-membership-level', tagId: 'tag-membership-level', val: membershipLevel },
         { inputId: 'field-g12-phone', tagId: 'tag-g12-phone', val: g12Phone },
         { inputId: 'field-school-address', tagId: 'tag-school-address', val: schoolAddress },
-        { inputId: 'field-home-address', tagId: 'tag-home-address', val: homeAddress }
+        { inputId: 'field-home-address', tagId: 'tag-home-address', val: homeAddress },
+        { inputId: 'field-zone', tagId: 'tag-zone', val: zone, isRequired: true }
       ];
+
+      // Populate DC Trainings checkboxes separately
+      const existingDC = (record.dc_trainings || '').split(',').map(s => s.trim().toLowerCase());
+      if (document.getElementById('field-dc-dca'))      document.getElementById('field-dc-dca').checked      = existingDC.includes('dca');
+      if (document.getElementById('field-dc-encounter')) document.getElementById('field-dc-encounter').checked = existingDC.includes('encounter');
+      if (document.getElementById('field-dc-dli'))      document.getElementById('field-dc-dli').checked      = existingDC.includes('dli');
+      // Show tag for dc_trainings
+      const dcTag = document.getElementById('tag-dc-trainings');
+      if (dcTag) {
+        if (record.dc_trainings && record.dc_trainings.trim()) {
+          dcTag.textContent = 'Existing'; dcTag.className = 'field-tag tag-present';
+        } else {
+          dcTag.textContent = 'Missing'; dcTag.className = 'field-tag tag-missing';
+        }
+      }
 
       let missingCount = 0;
 
@@ -731,7 +792,7 @@
       }
     }
 
-    // Handle Form Update Submission for ALL 11 columns
+    // Handle Form Update Submission for ALL 12 columns
     async function handleFormSubmit(e) {
       e.preventDefault();
       if (!currentRecordId) return;
@@ -748,10 +809,16 @@
       const levelVal = document.getElementById('field-level').value || null;
       const departmentVal = document.getElementById('field-department').value || null;
       const leaderVal = document.getElementById('field-leader').value.trim() || 'Unassigned';
-      const leaderTypeVal = document.getElementById('field-leader-type').value || null;
+      const membershipLevelVal = document.getElementById('field-membership-level').value || null;
       const g12PhoneVal = document.getElementById('field-g12-phone').value.trim() || null;
       const schoolAddressVal = document.getElementById('field-school-address').value.trim() || null;
       const homeAddressVal = document.getElementById('field-home-address').value.trim() || null;
+      const zoneVal = document.getElementById('field-zone').value;
+      // DC Trainings
+      const dcChecked = ['field-dc-dca','field-dc-encounter','field-dc-dli']
+        .filter(id => document.getElementById(id)?.checked)
+        .map(id => document.getElementById(id).value);
+      const dcTrainingsVal = dcChecked.length > 0 ? dcChecked.join(', ') : null;
 
       const updatedPayload = {
         member_name: memberName,
@@ -761,12 +828,14 @@
         level: levelVal,
         department: departmentVal,
         g12_leader: leaderVal,
-        leader_type: leaderTypeVal,
+        membership_level: membershipLevelVal,
         g12_phone: g12PhoneVal,
         school_address: schoolAddressVal,
         School_Address: schoolAddressVal,
         home_address: homeAddressVal,
-        Home_Address: homeAddressVal
+        Home_Address: homeAddressVal,
+        zone: zoneVal,
+        dc_trainings: dcTrainingsVal
       };
 
       try {
@@ -785,10 +854,12 @@
             level: levelVal,
             department: departmentVal,
             g12_leader: leaderVal,
-            leader_type: leaderTypeVal,
+            membership_level: membershipLevelVal,
             g12_phone: g12PhoneVal,
             school_address: schoolAddressVal,
-            home_address: homeAddressVal
+            home_address: homeAddressVal,
+            zone: zoneVal,
+            dc_trainings: dcTrainingsVal
           };
           const res = await supabaseClient
             .from('members')
