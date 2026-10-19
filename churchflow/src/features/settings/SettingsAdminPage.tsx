@@ -18,10 +18,8 @@ import {
   Search,
   X,
   Download,
-  Printer,
   Sparkles,
   Upload,
-  Image as ImageIcon,
 } from 'lucide-react';
 import { useBentoConfig } from '../../hooks/useBentoConfig';
 import { useLeadership } from '../../hooks/useLeadership';

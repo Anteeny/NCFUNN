@@ -139,9 +139,13 @@ export const G12ReportPage: React.FC = () => {
     }
   };
 
+  // Service type for the selected date (taken from the submitted records)
+  const selectedServiceType =
+    dateLeaders.flatMap(l => l.records).find(r => r.service_type)?.service_type || 'G12 Meeting';
+
   const exportCurrentReportCSV = () => {
     if (!activeLeader) return;
-    const filtered = (activeLeader.disciples || []).filter(d =>
+    const filtered = (activeLeader.records || []).filter(d =>
       d.member_name.toLowerCase().includes(memberSearch.toLowerCase())
     );
     const headers = ['#', 'Disciple Name', 'Status', 'Notes / Reason', 'G12 Leader', 'Service Date', 'Service Type'];
@@ -159,7 +163,7 @@ export const G12ReportPage: React.FC = () => {
 
   const printCurrentReport = () => {
     if (!activeLeader) return;
-    const filtered = (activeLeader.disciples || []).filter(d =>
+    const filtered = (activeLeader.records || []).filter(d =>
       d.member_name.toLowerCase().includes(memberSearch.toLowerCase())
     );
     const headers = ['#', 'Disciple Name', 'Status', 'Notes / Reason'];
@@ -185,7 +189,7 @@ export const G12ReportPage: React.FC = () => {
   const exportAllLeadersDateCSV = () => {
     if (!dateLeaders || dateLeaders.length === 0) return;
     const allDisciples = dateLeaders.flatMap(l =>
-      (l.disciples || []).map(d => ({ ...d, leader: l.leader_name }))
+      (l.records || []).map(d => ({ ...d, leader: l.leader_name }))
     );
     const headers = ['#', 'Disciple Name', 'Status', 'G12 Leader', 'Notes / Reason', 'Service Date', 'Service Type'];
     const rows = allDisciples.map((d, idx) => [

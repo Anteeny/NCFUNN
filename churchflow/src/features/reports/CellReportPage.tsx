@@ -116,7 +116,7 @@ export const CellReportPage: React.FC = () => {
       idx + 1,
       r.leader_name,
       r.location || 'Campus Venue',
-      r.meeting_time || '5:00 PM',
+      r.time_in || '5:00 PM',
       r.attendance,
       r.new_converts,
       r.offering,

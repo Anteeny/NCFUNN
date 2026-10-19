@@ -154,17 +154,20 @@ export const DepartmentReportPage: React.FC = () => {
     }
   };
 
+  // Department records don't store a service type, so use a fixed label in exports
+  const selectedServiceType = 'Department Meeting';
+
   const exportCurrentDeptReportCSV = () => {
     if (!activeUnit) return;
-    const filtered = (activeUnit.workers || []).filter(w =>
-      w.worker_name.toLowerCase().includes(workerSearch.toLowerCase())
+    const filtered = (activeUnit.records || []).filter(w =>
+      w.member_name.toLowerCase().includes(workerSearch.toLowerCase())
     );
     const headers = ['#', 'Worker Name', 'Status', 'Absence Reason', 'Department', 'Service Date', 'Service Type'];
     const rows = filtered.map((w, idx) => [
       idx + 1,
-      w.worker_name,
+      w.member_name,
       w.status,
-      w.absence_reason || '—',
+      w.reason_for_absence || '—',
       activeUnit.dept_name,
       selectedDate,
       selectedServiceType,
@@ -174,15 +177,15 @@ export const DepartmentReportPage: React.FC = () => {
 
   const printCurrentDeptReport = () => {
     if (!activeUnit) return;
-    const filtered = (activeUnit.workers || []).filter(w =>
-      w.worker_name.toLowerCase().includes(workerSearch.toLowerCase())
+    const filtered = (activeUnit.records || []).filter(w =>
+      w.member_name.toLowerCase().includes(workerSearch.toLowerCase())
     );
     const headers = ['#', 'Worker Name', 'Status', 'Absence Reason'];
     const rows = filtered.map((w, idx) => [
       idx + 1,
-      w.worker_name,
+      w.member_name,
       w.status,
-      w.absence_reason || '—',
+      w.reason_for_absence || '—',
     ]);
     printTable(
       `Department Attendance Report · ${activeUnit.dept_name}`,
@@ -200,15 +203,15 @@ export const DepartmentReportPage: React.FC = () => {
   const exportAllDeptsDateCSV = () => {
     if (!dateUnits || dateUnits.length === 0) return;
     const allWorkers = dateUnits.flatMap(u =>
-      (u.workers || []).map(w => ({ ...w, dept: u.dept_name }))
+      (u.records || []).map(w => ({ ...w, dept: u.dept_name }))
     );
     const headers = ['#', 'Worker Name', 'Status', 'Department', 'Absence Reason', 'Service Date', 'Service Type'];
     const rows = allWorkers.map((w, idx) => [
       idx + 1,
-      w.worker_name,
+      w.member_name,
       w.status,
       w.dept,
-      w.absence_reason || '—',
+      w.reason_for_absence || '—',
       selectedDate,
       selectedServiceType,
     ]);

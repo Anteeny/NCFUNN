@@ -65,7 +65,12 @@ function formatTimeIn(isoString?: string | null): string {
 /**
  * Exports a service attendance roster to an Excel-compatible CSV file
  */
-function exportAttendanceCSV(date: string, type: string, records: ServiceAttendanceRecord[]) {
+// Export/print only require member_name; every other column has a fallback.
+// This lets both live check-ins and history-folder records be exported.
+type ExportableAttendance = Pick<ServiceAttendanceRecord, 'member_name'> &
+  Partial<Omit<ServiceAttendanceRecord, 'member_name'>>;
+
+function exportAttendanceCSV(date: string, type: string, records: ExportableAttendance[]) {
   if (!records || records.length === 0) {
     alert('No attendance records available to export for this service session.');
     return;
@@ -98,7 +103,7 @@ function exportAttendanceCSV(date: string, type: string, records: ServiceAttenda
 /**
  * Opens a clean, print-ready document / PDF dialog for an attendance roster
  */
-function printAttendanceRoster(date: string, type: string, records: ServiceAttendanceRecord[]) {
+function printAttendanceRoster(date: string, type: string, records: ExportableAttendance[]) {
   if (!records || records.length === 0) {
     alert('No attendance records available to print.');
     return;
@@ -759,7 +764,7 @@ export const AttendancePage: React.FC = () => {
                     m.department || 'General',
                     m.zone || 'HQ',
                     m.g12_leader || m.leader || '—',
-                    savedCheckIns[String(m.id)] ? 'Checked In' : 'Not Checked In',
+                    checkedInMap.has(String(m.id)) ? 'Checked In' : 'Not Checked In',
                   ]);
                   exportToCSV(`Live_Tracker_Roster_${serviceDate}`, headers, rows);
                 }}
