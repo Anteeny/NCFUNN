@@ -3447,6 +3447,9 @@
             <i class="ti ti-chart-bar"></i> Cell Reports
           </div>
         </div>
+        <div class="nav-item" onclick="window.open('../Attendance/tracker.html', '_blank')" style="color:#4ade80;">
+          <i class="ti ti-clipboard-check" style="color:#22c55e;"></i> Gate Tracker <span class="badge" style="background:rgba(34,197,94,0.18); color:#22c55e; font-size:10px; margin-left:auto; padding:2px 6px; border-radius:8px;">LIVE</span>
+        </div>
         <div class="nav-item" onclick="showPage('birthdays',this)" id="nav-birthdays" style="color:#fde047;">
           <i class="ti ti-cake" style="color:#f59e0b;"></i> Birthdays 🎂
         </div>
@@ -3799,6 +3802,7 @@
                       <th>Cell Leader</th>
                       <th>Cell Address (Room & Lodge)</th>
                       <th>Meeting Schedule</th>
+                      <th>Area Members (Hostel Sync)</th>
                     </tr>
                   </thead>
                   <tbody id="connect-cells-tbody">
@@ -5490,6 +5494,45 @@
     </div>
   </div>
 
+  <!-- CONNECT CELL MEMBERS MODAL (LOCATION & HOSTEL SYNC) -->
+  <div class="modal-backdrop" id="modal-connect-cell-members" style="z-index: 220;">
+    <div class="modal" style="max-width: 850px; width: 95%; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="flex-shrink: 0;">
+        <div>
+          <div class="modal-title" id="connect-cell-members-title" style="font-size: 18px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+            <i class="ti ti-users" style="color: var(--blue);"></i> Connect Cell Members Roster
+          </div>
+          <div id="connect-cell-members-sub" style="font-size: 12.5px; color: var(--text-muted); margin-top: 2px;">
+            Members mapped purely by hostel & residential address in this cell's territory.
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('connect-cell-members')">×</button>
+      </div>
+      <div class="modal-body" style="padding: 16px; overflow-y: auto; flex: 1;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr style="background:rgba(15,23,42,0.9); text-align:left;">
+                <th style="width:40px; text-align:center;">#</th>
+                <th>Member Name</th>
+                <th>Phone (WhatsApp)</th>
+                <th>Hostel / Lodge Address</th>
+                <th>Growth Stage</th>
+                <th>Course & Level</th>
+              </tr>
+            </thead>
+            <tbody id="connect-cell-members-tbody">
+              <!-- Loaded dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content: flex-end; flex-shrink: 0;">
+        <button class="btn btn-outline btn-sm" onclick="closeModal('connect-cell-members')">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- DATALIST FOR LEADER SUGGESTIONS -->
   <datalist id="g12-leaders-list">
     <option value="Ukamaka Augustine"></option>
@@ -7003,11 +7046,32 @@
         const cellsTbody = document.getElementById('connect-cells-tbody');
         if (cellsTbody) {
           if (zoneCells.length === 0) {
-            cellsTbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:40px; color:var(--text-muted);"><i class="ti ti-home-off" style="font-size:28px; opacity:0.3; display:block; margin-bottom:8px;"></i>No cells found in ${selectedConnectZone} zone.<br>Click <strong>Manage Cells</strong> to add or edit records after password authentication.</td></tr>`;
+            cellsTbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:var(--text-muted);"><i class="ti ti-home-off" style="font-size:28px; opacity:0.3; display:block; margin-bottom:8px;"></i>No cells found in ${selectedConnectZone} zone.<br>Click <strong>Manage Cells</strong> to add or edit records after password authentication.</td></tr>`;
             return;
           }
 
-          cellsTbody.innerHTML = zoneCells.map((c, idx) => `
+          cellsTbody.innerHTML = zoneCells.map((c, idx) => {
+            const cellLoc = (c.cell_address || c.location || '').toLowerCase();
+            const cellZ = (c.zone || '').toLowerCase();
+            const keywords = cellLoc.split(/[\s,./-]+/).filter(w => w.length > 3 && !['lodge','hostel','street','road','block','room','behind','front','near'].includes(w));
+
+            const matchedMembers = (state.members || []).filter(m => {
+              const memZ = (m.zone || '').toLowerCase();
+              if (memZ && cellZ && memZ !== cellZ) return false;
+              const memLoc = (m.School_Address || m.school_address || '').toLowerCase();
+              if (!memLoc) return memZ === cellZ;
+              if (keywords.length > 0) {
+                return keywords.some(kw => memLoc.includes(kw));
+              }
+              return memZ === cellZ;
+            });
+
+            const escapedCellName = (c.cell_name || c.name || '').replace(/'/g, "\\'");
+            const escapedZone = (c.zone || '').replace(/'/g, "\\'");
+            const escapedAddress = (c.cell_address || c.location || '').replace(/'/g, "\\'");
+            const escapedLeader = (c.cell_leader || c.leader || '').replace(/'/g, "\\'");
+
+            return `
             <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
               <td style="text-align:center; font-weight:600; color:var(--blue);">${idx + 1}</td>
               <td><span class="badge badge-blue" style="font-size:11px;">${c.zone} Zone</span></td>
@@ -7015,8 +7079,14 @@
               <td><strong style="color:var(--blue); font-size:13px;"><i class="ti ti-user"></i> ${c.cell_leader || c.leader}</strong></td>
               <td><span style="font-size:12.5px; color:var(--text-muted);"><i class="ti ti-map-pin" style="color:var(--blue);"></i> ${c.cell_address || c.location}</span></td>
               <td><span style="font-size:12px; color:#10b981;"><i class="ti ti-clock"></i> ${c.schedule || 'Saturdays 5:00 PM'}</span></td>
+              <td>
+                <button class="btn btn-sm" style="background:rgba(59,130,246,0.15); color:var(--blue); border:1px solid rgba(59,130,246,0.3); border-radius:10px; padding:5px 12px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px;" onclick="openConnectCellMembersModal('${escapedCellName}', '${escapedZone}', '${escapedAddress}', '${escapedLeader}')">
+                  <i class="ti ti-users"></i> ${matchedMembers.length} Members
+                </button>
+              </td>
             </tr>
-          `).join('');
+          `;
+          }).join('');
         }
 
       } else {
@@ -7059,6 +7129,65 @@
     function exitConnectZoneView() {
       selectedConnectZone = null;
       renderConnectPage();
+    }
+
+    function openConnectCellMembersModal(cellName, zone, cellAddress, cellLeader) {
+      const titleEl = document.getElementById('connect-cell-members-title');
+      const subEl = document.getElementById('connect-cell-members-sub');
+      const tbody = document.getElementById('connect-cell-members-tbody');
+      if (!titleEl || !tbody) return;
+
+      titleEl.innerHTML = `<i class="ti ti-home-heart" style="color:var(--blue);"></i> ${cellName} (${zone} Zone)`;
+      if (subEl) {
+        subEl.innerHTML = `<strong>Cell Leader:</strong> ${cellLeader || 'Unassigned'} · <strong>Area Covered:</strong> ${cellAddress || 'Zone-wide'}`;
+      }
+
+      const cellLoc = (cellAddress || cellName || '').toLowerCase();
+      const cellZ = (zone || '').toLowerCase();
+      const keywords = cellLoc.split(/[\s,./-]+/).filter(w => w.length > 3 && !['lodge','hostel','street','road','block','room','behind','front','near'].includes(w));
+
+      const matched = (state.members || []).filter(m => {
+        const memZ = (m.zone || '').toLowerCase();
+        if (memZ && cellZ && memZ !== cellZ) return false;
+        const memLoc = (m.School_Address || m.school_address || '').toLowerCase();
+        if (!memLoc) return memZ === cellZ;
+        if (keywords.length > 0) {
+          return keywords.some(kw => memLoc.includes(kw));
+        }
+        return memZ === cellZ;
+      });
+
+      if (matched.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align:center; padding:36px; color:var(--text-muted);">
+              <i class="ti ti-users-minus" style="font-size:28px; opacity:0.3; display:block; margin-bottom:8px;"></i>
+              No members currently recorded living in this hostel or lodge area.<br>
+              <span style="font-size:12px;">Members registered with addresses matching this area will appear here automatically.</span>
+            </td>
+          </tr>
+        `;
+      } else {
+        tbody.innerHTML = matched.map((m, idx) => {
+          const phone = m.member_phone || '';
+          const waNum = phone ? (phone.startsWith('0') ? '234' + phone.slice(1) : phone.replace(/\D/g, '')) : '';
+          const lvl = m.membership_level || 'MVP';
+          return `
+            <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
+              <td style="text-align:center; font-weight:600; color:var(--blue);">${idx + 1}</td>
+              <td><strong style="color:#fff;">${typeof escapeHtml === 'function' ? escapeHtml(m.member_name) : m.member_name}</strong></td>
+              <td>
+                ${phone ? `<a href="https://wa.me/${waNum}" target="_blank" style="color:#22c55e; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:4px;"><i class="ti ti-brand-whatsapp"></i> ${phone}</a>` : '<span style="color:var(--text-muted)">No phone</span>'}
+              </td>
+              <td><span style="color:var(--text-muted); font-size:12.5px;"><i class="ti ti-map-pin" style="color:var(--blue);"></i> ${m.School_Address || m.school_address || '—'}</span></td>
+              <td><span class="badge badge-blue" style="font-size:11px;">${lvl}</span></td>
+              <td><span style="font-size:12px; color:var(--text-muted);">${m.course_of_study || m.department || '—'} (${m.level || '—'})</span></td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      openModal('connect-cell-members');
     }
 
     function openAddConnectCellModal() {
@@ -8494,6 +8623,47 @@
       </div>
     `;
 
+        // 4. Live Service Attendance Gate Counter
+        let liveAttendanceCount = 0;
+        let liveServiceTitle = 'Gate Attendance';
+        let isLiveToday = false;
+        try {
+          const todayIso = new Date().toISOString().split('T')[0];
+          const { data: todayAtt } = await supabaseClient
+            .from('service_attendance')
+            .select('id, service_type')
+            .eq('service_date', todayIso);
+
+          if (todayAtt && todayAtt.length > 0) {
+            liveAttendanceCount = todayAtt.length;
+            liveServiceTitle = `${todayAtt[0].service_type || 'Service'} (Today)`;
+            isLiveToday = true;
+          } else {
+            const { data: latestAtt } = await supabaseClient
+              .from('service_attendance')
+              .select('service_date, service_type')
+              .order('service_date', { ascending: false })
+              .limit(1);
+
+            if (latestAtt && latestAtt.length > 0) {
+              const lastDate = latestAtt[0].service_date;
+              const lastType = latestAtt[0].service_type;
+              const { count } = await supabaseClient
+                .from('service_attendance')
+                .select('*', { count: 'exact', head: true })
+                .eq('service_date', lastDate)
+                .eq('service_type', lastType);
+              liveAttendanceCount = count || 0;
+              liveServiceTitle = `${lastType} (${lastDate})`;
+            } else {
+              liveAttendanceCount = 0;
+              liveServiceTitle = 'Gate Ready For Service';
+            }
+          }
+        } catch (e) {
+          console.warn('Live attendance counter load note:', e);
+        }
+
         const secStats = document.getElementById('dash-stats-secondary');
         if (secStats) {
           secStats.innerHTML = `
@@ -8515,11 +8685,14 @@
         <div class="stat-label">Connect Groups (Cells)</div>
         <div class="stat-change up"><i class="ti ti-calendar-event"></i> Saturday Cells →</div>
       </div>
-      <div class="stat-card" style="cursor: pointer; border-top: 3px solid #f59e0b;" onclick="openBirthdayCalendarModal()" title="View Birthday Calendar">
-        <div class="stat-icon" style="background:rgba(245, 158, 11, 0.2); color:#f59e0b;"><i class="ti ti-cake"></i></div>
-        <div class="stat-num">${(state.members || []).filter(m => m.birthday || m.dob || m.date_of_birth).length}</div>
-        <div class="stat-label">Birthdays Recorded</div>
-        <div class="stat-change up" style="color:#fde047;"><i class="ti ti-calendar"></i> Birthday Calendar →</div>
+      <div class="stat-card" style="cursor: pointer; border-top: 3px solid #22c55e; position: relative;" onclick="window.open('../Attendance/tracker.html', '_blank')" title="Launch Live Gate Attendance Tracker">
+        <div style="position: absolute; top: 12px; right: 14px; display: flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; color: #22c55e; background: rgba(34, 197, 94, 0.12); padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(34, 197, 94, 0.3);">
+          <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#22c55e; box-shadow: 0 0 6px #22c55e;"></span> ${isLiveToday ? 'LIVE GATE' : 'GATE PORTAL'}
+        </div>
+        <div class="stat-icon" style="background:rgba(34, 197, 94, 0.2); color:#22c55e;"><i class="ti ti-user-check"></i></div>
+        <div class="stat-num">${liveAttendanceCount}</div>
+        <div class="stat-label">${liveServiceTitle}</div>
+        <div class="stat-change up" style="color:#22c55e;"><i class="ti ti-external-link"></i> Open Gate Tracker →</div>
       </div>
     `;
         }

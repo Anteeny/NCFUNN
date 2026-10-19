@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NCFUNN Live Service Attendance & Gate Tracker</title>
+  <meta name="description" content="Official real-time gate attendance tracker for NCFUNN fellowship services.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg-primary: #0a0f1d;
+      --bg-card: rgba(17, 24, 39, 0.75);
+      --bg-card-hover: rgba(30, 41, 59, 0.85);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(34, 197, 94, 0.3);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent-green: #22c55e;
+      --accent-green-glow: rgba(34, 197, 94, 0.25);
+      --accent-blue: #38bdf8;
+      --accent-purple: #a855f7;
+      --accent-gold: #f59e0b;
+      --accent-red: #ef4444;
+      --font-body: 'Plus Jakarta Sans', sans-serif;
+      --font-display: 'Space Grotesk', sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: radial-gradient(circle at 10% 10%, #0d172e 0%, #080d1a 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    /* Ambient background glowing orbs */
+    .ambient-glow {
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(120px);
+      opacity: 0.15;
+    }
+    .glow-1 { top: -150px; left: -100px; background: #22c55e; }
+    .glow-2 { bottom: 50px; right: -100px; background: #38bdf8; }
+
+    .app-container {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+
+    /* Navigation / Header */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      padding: 18px 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #16a34a, #059669);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 26px;
+      box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+    }
+
+    .brand-text h1 {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+      animation: pulse 1.6s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.3); }
+    }
+
+    .brand-text p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .control-pill {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-main);
+    }
+
+    .control-pill input[type="date"],
+    .control-pill select {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 600;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .control-pill select option {
+      background: #0f172a;
+      color: #fff;
+    }
+
+    .custom-service-input {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--accent-green);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 12px;
+      font-size: 13px;
+      display: none;
+      outline: none;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: var(--font-body);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+    }
+    .btn-primary:hover {
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(30, 41, 59, 0.8);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+    .btn-secondary:hover {
+      background: rgba(51, 65, 85, 0.8);
+    }
+
+    /* Live Counters Grid */
+    .counter-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .counter-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 18px 20px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+    .counter-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .counter-card.featured {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(6, 95, 70, 0.25));
+      border: 1px solid rgba(34, 197, 94, 0.4);
+      box-shadow: 0 10px 25px -5px rgba(34, 197, 94, 0.2);
+    }
+
+    .counter-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .counter-title {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    .counter-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .counter-val {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+
+    .counter-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Search & Filter Bar */
+    .filter-panel {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 260px;
+      position: relative;
+    }
+
+    .search-box i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 18px;
+    }
+
+    .search-box input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 12px 16px 12px 42px;
+      color: #fff;
+      font-size: 14px;
+      font-family: var(--font-body);
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .search-box input:focus {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 3px var(--accent-green-glow);
+    }
+
+    .filter-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--border-color);
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .chip:hover {
+      background: rgba(51, 65, 85, 0.8);
+      color: #fff;
+    }
+
+    .chip.active {
+      background: rgba(34, 197, 94, 0.2);
+      border-color: var(--accent-green);
+      color: #4ade80;
+    }
+
+    /* Attendees List / Table */
+    .table-container {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+    }
+
+    .table-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .table-title {
+      font-size: 15px;
+      font-weight: 700;
+      font-family: var(--font-display);
+    }
+
+    .table-count-badge {
+      font-size: 12px;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .attendees-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    .attendees-table th {
+      padding: 14px 20px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(15, 23, 42, 0.4);
+    }
+
+    .attendees-table td {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-size: 13px;
+      vertical-align: middle;
+    }
+
+    .attendees-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .member-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .member-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #1e293b, #334155);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #94a3b8;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .member-avatar.checked {
+      background: linear-gradient(135deg, #10b981, #047857);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+    }
+
+    .member-name {
+      font-weight: 700;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .member-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-mvp { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-occasional { background: rgba(14, 165, 233, 0.15); color: #38bdf8; border: 1px solid rgba(14, 165, 233, 0.3); }
+    .badge-committed { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .badge-worker { background: rgba(34, 197, 94, 0.15); color: #4ade80; border: 1px solid rgba(34, 197, 94, 0.3); }
+    .badge-dh { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-zone { background: rgba(255, 255, 255, 0.06); color: #cbd5e1; }
+
+    /* Check-In Toggle Button */
+    .btn-checkin {
+      padding: 9px 16px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid transparent;
+      transition: all 0.2s ease;
+    }
+
+    .btn-checkin.not-checked {
+      background: rgba(30, 41, 59, 0.9);
+      color: #94a3b8;
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    .btn-checkin.not-checked:hover {
+      background: rgba(34, 197, 94, 0.2);
+      color: #4ade80;
+      border-color: rgba(34, 197, 94, 0.4);
+      transform: scale(1.02);
+    }
+
+    .btn-checkin.checked {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.4);
+    }
+    .btn-checkin.checked:hover {
+      background: linear-gradient(135deg, #059669, #047857);
+      opacity: 0.9;
+    }
+
+    .btn-whatsapp-peetee {
+      background: rgba(37, 211, 102, 0.12);
+      color: #25d366;
+      border: 1px solid rgba(37, 211, 102, 0.3);
+      padding: 8px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      margin-left: 6px;
+    }
+    .btn-whatsapp-peetee:hover {
+      background: #25d366;
+      color: #000;
+    }
+
+    /* Modal Styles */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-box {
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      max-width: 500px;
+      width: 100%;
+      padding: 28px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      animation: modalPop 0.2s ease-out;
+    }
+
+    @keyframes modalPop {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 10px 14px;
+      color: #fff;
+      font-size: 14px;
+      font-family: var(--font-body);
+      outline: none;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      border-color: var(--accent-green);
+    }
+
+    /* Toast */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      background: #0f172a;
+      border: 1px solid var(--accent-green);
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+      border-radius: 14px;
+      padding: 14px 20px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toastIn 0.3s ease;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* PIN Lock Screen */
+    #lock-screen {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 15, 29, 0.96);
+      backdrop-filter: blur(20px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .pin-card {
+      background: rgba(17, 24, 39, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 28px;
+      padding: 36px 32px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 25px 60px -15px rgba(0,0,0,0.8);
+    }
+
+    .pin-input-group {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin: 24px 0 28px;
+    }
+
+    .pin-digit {
+      width: 52px;
+      height: 60px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      font-size: 26px;
+      font-family: var(--font-display);
+      font-weight: 700;
+      text-align: center;
+      color: #fff;
+      outline: none;
+    }
+    .pin-digit:focus {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 15px var(--accent-green-glow);
+    }
+
+    @media (max-width: 768px) {
+      .app-container { padding: 16px 12px; }
+      header { padding: 14px 16px; border-radius: 16px; }
+      .brand-text h1 { font-size: 17px; }
+      .counter-grid { grid-template-columns: repeat(2, 1fr); }
+      .attendees-table th:nth-child(3),
+      .attendees-table td:nth-child(3),
+      .attendees-table th:nth-child(4),
+      .attendees-table td:nth-child(4) {
+        display: none;
+      }
+      .attendees-table td { padding: 12px 10px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Ambient background glow -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <!-- PIN Lock Screen -->
+  <div id="lock-screen">
+    <div class="pin-card">
+      <div style="width: 56px; height: 56px; border-radius: 16px; background: rgba(34, 197, 94, 0.15); color: #22c55e; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 16px;">
+        <i class="ti ti-lock"></i>
+      </div>
+      <h2 style="font-family: var(--font-display); font-size: 20px; font-weight: 700;">Gate Usher Access</h2>
+      <p style="font-size: 13px; color: var(--text-muted); margin-top: 6px;">Enter the 4-digit fellowship gate PIN to begin tracking service attendance.</p>
+      
+      <div class="pin-input-group">
+        <input type="password" maxlength="1" class="pin-digit" id="pin-1" autofocus>
+        <input type="password" maxlength="1" class="pin-digit" id="pin-2">
+        <input type="password" maxlength="1" class="pin-digit" id="pin-3">
+        <input type="password" maxlength="1" class="pin-digit" id="pin-4">
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%; padding: 14px;" onclick="verifyGatePin()">
+        <i class="ti ti-shield-check"></i> Unlock Gate Portal
+      </button>
+      <div id="pin-err" style="color: #ef4444; font-size: 12px; margin-top: 12px; display: none;">Invalid PIN. Please try again.</div>
+    </div>
+  </div>
+
+  <div class="app-container" id="main-app" style="display: none;">
+    <!-- Header -->
+    <header>
+      <div class="brand-group">
+        <div class="brand-logo">
+          <i class="ti ti-clipboard-check"></i>
+        </div>
+        <div class="brand-text">
+          <h1>
+            NCFUNN Gate Attendance
+            <span class="live-badge"><span class="live-dot"></span> LIVE GATE</span>
+          </h1>
+          <p>Real-time entrance check-in & member growth sync</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Date Selector -->
+        <div class="control-pill">
+          <i class="ti ti-calendar" style="color: var(--accent-green);"></i>
+          <input type="date" id="service-date-input" onchange="onServiceContextChanged()">
+        </div>
+
+        <!-- Service Type Selector -->
+        <div class="control-pill">
+          <i class="ti ti-sparkles" style="color: var(--accent-blue);"></i>
+          <select id="service-type-select" onchange="onServiceTypeChanged()">
+            <option value="Sunday Service">Sunday Service</option>
+            <option value="Wednesday Midweek Service">Wednesday Midweek Service</option>
+            <option value="Special Meeting / Vigil">Special Meeting / Vigil</option>
+            <option value="CUSTOM">Other / Custom Service...</option>
+          </select>
+        </div>
+
+        <!-- Custom Service Name Input (revealed if CUSTOM selected) -->
+        <input type="text" id="custom-service-input" class="custom-service-input" placeholder="Enter service or event name..." onblur="onServiceContextChanged()">
+
+        <!-- Quick Add Member Button -->
+        <button class="btn btn-primary" onclick="openQuickAddModal()">
+          <i class="ti ti-user-plus"></i> Add Attendee
+        </button>
+
+        <!-- Admin Portal Return Button -->
+        <a href="../Website/index.html" class="btn btn-secondary" title="Return to Admin Dashboard">
+          <i class="ti ti-dashboard"></i> Admin Hub
+        </a>
+      </div>
+    </header>
+
+    <!-- Live Counters -->
+    <div class="counter-grid">
+      <div class="counter-card featured">
+        <div class="counter-top">
+          <span class="counter-title">Total Present</span>
+          <div class="counter-icon" style="background: rgba(34, 197, 94, 0.2); color: #4ade80;">
+            <i class="ti ti-users-group"></i>
+          </div>
+        </div>
+        <div class="counter-val" id="cnt-total" style="color: #4ade80;">0</div>
+        <div class="counter-sub"><i class="ti ti-check"></i> Checked in today</div>
+      </div>
+
+      <div class="counter-card">
+        <div class="counter-top">
+          <span class="counter-title">MVPs (1st Timers)</span>
+          <div class="counter-icon" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">
+            <i class="ti ti-star"></i>
+          </div>
+        </div>
+        <div class="counter-val" id="cnt-mvp" style="color: #fbbf24;">0</div>
+        <div class="counter-sub"><i class="ti ti-sparkles"></i> First time guests</div>
+      </div>
+
+      <div class="counter-card">
+        <div class="counter-top">
+          <span class="counter-title">Occasional / 2nd</span>
+          <div class="counter-icon" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8;">
+            <i class="ti ti-refresh"></i>
+          </div>
+        </div>
+        <div class="counter-val" id="cnt-occasional" style="color: #38bdf8;">0</div>
+        <div class="counter-sub"><i class="ti ti-user-check"></i> Returning visitors</div>
+      </div>
+
+      <div class="counter-card">
+        <div class="counter-top">
+          <span class="counter-title">Committed</span>
+          <div class="counter-icon" style="background: rgba(168, 85, 247, 0.15); color: #c084fc;">
+            <i class="ti ti-heart"></i>
+          </div>
+        </div>
+        <div class="counter-val" id="cnt-committed" style="color: #c084fc;">0</div>
+        <div class="counter-sub"><i class="ti ti-flame"></i> Consistent members</div>
+      </div>
+
+      <div class="counter-card">
+        <div class="counter-top">
+          <span class="counter-title">Workers</span>
+          <div class="counter-icon" style="background: rgba(34, 197, 94, 0.15); color: #34d399;">
+            <i class="ti ti-building"></i>
+          </div>
+        </div>
+        <div class="counter-val" id="cnt-workers" style="color: #34d399;">0</div>
+        <div class="counter-sub"><i class="ti ti-briefcase"></i> Workforce quota</div>
+      </div>
+
+      <div class="counter-card">
+        <div class="counter-top">
+          <span class="counter-title">Leadership</span>
+          <div class="counter-icon" style="background: rgba(239, 68, 68, 0.15); color: #f87171;">
+            <i class="ti ti-crown"></i>
+          </div>
+        </div>
+        <div class="counter-val" id="cnt-leaders" style="color: #f87171;">0</div>
+        <div class="counter-sub"><i class="ti ti-shield"></i> DHs & Pastors</div>
+      </div>
+    </div>
+
+    <!-- Search & Filter Controls -->
+    <div class="filter-panel">
+      <div class="search-box">
+        <i class="ti ti-search"></i>
+        <input type="text" id="gate-search" placeholder="Quick search by name, phone, hostel, or department..." oninput="onSearchChanged()">
+      </div>
+
+      <div class="filter-chips">
+        <div class="chip active" data-filter="all" onclick="setFilter('all', this)">All Members (<span id="chip-cnt-all">0</span>)</div>
+        <div class="chip" data-filter="checked" onclick="setFilter('checked', this)">✓ Present (<span id="chip-cnt-checked">0</span>)</div>
+        <div class="chip" data-filter="not_checked" onclick="setFilter('not_checked', this)">⏳ Unmarked (<span id="chip-cnt-unmarked">0</span>)</div>
+        <div class="chip" data-filter="mvp" onclick="setFilter('mvp', this)">MVPs</div>
+        <div class="chip" data-filter="occasional" onclick="setFilter('occasional', this)">Occasional / 2nd</div>
+        <div class="chip" data-filter="committed" onclick="setFilter('committed', this)">Committed</div>
+        <div class="chip" data-filter="worker" onclick="setFilter('worker', this)">Workers</div>
+      </div>
+    </div>
+
+    <!-- Attendees Table -->
+    <div class="table-container">
+      <div class="table-header">
+        <div class="table-title">
+          Fellowship Roster & Entrance Status
+        </div>
+        <div class="table-count-badge" id="roster-count-label">
+          Showing 0 members
+        </div>
+      </div>
+
+      <div style="overflow-x: auto;">
+        <table class="attendees-table">
+          <thead>
+            <tr>
+              <th>Attendee Details</th>
+              <th>Status / Growth Stage</th>
+              <th>Hostel & Campus Zone</th>
+              <th>Course & Level</th>
+              <th style="text-align: right;">Entrance Action</th>
+            </tr>
+          </thead>
+          <tbody id="attendees-tbody">
+            <tr>
+              <td colspan="5" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                <i class="ti ti-loader" style="font-size: 24px; animation: spin 1s infinite linear;"></i>
+                <div style="margin-top: 8px;">Loading member roster...</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Add Attendee Modal -->
+  <div class="modal-backdrop" id="quick-add-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="ti ti-user-plus" style="color: var(--accent-green); margin-right: 6px;"></i> Register New Attendee</h3>
+        <button class="modal-close" onclick="closeQuickAddModal()"><i class="ti ti-x"></i></button>
+      </div>
+
+      <form id="quick-add-form" onsubmit="handleQuickAddSubmit(event)">
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="add-name" required placeholder="e.g. Mitchell Ibeneme">
+        </div>
+
+        <div class="form-group">
+          <label>Phone Number (WhatsApp) *</label>
+          <input type="tel" id="add-phone" required placeholder="e.g. 08123456789">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label>Course / Department</label>
+            <input type="text" id="add-course" placeholder="e.g. Mechanical Eng">
+          </div>
+          <div class="form-group">
+            <label>Level</label>
+            <select id="add-level">
+              <option value="100 Level">100 Level</option>
+              <option value="200 Level">200 Level</option>
+              <option value="300 Level">300 Level</option>
+              <option value="400 Level">400 Level</option>
+              <option value="500 Level">500 Level</option>
+              <option value="Graduate">Graduate</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label>Hostel / Lodge Address</label>
+            <input type="text" id="add-address" placeholder="e.g. Franco Hostel Room 204">
+          </div>
+          <div class="form-group">
+            <label>Campus Zone</label>
+            <select id="add-zone">
+              <option value="Franco">Franco</option>
+              <option value="Hilltop">Hilltop</option>
+              <option value="Odim">Odim</option>
+              <option value="Odenigwe">Odenigwe</option>
+              <option value="JSQ">JSQ</option>
+              <option value="Greenhouse">Greenhouse</option>
+              <option value="HQ">HQ / Campus</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-top: 24px; display: flex; gap: 12px;">
+          <button type="button" class="btn btn-secondary" style="flex: 1;" onclick="closeQuickAddModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="flex: 1.5;">
+            <i class="ti ti-check"></i> Save & Check In
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Audio Chime for Check-in -->
+  <audio id="checkin-sound" preload="auto">
+    <source src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU..." type="audio/wav">
+  </audio>
+
+  <script>
+    const SUPABASE_URL = 'https://cjbedftdexzcsydwayig.supabase.co';
+    const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqYmVkZnRkZXh6Y3N5ZHdheWlnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwNTUwMjgsImV4cCI6MjA5MzYzMTAyOH0.xsvtG5NmI_9TDZQ5-MhcjtX4UIIAiH2kyOlpIPDkCdg';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, ANON_KEY);
+
+    // App State
+    let membersList = [];
+    let attendanceMap = new Map(); // member_id -> attendance record
+    let currentFilter = 'all';
+    let searchQuery = '';
+
+    // Connect Leaders Directory for PeeTEE dispatch
+    const ZONE_LEADERS = {
+      'Franco': { name: 'Bro. Emmanuel', phone: '2348030000001' },
+      'Hilltop': { name: 'Sis. Chidinma', phone: '2348030000002' },
+      'Odim': { name: 'Bro. Victor', phone: '2348030000003' },
+      'Odenigwe': { name: 'Bro. David', phone: '2348030000004' },
+      'JSQ': { name: 'Sis. Joy', phone: '2348030000005' },
+      'Greenhouse': { name: 'Bro. Samuel', phone: '2348030000006' },
+      'HQ': { name: 'Leadership Desk', phone: '2348030000000' }
+    };
+
+    // --- PIN Verification ---
+    const GATE_PIN = '2026';
+
+    function initPinInputs() {
+      const digits = [document.getElementById('pin-1'), document.getElementById('pin-2'), document.getElementById('pin-3'), document.getElementById('pin-4')];
+      digits.forEach((input, idx) => {
+        input.addEventListener('input', (e) => {
+          if (e.target.value.length === 1 && idx < 3) {
+            digits[idx + 1].focus();
+          }
+          if (idx === 3 && e.target.value.length === 1) {
+            verifyGatePin();
+          }
+        });
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+            digits[idx - 1].focus();
+          }
+        });
+      });
+
+      // Check session
+      if (sessionStorage.getItem('ncf_gate_unlocked') === 'true') {
+        unlockGateUI();
+      }
+    }
+
+    function verifyGatePin() {
+      const pin = ['pin-1', 'pin-2', 'pin-3', 'pin-4'].map(id => document.getElementById(id).value).join('');
+      if (pin === GATE_PIN) {
+        sessionStorage.setItem('ncf_gate_unlocked', 'true');
+        unlockGateUI();
+      } else {
+        const err = document.getElementById('pin-err');
+        err.style.display = 'block';
+        ['pin-1', 'pin-2', 'pin-3', 'pin-4'].forEach(id => {
+          const el = document.getElementById(id);
+          el.value = '';
+          el.style.borderColor = '#ef4444';
+        });
+        document.getElementById('pin-1').focus();
+      }
+    }
+
+    function unlockGateUI() {
+      document.getElementById('lock-screen').style.display = 'none';
+      document.getElementById('main-app').style.display = 'block';
+      initGateApp();
+    }
+
+    // --- Main Gate App ---
+    function initGateApp() {
+      // Set today's date
+      const today = new Date().toISOString().split('T')[0];
+      const dateInput = document.getElementById('service-date-input');
+      if (!dateInput.value) {
+        dateInput.value = today;
+      }
+
+      // Auto-detect service type based on weekday
+      const dayOfWeek = new Date().getDay(); // 0 is Sunday, 3 is Wednesday
+      const select = document.getElementById('service-type-select');
+      if (dayOfWeek === 0) select.value = 'Sunday Service';
+      else if (dayOfWeek === 3) select.value = 'Wednesday Midweek Service';
+
+      loadData();
+      subscribeRealtime();
+    }
+
+    function getActiveServiceDetails() {
+      const date = document.getElementById('service-date-input').value;
+      const select = document.getElementById('service-type-select');
+      let type = select.value;
+      if (type === 'CUSTOM') {
+        const customVal = document.getElementById('custom-service-input').value.trim();
+        type = customVal || 'Special Meeting';
+      }
+      return { date, type };
+    }
+
+    function onServiceTypeChanged() {
+      const select = document.getElementById('service-type-select');
+      const customInput = document.getElementById('custom-service-input');
+      if (select.value === 'CUSTOM') {
+        customInput.style.display = 'inline-block';
+        customInput.focus();
+      } else {
+        customInput.style.display = 'none';
+        onServiceContextChanged();
+      }
+    }
+
+    function onServiceContextChanged() {
+      loadAttendance();
+    }
+
+    async function loadData() {
+      try {
+        const { data: members, error } = await supabaseClient
+          .from('members')
+          .select('*')
+          .order('member_name', { ascending: true });
+
+        if (error) throw error;
+        membersList = members || [];
+        await loadAttendance();
+      } catch (err) {
+        console.error('Failed to load members:', err);
+        showToast('Error loading members: ' + err.message, 'error');
+      }
+    }
+
+    async function loadAttendance() {
+      const { date, type } = getActiveServiceDetails();
+      try {
+        const { data: attList, error } = await supabaseClient
+          .from('service_attendance')
+          .select('*')
+          .eq('service_date', date)
+          .eq('service_type', type);
+
+        if (error) throw error;
+
+        attendanceMap.clear();
+        (attList || []).forEach(row => {
+          attendanceMap.set(String(row.member_id), row);
+        });
+
+        updateCounters();
+        renderTable();
+      } catch (err) {
+        console.error('Failed to load attendance:', err);
+        showToast('Error fetching attendance: ' + err.message, 'error');
+      }
+    }
+
+    function subscribeRealtime() {
+      supabaseClient
+        .channel('public:service_attendance')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'service_attendance' }, payload => {
+          const { date, type } = getActiveServiceDetails();
+          const row = payload.new || payload.old;
+          if (row && row.service_date === date && row.service_type === type) {
+            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+              attendanceMap.set(String(payload.new.member_id), payload.new);
+            } else if (payload.eventType === 'DELETE') {
+              attendanceMap.delete(String(payload.old.member_id));
+            }
+            updateCounters();
+            renderTable();
+          }
+        })
+        .subscribe();
+    }
+
+    // --- Counters & Filter ---
+    function updateCounters() {
+      let totalChecked = attendanceMap.size;
+      let mvpChecked = 0;
+      let occasionalChecked = 0;
+      let committedChecked = 0;
+      let workerChecked = 0;
+      let leaderChecked = 0;
+
+      attendanceMap.forEach(att => {
+        const m = membersList.find(x => String(x.id) === String(att.member_id));
+        const lvl = (m && m.membership_level ? m.membership_level.toLowerCase() : '');
+        if (lvl.includes('mvp') || lvl.includes('first')) mvpChecked++;
+        else if (lvl.includes('occasional') || lvl.includes('second')) occasionalChecked++;
+        else if (lvl.includes('committed')) committedChecked++;
+        else if (lvl.includes('worker') || lvl.includes('workforce')) workerChecked++;
+        else if (lvl.includes('dh') || lvl.includes('pastor') || lvl.includes('core')) leaderChecked++;
+      });
+
+      document.getElementById('cnt-total').textContent = totalChecked;
+      document.getElementById('cnt-mvp').textContent = mvpChecked;
+      document.getElementById('cnt-occasional').textContent = occasionalChecked;
+      document.getElementById('cnt-committed').textContent = committedChecked;
+      document.getElementById('cnt-workers').textContent = workerChecked;
+      document.getElementById('cnt-leaders').textContent = leaderChecked;
+
+      // Filter chips counts
+      document.getElementById('chip-cnt-all').textContent = membersList.length;
+      document.getElementById('chip-cnt-checked').textContent = totalChecked;
+      document.getElementById('chip-cnt-unmarked').textContent = Math.max(0, membersList.length - totalChecked);
+    }
+
+    function setFilter(filter, el) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-chips .chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      renderTable();
+    }
+
+    function onSearchChanged() {
+      searchQuery = document.getElementById('gate-search').value.toLowerCase().trim();
+      renderTable();
+    }
+
+    // --- Table Rendering ---
+    function renderTable() {
+      const tbody = document.getElementById('attendees-tbody');
+      const { date, type } = getActiveServiceDetails();
+
+      const filtered = membersList.filter(m => {
+        const isChecked = attendanceMap.has(String(m.id));
+        const lvl = (m.membership_level || '').toLowerCase();
+
+        // Status chip filter
+        if (currentFilter === 'checked' && !isChecked) return false;
+        if (currentFilter === 'not_checked' && isChecked) return false;
+        if (currentFilter === 'mvp' && !lvl.includes('mvp') && !lvl.includes('first')) return false;
+        if (currentFilter === 'occasional' && !lvl.includes('occasional') && !lvl.includes('second')) return false;
+        if (currentFilter === 'committed' && !lvl.includes('committed')) return false;
+        if (currentFilter === 'worker' && !lvl.includes('worker') && !lvl.includes('workforce')) return false;
+
+        // Search text filter
+        if (searchQuery) {
+          const name = (m.member_name || '').toLowerCase();
+          const phone = (m.member_phone || '').toLowerCase();
+          const addr = (m.School_Address || m.school_address || '').toLowerCase();
+          const dept = (m.department || m.course_of_study || '').toLowerCase();
+          const zone = (m.zone || '').toLowerCase();
+          if (!name.includes(searchQuery) && !phone.includes(searchQuery) && !addr.includes(searchQuery) && !dept.includes(searchQuery) && !zone.includes(searchQuery)) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      document.getElementById('roster-count-label').textContent = `Showing ${filtered.length} of ${membersList.length} members`;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 48px; color: var(--text-muted);">
+              <i class="ti ti-user-x" style="font-size: 32px; display: block; margin-bottom: 8px;"></i>
+              No members match your search or filter.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(m => {
+        const isChecked = attendanceMap.has(String(m.id));
+        const att = attendanceMap.get(String(m.id));
+        const initials = (m.member_name || 'U').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+        const stageBadge = getStageBadge(m.membership_level);
+        const zoneBadge = m.zone ? `<span class="badge badge-zone"><i class="ti ti-map-pin"></i> ${m.zone}</span>` : '';
+        const hostelText = m.School_Address || m.school_address || 'Address unrecorded';
+
+        // PeeTEE WhatsApp alert button (for MVPs and Occasionals)
+        let peeteeBtn = '';
+        const isMvpOrOccasional = (m.membership_level || '').toLowerCase().includes('mvp') || (m.membership_level || '').toLowerCase().includes('occasional');
+        if (isMvpOrOccasional) {
+          const leader = ZONE_LEADERS[m.zone] || ZONE_LEADERS['HQ'];
+          const alertMsg = encodeURIComponent(
+            `Good day Sir/Ma,\n\n` +
+            `You have a member from your area:\n` +
+            `• Name: ${m.member_name}\n` +
+            `• Phone: ${m.member_phone || 'N/A'}\n` +
+            `• Hostel/Address: ${hostelText}\n` +
+            `• Department: ${m.department || m.course_of_study || 'N/A'}\n` +
+            `• Service Checked-in: ${type} (${date})\n\n` +
+            `Ensure you reach out and follow up. God bless.\n\n` +
+            `from PeeTEE`
+          );
+          peeteeBtn = `
+            <a href="https://wa.me/${leader.phone}?text=${alertMsg}" target="_blank" class="btn-whatsapp-peetee" title="Send PeeTEE WhatsApp Alert to ${m.zone || 'Cell'} Leader">
+              <i class="ti ti-brand-whatsapp"></i> PeeTEE Alert
+            </a>
+          `;
+        }
+
+        return `
+          <tr>
+            <td>
+              <div class="member-info">
+                <div class="member-avatar ${isChecked ? 'checked' : ''}">
+                  ${isChecked ? '<i class="ti ti-check"></i>' : initials}
+                </div>
+                <div>
+                  <div class="member-name">${escapeHtml(m.member_name)}</div>
+                  <div class="member-sub">
+                    <span><i class="ti ti-phone"></i> ${escapeHtml(m.member_phone || 'No phone')}</span>
+                    ${m.member_phone ? `<a href="https://wa.me/${cleanPhoneForWa(m.member_phone)}" target="_blank" style="color: #22c55e;" title="Open WhatsApp"><i class="ti ti-brand-whatsapp"></i></a>` : ''}
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td>
+              ${stageBadge}
+            </td>
+            <td>
+              <div style="font-weight: 600; color: #fff;">${escapeHtml(hostelText)}</div>
+              <div style="margin-top: 4px;">${zoneBadge}</div>
+            </td>
+            <td>
+              <div style="font-weight: 500;">${escapeHtml(m.course_of_study || m.department || '—')}</div>
+              <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(m.level || '')}</div>
+            </td>
+            <td style="text-align: right; white-space: nowrap;">
+              <button 
+                class="btn-checkin ${isChecked ? 'checked' : 'not-checked'}" 
+                onclick="toggleAttendance('${m.id}', '${escapeAttr(m.member_name)}', '${m.zone || 'HQ'}', '${escapeAttr(m.department || '')}')">
+                ${isChecked ? `<i class="ti ti-check"></i> Present` : `<i class="ti ti-user-plus"></i> Mark Entry`}
+              </button>
+              ${peeteeBtn}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function getStageBadge(level) {
+      if (!level) return '<span class="badge badge-occasional">Attendee</span>';
+      const l = level.toLowerCase();
+      if (l.includes('mvp') || l.includes('first')) return '<span class="badge badge-mvp"><i class="ti ti-star"></i> MVP</span>';
+      if (l.includes('occasional') || l.includes('second')) return '<span class="badge badge-occasional"><i class="ti ti-refresh"></i> Occasional / 2nd</span>';
+      if (l.includes('committed')) return '<span class="badge badge-committed"><i class="ti ti-heart"></i> Committed</span>';
+      if (l.includes('worker') || l.includes('workforce')) return '<span class="badge badge-worker"><i class="ti ti-briefcase"></i> Worker</span>';
+      if (l.includes('dh') || l.includes('core')) return '<span class="badge badge-dh"><i class="ti ti-shield"></i> DH / Core</span>';
+      if (l.includes('pastor')) return '<span class="badge badge-dh"><i class="ti ti-crown"></i> Pastor</span>';
+      return `<span class="badge badge-zone">${escapeHtml(level)}</span>`;
+    }
+
+    // --- Check-in Action ---
+    async function toggleAttendance(memberId, memberName, zone, department) {
+      const { date, type } = getActiveServiceDetails();
+      const isChecked = attendanceMap.has(String(memberId));
+
+      if (isChecked) {
+        // Confirm removal to prevent accidental taps
+        if (!confirm(`Are you sure you want to uncheck ${memberName} for ${type}?`)) return;
+
+        try {
+          const { error } = await supabaseClient
+            .from('service_attendance')
+            .delete()
+            .eq('member_id', String(memberId))
+            .eq('service_date', date)
+            .eq('service_type', type);
+
+          if (error) throw error;
+          attendanceMap.delete(String(memberId));
+          updateCounters();
+          renderTable();
+          showToast(`Unmarked ${memberName}`, 'info');
+        } catch (err) {
+          showToast('Failed to unmark: ' + err.message, 'error');
+        }
+      } else {
+        try {
+          const payload = {
+            member_id: String(memberId),
+            member_name: memberName,
+            service_date: date,
+            service_type: type,
+            zone: zone || 'HQ',
+            department: department || null,
+            checked_in_at: new Date().toISOString(),
+            marked_by: 'Gate Usher'
+          };
+
+          const { data, error } = await supabaseClient
+            .from('service_attendance')
+            .insert([payload])
+            .select();
+
+          if (error) throw error;
+          if (data && data[0]) {
+            attendanceMap.set(String(memberId), data[0]);
+          }
+
+          // Member Growth Auto-Evaluation:
+          // Check how many services this member has attended
+          evaluateMemberGraduation(memberId);
+
+          updateCounters();
+          renderTable();
+          showToast(`✓ Checked in ${memberName}!`, 'success');
+        } catch (err) {
+          showToast('Failed to check in: ' + err.message, 'error');
+        }
+      }
+    }
+
+    // Auto-graduate MVP to Occasional/Second Timer when attending second service
+    async function evaluateMemberGraduation(memberId) {
+      try {
+        const mem = membersList.find(m => String(m.id) === String(memberId));
+        if (!mem) return;
+
+        // Count all services attended by this member
+        const { count, error } = await supabaseClient
+          .from('service_attendance')
+          .select('*', { count: 'exact', head: true })
+          .eq('member_id', String(memberId));
+
+        if (!error && count >= 2) {
+          const currentLvl = (mem.membership_level || '').toLowerCase();
+          if (currentLvl === 'mvp') {
+            await supabaseClient
+              .from('members')
+              .update({ membership_level: 'Occasional / Second Timer' })
+              .eq('id', mem.id);
+
+            mem.membership_level = 'Occasional / Second Timer';
+            showToast(`🎉 ${mem.member_name} graduated to Occasional / Second Timer!`, 'success');
+          }
+        }
+      } catch (e) {
+        console.warn('Graduation evaluation note:', e);
+      }
+    }
+
+    // --- Quick Add Modal ---
+    function openQuickAddModal() {
+      document.getElementById('quick-add-modal').style.display = 'flex';
+      document.getElementById('add-name').focus();
+    }
+
+    function closeQuickAddModal() {
+      document.getElementById('quick-add-modal').style.display = 'none';
+      document.getElementById('quick-add-form').reset();
+    }
+
+    async function handleQuickAddSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('add-name').value.trim();
+      const phone = document.getElementById('add-phone').value.trim();
+      const course = document.getElementById('add-course').value.trim();
+      const level = document.getElementById('add-level').value;
+      const address = document.getElementById('add-address').value.trim();
+      const zone = document.getElementById('add-zone').value;
+
+      if (!name || !phone) return;
+
+      try {
+        // 1. Insert into members
+        const newMemberPayload = {
+          member_name: name,
+          member_phone: phone,
+          course_of_study: course,
+          level: level,
+          School_Address: address,
+          school_address: address,
+          zone: zone,
+          membership_level: 'MVP',
+          joined_date: new Date().toISOString().split('T')[0]
+        };
+
+        const { data: createdMem, error: memErr } = await supabaseClient
+          .from('members')
+          .insert([newMemberPayload])
+          .select();
+
+        if (memErr) throw memErr;
+        const newMember = createdMem[0];
+        membersList.unshift(newMember);
+
+        // 2. Automatically check them into the active service
+        const { date, type } = getActiveServiceDetails();
+        const attPayload = {
+          member_id: String(newMember.id),
+          member_name: name,
+          service_date: date,
+          service_type: type,
+          zone: zone,
+          department: course,
+          checked_in_at: new Date().toISOString(),
+          marked_by: 'Gate Usher (New Registration)'
+        };
+
+        const { data: attData, error: attErr } = await supabaseClient
+          .from('service_attendance')
+          .insert([attPayload])
+          .select();
+
+        if (attErr) throw attErr;
+        if (attData && attData[0]) {
+          attendanceMap.set(String(newMember.id), attData[0]);
+        }
+
+        closeQuickAddModal();
+        updateCounters();
+        renderTable();
+        showToast(`🎉 ${name} registered & checked in as MVP!`, 'success');
+      } catch (err) {
+        showToast('Error registering attendee: ' + err.message, 'error');
+      }
+    }
+
+    // --- Helpers ---
+    function cleanPhoneForWa(p) {
+      let d = String(p).replace(/\D/g, '');
+      if (d.startsWith('0')) d = '234' + d.slice(1);
+      return d;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function escapeAttr(str) {
+      if (!str) return '';
+      return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      const icon = type === 'success' ? 'ti-check' : (type === 'error' ? 'ti-alert-circle' : 'ti-info-circle');
+      toast.innerHTML = `<i class="ti ${icon}" style="color: ${type === 'success' ? '#22c55e' : (type === 'error' ? '#ef4444' : '#38bdf8')}; font-size: 18px;"></i> ${msg}`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    // Start
+    window.addEventListener('DOMContentLoaded', () => {
+      initPinInputs();
+    });
+  </script>
+</body>
+</html>
