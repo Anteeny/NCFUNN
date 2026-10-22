@@ -11,8 +11,6 @@ import {
   LogIn,
   AlertCircle,
   CheckCircle2,
-  Building2,
-  Sparkles,
   UserPlus,
 } from 'lucide-react';
 
@@ -65,7 +63,12 @@ export const LoginPage: React.FC = () => {
     try {
       const { error } = await signIn(cleanEmail, password);
       if (error) {
-        setErrorMsg('Invalid login credentials. No record found for this account.');
+        const msg = error.message || '';
+        if (msg.toLowerCase().includes('email not confirmed')) {
+          setErrorMsg('Email is unconfirmed in Supabase. Please auto-confirm it in Supabase Auth or disable "Confirm email".');
+        } else {
+          setErrorMsg(msg || 'Invalid login credentials. Please check your password.');
+        }
       } else {
         navigate(from, { replace: true });
       }
@@ -285,7 +288,7 @@ export const LoginPage: React.FC = () => {
               gap: '6px',
             }}
           >
-            <Building2 size={14} /> Register your Church
+             Register your Church
           </button>
         </div>
 
@@ -341,7 +344,7 @@ export const LoginPage: React.FC = () => {
                   type="email"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="admin@ncfunn.org"
+                  placeholder="admin@ncfunn.site"
                   required
                   style={{
                     width: '100%',
@@ -498,7 +501,7 @@ export const LoginPage: React.FC = () => {
               }}
             >
               <LogIn size={16} />
-              {submitting ? 'Verifying Credentials...' : 'Sign In & Open Database'}
+              {submitting ? 'Verifying Credentials...' : 'Sign In'}
             </button>
           </form>
         )}
@@ -719,8 +722,8 @@ export const LoginPage: React.FC = () => {
                 boxShadow: '0 4px 14px rgba(37, 99, 235, 0.25)',
               }}
             >
-              <Sparkles size={16} />
-              {submitting ? 'Creating Workspace...' : 'Register Church & Open Workspace'}
+              
+              {submitting ? 'Creating Workspace...' : 'Register Church'}
             </button>
           </form>
         )}
