@@ -11,6 +11,10 @@ import { DepartmentsUnitsPage } from '../features/departments/DepartmentsUnitsPa
 import { AboutUsPage } from '../features/about/AboutUsPage';
 import { SettingsAdminPage } from '../features/settings/SettingsAdminPage';
 
+// Auth & Protection
+import { LoginPage } from '../features/auth/LoginPage';
+import { ProtectedRoute } from '../components/auth/ProtectedRoute';
+
 // Report Workflows
 import { G12ReportPage } from '../features/reports/G12ReportPage';
 import { DepartmentReportPage } from '../features/reports/DepartmentReportPage';
@@ -19,9 +23,36 @@ import { MvpPage } from '../features/mvp/MvpPage';
 import { ProfileUpdatePage } from '../features/members/ProfileUpdatePage';
 
 export const router = createBrowserRouter([
+  // Public Routes (Intake slips, visitor registration, officer sign-in)
+  {
+    path: '/login',
+    element: <LoginPage />,
+  },
+  {
+    path: '/mvp',
+    element: <MvpPage />,
+  },
+  {
+    path: '/u/:token',
+    element: <ProfileUpdatePage />,
+  },
+  {
+    path: '/update/:token',
+    element: <ProfileUpdatePage />,
+  },
+
+  // Legacy Public URL redirects
+  { path: 'mvp.html', element: <Navigate to="/mvp" replace /> },
+  { path: 'update-profile.html', element: <Navigate to="/u/preview" replace /> },
+
+  // Protected Operating System Routes (Requires Supabase Authenticated Session)
   {
     path: '/',
-    element: <Layout />,
+    element: (
+      <ProtectedRoute>
+        <Layout />
+      </ProtectedRoute>
+    ),
     children: [
       // Primary Flowchart Modules & About Us
       { index: true, element: <DashboardPage /> },
@@ -35,25 +66,20 @@ export const router = createBrowserRouter([
       { path: 'about', element: <AboutUsPage /> },
       { path: 'settings', element: <SettingsAdminPage /> },
 
-      // Reporting Actions & Forms
+      // Reporting View-Only Pages
       { path: 'reports/g12', element: <G12ReportPage /> },
       { path: 'reports/department', element: <DepartmentReportPage /> },
       { path: 'reports/cell', element: <CellReportPage /> },
-      { path: 'mvp', element: <MvpPage /> },
-      { path: 'u/:token', element: <ProfileUpdatePage /> },
-      { path: 'update/:token', element: <ProfileUpdatePage /> },
 
-      // Legacy URL backward-compatibility redirects
+      // Legacy Internal Redirects
       { path: 'G12report.html', element: <Navigate to="/reports/g12" replace /> },
       { path: 'Department.html', element: <Navigate to="/reports/department" replace /> },
       { path: 'connect.html', element: <Navigate to="/reports/cell" replace /> },
       { path: 'cellreport.html', element: <Navigate to="/reports/cell" replace /> },
-      { path: 'mvp.html', element: <Navigate to="/mvp" replace /> },
       { path: 'tracker.html', element: <Navigate to="/attendance" replace /> },
-      { path: 'update-profile.html', element: <Navigate to="/u/preview" replace /> },
-
-      // Fallback
-      { path: '*', element: <Navigate to="/" replace /> },
     ],
   },
+
+  // Fallback
+  { path: '*', element: <Navigate to="/" replace /> },
 ]);

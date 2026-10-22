@@ -18,8 +18,10 @@ import {
   Bell,
   BookOpen,
   Sparkles,
+  LogOut,
 } from 'lucide-react';
 import { defaultSidebarConfig, type SidebarIconName } from '../../config/sidebar.config';
+import { useAuth } from '../../context/AuthContext';
 
 interface SidebarDrawerProps {
   isOpen: boolean;
@@ -47,6 +49,7 @@ const iconMap: Record<SidebarIconName, (size?: number) => React.ReactNode> = {
 
 export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ isOpen, onClose }) => {
   const cfg = defaultSidebarConfig;
+  const { userDisplayName, userRole, signOut } = useAuth();
 
   return (
     <>
@@ -279,30 +282,73 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ isOpen, onClose })
             borderTop: '1px solid rgba(255, 255, 255, 0.1)',
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
             gap: '12px',
             background: 'rgba(0, 0, 0, 0.25)',
           }}
         >
-          <div
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              background: 'var(--blue)',
-              color: '#0b1320',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 700,
-              fontSize: '13px',
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                background: 'var(--blue)',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: '13px',
+                flexShrink: 0,
+              }}
+            >
+              {userDisplayName.slice(0, 2).toUpperCase()}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div
+                style={{
+                  color: '#fff',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: '160px',
+                }}
+              >
+                {userDisplayName}
+              </div>
+              <div style={{ color: 'rgba(255, 255, 255, 0.45)', fontSize: '11px' }}>
+                {userRole}
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              onClose();
+              signOut();
             }}
+            style={{
+              background: 'rgba(239, 68, 68, 0.15)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#fca5a5',
+              padding: '7px 10px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '11.5px',
+              fontWeight: 600,
+              transition: 'all 0.15s ease',
+            }}
+            title="Sign out of operating system"
           >
-            {cfg.userProfile.initials}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: '#fff', fontSize: '13px', fontWeight: 600 }}>{cfg.userProfile.name}</div>
-            <div style={{ color: 'rgba(255, 255, 255, 0.45)', fontSize: '11px' }}>{cfg.userProfile.role}</div>
-          </div>
+            <LogOut size={13} />
+            <span>Exit</span>
+          </button>
         </div>
       </aside>
     </>

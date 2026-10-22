@@ -1,8 +1,9 @@
 import React from 'react';
 import { formatWATReadable } from '../../lib/date';
-import { Calendar, Sun, Moon, PlusCircle, Menu } from 'lucide-react';
+import { Calendar, Sun, Moon, PlusCircle, Menu, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useBranding } from '../../hooks/useBranding';
+import { useAuth } from '../../context/AuthContext';
 
 interface ExecutiveHeaderProps {
   onMenuToggle?: () => void;
@@ -17,6 +18,7 @@ export const ExecutiveHeader: React.FC<ExecutiveHeaderProps> = ({
 }) => {
   const todayStr = formatWATReadable();
   const { branding } = useBranding();
+  const { user, userDisplayName, signOut } = useAuth();
 
   return (
     <div
@@ -198,6 +200,29 @@ export const ExecutiveHeader: React.FC<ExecutiveHeaderProps> = ({
               title="Toggle Navigation Menu"
             >
               <Menu size={18} />
+            </button>
+          )}
+
+          {user && (
+            <button
+              onClick={signOut}
+              style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '12px',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                background: 'rgba(239, 68, 68, 0.1)',
+                color: '#fca5a5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                boxSizing: 'border-box',
+              }}
+              title={`Sign Out (${userDisplayName})`}
+            >
+              <LogOut size={16} />
             </button>
           )}
         </div>

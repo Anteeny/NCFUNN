@@ -18,6 +18,7 @@ import {
   FileText,
   Download,
   Printer,
+  ExternalLink,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useLeadership } from '../../hooks/useLeadership';
@@ -345,45 +346,28 @@ export const DepartmentReportPage: React.FC = () => {
           </p>
         </div>
 
-        {/* View / Submit Mode Switcher */}
-        <div style={{ display: 'flex', background: 'var(--navy-soft)', borderRadius: '10px', padding: '4px', border: '1px solid var(--border)' }}>
-          <button
-            onClick={() => setActiveMode('view')}
-            className="btn"
+        {/* External Submissions Link & View-Only Indicator */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <span className="badge badge-blue" style={{ fontSize: '11px', padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+            <FileText size={12} /> Executive View-Only
+          </span>
+          <a
+            href="https://reports.ncfun.site"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-outline"
             style={{
               padding: '7px 14px',
-              fontSize: '12.5px',
-              background: activeMode === 'view' ? 'var(--blue)' : 'transparent',
-              color: activeMode === 'view' ? '#fff' : 'var(--text-muted)',
-              border: 'none',
-              borderRadius: '7px',
+              fontSize: '12px',
+              borderRadius: '8px',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
             }}
+            title="External leader reporting portal"
           >
-            <FileText size={14} /> View Submitted Reports
-          </button>
-          <button
-            onClick={() => {
-              setActiveMode('submit');
-              setStep(1);
-            }}
-            className="btn"
-            style={{
-              padding: '7px 14px',
-              fontSize: '12.5px',
-              background: activeMode === 'submit' ? 'var(--blue)' : 'transparent',
-              color: activeMode === 'submit' ? '#fff' : 'var(--text-muted)',
-              border: 'none',
-              borderRadius: '7px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-            }}
-          >
-            <Plus size={14} /> Submit New Report
-          </button>
+            <ExternalLink size={13} style={{ color: '#06b6d4' }} /> Submit on reports.ncfun.site
+          </a>
         </div>
       </div>
 

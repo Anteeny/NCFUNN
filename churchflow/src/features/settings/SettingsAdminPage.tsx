@@ -32,6 +32,7 @@ import {
   type CellLeaderRecord,
   type CampusZoneRecord,
 } from '../../services/leadership.service';
+import { settingsService, type AdminProfile } from '../../services/settings.service';
 import type { BentoGridDashboardConfig } from '../../config/bentoGrid.config';
 
 export const SettingsAdminPage: React.FC = () => {
@@ -279,26 +280,45 @@ export const SettingsAdminPage: React.FC = () => {
   };
 
   // S4: Backend Admin Users
-  const [adminUsers, setAdminUsers] = useState([
-    { id: 1, name: 'Lead Pastor / Admin', email: 'admin@ncfunn.org', role: 'Super Admin', status: 'Active' },
-    { id: 2, name: 'Media Director', email: 'media@ncfunn.org', role: 'Editor', status: 'Active' },
-    { id: 3, name: 'Secretariat Lead', email: 'secretary@ncfunn.org', role: 'Viewer', status: 'Active' },
+  const [adminUsers, setAdminUsers] = useState<AdminProfile[]>([
+    { id: '1', name: 'Lead Pastor / Admin', full_name: 'Lead Pastor / Admin', email: 'admin@ncfunn.org', role: 'Super Admin', status: 'Active' },
+    { id: '2', name: 'Media Director', full_name: 'Media Director', email: 'media@ncfunn.org', role: 'Editor', status: 'Active' },
+    { id: '3', name: 'Secretariat Lead', full_name: 'Secretariat Lead', email: 'secretary@ncfunn.org', role: 'Viewer', status: 'Active' },
   ]);
+
+  useEffect(() => {
+    settingsService.getAdminProfiles().then(profiles => {
+      if (profiles && profiles.length > 0) {
+        setAdminUsers(profiles);
+      }
+    });
+  }, []);
 
   const [newAdmin, setNewAdmin] = useState({ name: '', email: '', role: 'Editor' });
 
-  const handleAddUser = (e: React.FormEvent) => {
+  const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAdmin.name || !newAdmin.email) return;
-    setAdminUsers(prev => [
-      ...prev,
-      { id: Date.now(), name: newAdmin.name, email: newAdmin.email, role: newAdmin.role, status: 'Active' },
-    ]);
+    const newProfile: AdminProfile = {
+      id: String(Date.now()),
+      name: newAdmin.name,
+      full_name: newAdmin.name,
+      email: newAdmin.email,
+      role: newAdmin.role,
+      status: 'Active',
+    };
+    setAdminUsers(prev => [...prev, newProfile]);
+    await settingsService.saveAdminProfile(newProfile);
     setNewAdmin({ name: '', email: '', role: 'Editor' });
+    setSaveMessage(`Operator "${newProfile.name}" authorized.`);
+    setSavedSuccess(true);
+    setTimeout(() => setSavedSuccess(false), 3000);
   };
 
-  const handleRemoveUser = (id: number) => {
-    setAdminUsers(prev => prev.filter(u => u.id !== id));
+  const handleRemoveUser = async (id: string | number) => {
+    const strId = String(id);
+    setAdminUsers(prev => prev.filter(u => String(u.id) !== strId));
+    await settingsService.deleteAdminProfile(strId);
   };
 
   // Helper to update a KPI card
@@ -381,7 +401,7 @@ export const SettingsAdminPage: React.FC = () => {
     const headers = ['#', 'Name', 'Email', 'Role', 'ID'];
     const rows = adminUsers.map((u, idx) => [
       idx + 1,
-      u.name,
+      u.name || u.full_name,
       u.email,
       u.role,
       u.id,
@@ -1688,7 +1708,7 @@ export const SettingsAdminPage: React.FC = () => {
                   <tr key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td style={{ padding: '10px', textAlign: 'center', color: 'var(--text-muted)', fontWeight: 600 }}>{idx + 1}</td>
                     <td style={{ padding: '10px' }}>
-                      <div style={{ fontWeight: 600 }}>{u.name}</div>
+                      <div style={{ fontWeight: 600 }}>{u.name || u.full_name}</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{u.email}</div>
                     </td>
                     <td style={{ padding: '10px' }}>
