@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useBranding } from '../../hooks/useBranding';
+import { organisationService } from '../../services/organisation.service';
 import {
   Lock,
   Mail,
@@ -138,6 +139,20 @@ export const LoginPage: React.FC = () => {
       }
       setSubmitting(true);
       try {
+        await organisationService.createOrganisation({
+          name: newChurchForm.churchName,
+          slug: newChurchForm.workspaceSlug,
+          custom_domain: `${newChurchForm.workspaceSlug}.churchflow.site`,
+          timezone: newChurchForm.timezone,
+          branding: {
+            logoType: 'emoji',
+            logoEmoji: '⛪',
+            portalTitle: `${newChurchForm.churchName} Portal`,
+            portalSubtitle: 'ChurchFlow Operating System',
+            contactEmail: newChurchForm.leadPastorEmail,
+          },
+        });
+
         const { error } = await signUp(newChurchForm.leadPastorEmail, newChurchForm.password, `${newChurchForm.churchName} Lead Pastor`);
         if (error) {
           setErrorMsg(error.message || 'Failed to initialize church workspace.');

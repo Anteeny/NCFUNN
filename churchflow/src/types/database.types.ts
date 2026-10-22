@@ -17,6 +17,7 @@ export type ServiceType = 'Sunday Service' | 'Midweek Service' | 'Special Meetin
 
 export interface Member {
   id: number;
+  organisation_id?: string;
   member_name: string;
   member_phone?: string | null;
   phone?: string | null; // Compatibility alias
@@ -43,6 +44,7 @@ export interface Member {
 
 export interface ServiceAttendanceRecord {
   id?: string;
+  organisation_id?: string;
   member_id: string | number;
   member_name: string;
   service_date: string;
@@ -58,6 +60,7 @@ export interface ServiceAttendanceRecord {
 
 export interface ServiceReportRecord {
   id?: number | string;
+  organisation_id?: string;
   date: string;
   service_type: string;
   zone: string;
@@ -82,6 +85,7 @@ export interface ServiceReportRecord {
 
 export interface G12ReportRecord {
   id?: string | number;
+  organisation_id?: string;
   report_date: string;
   leader_name: string;
   member_name: string;
@@ -94,6 +98,7 @@ export interface G12ReportRecord {
 
 export interface DepartmentReportRecord {
   id?: string | number;
+  organisation_id?: string;
   dept_name: string;
   report_date: string;
   member_name: string;
@@ -107,6 +112,7 @@ export type DeptReportRecord = DepartmentReportRecord;
 
 export interface CellReportRecord {
   id?: string | number;
+  organisation_id?: string;
   leader_name: string;
   location: string;
   time_in: string;
@@ -122,6 +128,7 @@ export interface CellReportRecord {
 
 export interface CellLeaderRecord {
   id: string;
+  organisation_id?: string;
   zone: string;
   cell_name: string;
   cell_leader: string;
@@ -133,6 +140,7 @@ export interface CellLeaderRecord {
 
 export interface DepartmentLeaderRecord {
   id: string;
+  organisation_id?: string;
   department_name: string;
   leader_name: string;
   phone: string;
@@ -141,6 +149,7 @@ export interface DepartmentLeaderRecord {
 
 export interface MVPRecord {
   id?: string | number;
+  organisation_id?: string;
   Name?: string;
   member_name?: string;
   'Phone Number'?: string;
@@ -151,4 +160,3 @@ export interface MVPRecord {
   'Complains / Comments'?: string;
   'Date Visited'?: string;
 }
-
