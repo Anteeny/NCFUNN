@@ -20,10 +20,12 @@ import {
   Download,
   Sparkles,
   Upload,
+  Check,
 } from 'lucide-react';
 import { useBentoConfig } from '../../hooks/useBentoConfig';
 import { useLeadership } from '../../hooks/useLeadership';
 import { useBranding } from '../../hooks/useBranding';
+import { useTenant } from '../../context/TenantContext';
 import { defaultBrandingConfig } from '../../lib/brandingStorage';
 import { exportToCSV } from '../../utils/exportUtils';
 import {
@@ -33,10 +35,12 @@ import {
   type CampusZoneRecord,
 } from '../../services/leadership.service';
 import { settingsService, type AdminProfile } from '../../services/settings.service';
+import { organisationService, NCF_UNN_ID } from '../../services/organisation.service';
+import type { Organisation } from '../../types/organisation.types';
 import type { BentoGridDashboardConfig } from '../../config/bentoGrid.config';
 
 export const SettingsAdminPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'cards' | 'ticker' | 'units' | 'branding' | 'users'>('units');
+  const [activeTab, setActiveTab] = useState<'cards' | 'ticker' | 'units' | 'branding' | 'users' | 'workspace'>('units');
   const [leadershipSubTab, setLeadershipSubTab] = useState<'depts' | 'cells' | 'zones' | 'g12'>('depts');
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [copiedSuccess, setCopiedSuccess] = useState(false);
@@ -101,6 +105,100 @@ export const SettingsAdminPage: React.FC = () => {
   useEffect(() => {
     setDraftBranding(branding);
   }, [branding]);
+
+  // Multi-tenant Workspace state
+  const { organisation, switchOrganisation, refreshOrganisation } = useTenant();
+  const [allOrgs, setAllOrgs] = useState<Organisation[]>([]);
+  const [orgDraft, setOrgDraft] = useState<Organisation>(organisation);
+  const [showAddOrgModal, setShowAddOrgModal] = useState(false);
+  const [newOrgForm, setNewOrgForm] = useState({
+    name: '',
+    slug: '',
+    custom_domain: '',
+    discipleshipModel: 'G12',
+    groupSingular: 'Connect Group',
+    groupPlural: 'Connect Groups',
+    territoryLabel: 'Campus Zone',
+  });
+  const [copiedOrgUrl, setCopiedOrgUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOrgDraft(organisation);
+  }, [organisation]);
+
+  useEffect(() => {
+    organisationService.listOrganisations().then(setAllOrgs);
+  }, [organisation]);
+
+  const copyToClipboard = (text: string, key: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedOrgUrl(key);
+    setTimeout(() => setCopiedOrgUrl(null), 2500);
+  };
+
+  const handleSaveWorkspace = async () => {
+    if (!orgDraft.id) return;
+    try {
+      const updated = await organisationService.updateOrganisation(orgDraft.id, {
+        name: orgDraft.name,
+        slug: orgDraft.slug,
+        custom_domain: orgDraft.custom_domain,
+        timezone: orgDraft.timezone,
+        base_currency: orgDraft.base_currency,
+        terminology: orgDraft.terminology,
+      });
+      if (updated) {
+        setOrgDraft(updated);
+        await refreshOrganisation();
+      }
+      setSaveMessage('Church workspace configuration updated!');
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+      const list = await organisationService.listOrganisations();
+      setAllOrgs(list);
+    } catch (err) {
+      console.error('Failed to update organisation:', err);
+    }
+  };
+
+  const handleCreateOrg = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newOrgForm.name.trim()) return;
+    const slug = (newOrgForm.slug || newOrgForm.name.toLowerCase().replace(/[^a-z0-9-]/g, '')).toLowerCase();
+    try {
+      const created = await organisationService.createOrganisation({
+        name: newOrgForm.name.trim(),
+        slug,
+        custom_domain: newOrgForm.custom_domain.trim() || `${slug}.churchflow.site`,
+        terminology: {
+          groupSingular: newOrgForm.groupSingular,
+          groupPlural: newOrgForm.groupPlural,
+          territoryLabel: newOrgForm.territoryLabel,
+          discipleshipModel: newOrgForm.discipleshipModel,
+          departmentLabel: 'Department',
+          serviceSingular: 'Service',
+        },
+      });
+      setShowAddOrgModal(false);
+      setNewOrgForm({
+        name: '',
+        slug: '',
+        custom_domain: '',
+        discipleshipModel: 'G12',
+        groupSingular: 'Connect Group',
+        groupPlural: 'Connect Groups',
+        territoryLabel: 'Campus Zone',
+      });
+      const list = await organisationService.listOrganisations();
+      setAllOrgs(list);
+      setSaveMessage(`New ministry "${created.name}" onboarded successfully!`);
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+      await switchOrganisation(created.slug);
+    } catch (err) {
+      console.error('Failed to create new organisation:', err);
+    }
+  };
 
   const handleSave = async () => {
     // 1. Save Bento Grid config
@@ -490,6 +588,7 @@ export const SettingsAdminPage: React.FC = () => {
           { id: 'ticker', label: 'S3: Announcement & Ticker', icon: <MessageSquare size={14} /> },
           { id: 'branding', label: 'S4: Church Logo & Branding', icon: <Sparkles size={14} /> },
           { id: 'users', label: 'S5: User Permissions', icon: <Shield size={14} /> },
+          { id: 'workspace', label: 'S6: Multi-Tenant & Workspace', icon: <Building2 size={14} /> },
         ].map(t => (
           <button
             key={t.id}
@@ -1793,6 +1892,637 @@ export const SettingsAdminPage: React.FC = () => {
               <button type="submit" className="btn btn-primary" style={{ marginTop: '10px', fontSize: '13px' }}>
                 <Plus size={15} /> Add Operator
               </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= S6: MULTI-TENANT & WORKSPACE ================= */}
+      {activeTab === 'workspace' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Active Workspace Banner */}
+          <div
+            className="portal-card"
+            style={{
+              padding: '24px 28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '16px',
+              borderLeft: '4px solid var(--blue)',
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <span style={{ fontSize: '24px' }}>{orgDraft.branding?.logoEmoji || '🏢'}</span>
+                <h3 className="font-serif" style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>
+                  {orgDraft.name}
+                </h3>
+                <span className="badge badge-blue" style={{ fontSize: '11px', textTransform: 'uppercase' }}>
+                  {orgDraft.status || 'Active'}
+                </span>
+                {orgDraft.id === NCF_UNN_ID && (
+                  <span className="badge badge-amber" style={{ fontSize: '11px' }}>
+                    Flagship Church #1
+                  </span>
+                )}
+              </div>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+                Workspace ID: <code style={{ fontSize: '11.5px', background: 'var(--navy-soft)', padding: '2px 6px', borderRadius: '4px' }}>{orgDraft.id}</code>
+                {' • '}Subdomain: <code style={{ fontSize: '11.5px', color: 'var(--blue)' }}>{orgDraft.slug}.churchflow.site</code>
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setShowAddOrgModal(true)}
+                className="btn btn-primary"
+                style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Plus size={15} /> Onboard New Ministry
+              </button>
+            </div>
+          </div>
+
+          {/* Ministry Switcher & Tenant Directory */}
+          <div className="portal-card" style={{ padding: '22px 26px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h4 className="font-serif" style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 4px 0' }}>
+                  Registered Church Workspaces
+                </h4>
+                <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', margin: 0 }}>
+                  Switch between ministries to verify complete Row-Level Security (RLS) data isolation.
+                </p>
+              </div>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                {allOrgs.length} {allOrgs.length === 1 ? 'Ministry' : 'Ministries'} Registered
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+              {allOrgs.map(org => {
+                const isCurrent = org.id === organisation.id;
+                return (
+                  <div
+                    key={org.id}
+                    style={{
+                      padding: '14px 16px',
+                      borderRadius: '10px',
+                      background: isCurrent ? 'rgba(59, 130, 246, 0.08)' : 'var(--navy-soft)',
+                      border: isCurrent ? '1.5px solid var(--blue)' : '1px solid var(--border)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      gap: '10px',
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text)' }}>
+                          {org.name}
+                        </span>
+                        {isCurrent && (
+                          <span className="badge badge-green" style={{ fontSize: '10.5px' }}>
+                            <Check size={11} /> Active
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                        Domain: {org.custom_domain || `${org.slug}.churchflow.site`}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        Discipleship Model: {org.terminology?.discipleshipModel || 'G12'}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                      {!isCurrent ? (
+                        <button
+                          type="button"
+                          onClick={() => switchOrganisation(org.slug)}
+                          className="btn btn-outline"
+                          style={{ fontSize: '11.5px', padding: '5px 12px', flex: 1 }}
+                        >
+                          Switch to Workspace
+                        </button>
+                      ) : (
+                        <div style={{ fontSize: '11.5px', color: 'var(--blue)', fontWeight: 600, padding: '5px 0' }}>
+                          ✓ Currently Operating Here
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(`${window.location.origin}/?org=${org.slug}`, `org_url_${org.id}`)}
+                        className="btn btn-outline"
+                        style={{ fontSize: '11px', padding: '5px 8px' }}
+                        title="Copy direct workspace link"
+                      >
+                        {copiedOrgUrl === `org_url_${org.id}` ? 'Copied!' : <Copy size={13} />}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Active Workspace Settings Form */}
+          <div className="portal-card" style={{ padding: '24px 28px' }}>
+            <h4 className="font-serif" style={{ fontSize: '17px', fontWeight: 700, marginBottom: '6px' }}>
+              Configure Active Church: {orgDraft.name}
+            </h4>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+              Manage church legal name, subdomain slugs, custom domain bindings, and localized terminology.
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '18px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                  CHURCH / ORGANISATION NAME *
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={orgDraft.name || ''}
+                  onChange={e => setOrgDraft({ ...orgDraft, name: e.target.value })}
+                  placeholder="e.g. NCF UNN or Grace City Church"
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                  SUBDOMAIN SLUG (CHURCHFLOW CLOUD) *
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={orgDraft.slug || ''}
+                    onChange={e => setOrgDraft({ ...orgDraft, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                    placeholder="ncfunn"
+                    style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
+                  />
+                  <span
+                    style={{
+                      background: 'var(--navy-soft)',
+                      border: '1px solid var(--border)',
+                      borderLeft: 'none',
+                      padding: '9px 12px',
+                      fontSize: '12px',
+                      color: 'var(--text-muted)',
+                      borderTopRightRadius: 'var(--radius-sm)',
+                      borderBottomRightRadius: 'var(--radius-sm)',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    .churchflow.site
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                  DEDICATED CUSTOM DOMAIN
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={orgDraft.custom_domain || ''}
+                  onChange={e => setOrgDraft({ ...orgDraft, custom_domain: e.target.value.toLowerCase().trim() })}
+                  placeholder="e.g. ncfunn.site or church.org"
+                />
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>
+                  Point a CNAME record at your DNS provider to <code style={{ color: 'var(--blue)' }}>cname.vercel-dns.com</code>
+                </span>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                  TIMEZONE
+                </label>
+                <select
+                  className="form-control"
+                  value={orgDraft.timezone || 'Africa/Lagos'}
+                  onChange={e => setOrgDraft({ ...orgDraft, timezone: e.target.value })}
+                >
+                  <option value="Africa/Lagos">Africa/Lagos (WAT, UTC+1)</option>
+                  <option value="UTC">UTC (Universal Time)</option>
+                  <option value="Europe/London">Europe/London (GMT/BST)</option>
+                  <option value="America/New_York">America/New_York (EST/EDT)</option>
+                  <option value="Africa/Johannesburg">Africa/Johannesburg (SAST, UTC+2)</option>
+                  <option value="Africa/Nairobi">Africa/Nairobi (EAT, UTC+3)</option>
+                  <option value="Asia/Dubai">Asia/Dubai (GST, UTC+4)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                  BASE CURRENCY
+                </label>
+                <select
+                  className="form-control"
+                  value={orgDraft.base_currency || 'NGN'}
+                  onChange={e => setOrgDraft({ ...orgDraft, base_currency: e.target.value })}
+                >
+                  <option value="NGN">NGN (Nigerian Naira - ₦)</option>
+                  <option value="USD">USD (US Dollar - $)</option>
+                  <option value="GBP">GBP (British Pound - £)</option>
+                  <option value="EUR">EUR (Euro - €)</option>
+                  <option value="GHS">GHS (Ghanaian Cedi - GH₵)</option>
+                  <option value="KES">KES (Kenyan Shilling - KSh)</option>
+                  <option value="ZAR">ZAR (South African Rand - R)</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                  DISCIPLESHIP & GROUP MODEL
+                </label>
+                <select
+                  className="form-control"
+                  value={orgDraft.terminology?.discipleshipModel || 'G12'}
+                  onChange={e =>
+                    setOrgDraft({
+                      ...orgDraft,
+                      terminology: {
+                        ...(orgDraft.terminology || {
+                          groupSingular: 'Connect Group',
+                          groupPlural: 'Connect Groups',
+                          territoryLabel: 'Campus Zone',
+                          departmentLabel: 'Department',
+                          serviceSingular: 'Service',
+                        }),
+                        discipleshipModel: e.target.value,
+                      },
+                    })
+                  }
+                >
+                  <option value="G12">G12 Discipleship Model</option>
+                  <option value="Discipleship Circles">Discipleship Circles</option>
+                  <option value="Cell System">Traditional Cell System</option>
+                  <option value="Life Groups">Life Group Fellowship</option>
+                  <option value="Care Cells">Care Cell Network</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Terminology Customization */}
+            <div style={{ marginTop: '22px', paddingTop: '20px', borderTop: '1px solid var(--border)' }}>
+              <h5 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '6px' }}>
+                Localized Church Terminology
+              </h5>
+              <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '14px' }}>
+                Customize labels across all menus and reports to match your church structure.
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
+                    GROUP SINGULAR LABEL
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={orgDraft.terminology?.groupSingular || 'Connect Group'}
+                    onChange={e =>
+                      setOrgDraft({
+                        ...orgDraft,
+                        terminology: {
+                          ...(orgDraft.terminology || {
+                            groupPlural: 'Connect Groups',
+                            territoryLabel: 'Campus Zone',
+                            discipleshipModel: 'G12',
+                            departmentLabel: 'Department',
+                            serviceSingular: 'Service',
+                          }),
+                          groupSingular: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="Connect Group / Life Group"
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
+                    GROUP PLURAL LABEL
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={orgDraft.terminology?.groupPlural || 'Connect Groups'}
+                    onChange={e =>
+                      setOrgDraft({
+                        ...orgDraft,
+                        terminology: {
+                          ...(orgDraft.terminology || {
+                            groupSingular: 'Connect Group',
+                            territoryLabel: 'Campus Zone',
+                            discipleshipModel: 'G12',
+                            departmentLabel: 'Department',
+                            serviceSingular: 'Service',
+                          }),
+                          groupPlural: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="Connect Groups / Life Groups"
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
+                    TERRITORY / ZONE LABEL
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={orgDraft.terminology?.territoryLabel || 'Campus Zone'}
+                    onChange={e =>
+                      setOrgDraft({
+                        ...orgDraft,
+                        terminology: {
+                          ...(orgDraft.terminology || {
+                            groupSingular: 'Connect Group',
+                            groupPlural: 'Connect Groups',
+                            discipleshipModel: 'G12',
+                            departmentLabel: 'Department',
+                            serviceSingular: 'Service',
+                          }),
+                          territoryLabel: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="Campus Zone / District / Parish"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+              <button
+                type="button"
+                onClick={handleSaveWorkspace}
+                className="btn btn-primary"
+                style={{ fontSize: '13px', padding: '10px 22px' }}
+              >
+                <CheckCircle2 size={16} /> Save Workspace Settings
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Access URLs Card */}
+          <div className="portal-card" style={{ padding: '22px 26px' }}>
+            <h4 className="font-serif" style={{ fontSize: '16px', fontWeight: 700, marginBottom: '6px' }}>
+              Church Direct Access URLs
+            </h4>
+            <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginBottom: '14px' }}>
+              Share these URLs with your congregation, leaders, and ushers for instant portal routing.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  background: 'var(--navy-soft)',
+                  borderRadius: '8px',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                }}
+              >
+                <div>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--blue)', textTransform: 'uppercase', display: 'block' }}>
+                    Dedicated Custom Domain
+                  </span>
+                  <code style={{ fontSize: '13px', color: 'var(--text)' }}>
+                    https://{orgDraft.custom_domain || `${orgDraft.slug}.site`}
+                  </code>
+                </div>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(`https://${orgDraft.custom_domain || `${orgDraft.slug}.site`}`, 'cust_url')}
+                    className="btn btn-outline"
+                    style={{ fontSize: '11.5px', padding: '5px 10px' }}
+                  >
+                    {copiedOrgUrl === 'cust_url' ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  background: 'var(--navy-soft)',
+                  borderRadius: '8px',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                }}
+              >
+                <div>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--blue)', textTransform: 'uppercase', display: 'block' }}>
+                    Cloud Subdomain Route
+                  </span>
+                  <code style={{ fontSize: '13px', color: 'var(--text)' }}>
+                    https://{orgDraft.slug}.churchflow.site
+                  </code>
+                </div>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(`https://${orgDraft.slug}.churchflow.site`, 'sub_url')}
+                    className="btn btn-outline"
+                    style={{ fontSize: '11.5px', padding: '5px 10px' }}
+                  >
+                    {copiedOrgUrl === 'sub_url' ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  background: 'var(--navy-soft)',
+                  borderRadius: '8px',
+                  flexWrap: 'wrap',
+                  gap: '8px',
+                }}
+              >
+                <div>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--blue)', textTransform: 'uppercase', display: 'block' }}>
+                    Universal Query Param Link
+                  </span>
+                  <code style={{ fontSize: '13px', color: 'var(--text)' }}>
+                    {window.location.origin}/?org={orgDraft.slug}
+                  </code>
+                </div>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(`${window.location.origin}/?org=${orgDraft.slug}`, 'param_url')}
+                    className="btn btn-outline"
+                    style={{ fontSize: '11.5px', padding: '5px 10px' }}
+                  >
+                    {copiedOrgUrl === 'param_url' ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL: ONBOARD NEW MINISTRY ================= */}
+      {showAddOrgModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.72)',
+            backdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1100,
+            padding: '20px',
+          }}
+          onClick={() => setShowAddOrgModal(false)}
+        >
+          <div
+            className="portal-card animate-scale-in"
+            style={{ width: '100%', maxWidth: '520px', padding: '26px 30px' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '20px' }}>⛪</span>
+                <h3 className="font-serif" style={{ fontSize: '18px', fontWeight: 700, margin: 0 }}>
+                  Onboard New Church / Ministry
+                </h3>
+              </div>
+              <button onClick={() => setShowAddOrgModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateOrg} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
+                  CHURCH / MINISTRY NAME *
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g. Grace Sanctuary Church"
+                  value={newOrgForm.name}
+                  onChange={e => {
+                    const name = e.target.value;
+                    const autoSlug = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    setNewOrgForm({
+                      ...newOrgForm,
+                      name,
+                      slug: newOrgForm.slug ? newOrgForm.slug : autoSlug,
+                    });
+                  }}
+                  required
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
+                  WORKSPACE SLUG *
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="gracesanctuary"
+                    value={newOrgForm.slug}
+                    onChange={e => setNewOrgForm({ ...newOrgForm, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '') })}
+                    required
+                    style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}
+                  />
+                  <span
+                    style={{
+                      background: 'var(--navy-soft)',
+                      border: '1px solid var(--border)',
+                      borderLeft: 'none',
+                      padding: '9px 12px',
+                      fontSize: '12px',
+                      color: 'var(--text-muted)',
+                      borderTopRightRadius: 'var(--radius-sm)',
+                      borderBottomRightRadius: 'var(--radius-sm)',
+                    }}
+                  >
+                    .churchflow.site
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
+                  CUSTOM DOMAIN (OPTIONAL)
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="e.g. gracesanctuary.org"
+                  value={newOrgForm.custom_domain}
+                  onChange={e => setNewOrgForm({ ...newOrgForm, custom_domain: e.target.value.toLowerCase().trim() })}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
+                    DISCIPLESHIP MODEL
+                  </label>
+                  <select
+                    className="form-control"
+                    value={newOrgForm.discipleshipModel}
+                    onChange={e => setNewOrgForm({ ...newOrgForm, discipleshipModel: e.target.value })}
+                  >
+                    <option value="G12">G12 Discipleship</option>
+                    <option value="Discipleship Circles">Discipleship Circles</option>
+                    <option value="Cell System">Traditional Cell</option>
+                    <option value="Life Groups">Life Groups</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
+                    TERRITORY LABEL
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Campus Zone / District"
+                    value={newOrgForm.territoryLabel}
+                    onChange={e => setNewOrgForm({ ...newOrgForm, territoryLabel: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button type="button" onClick={() => setShowAddOrgModal(false)} className="btn btn-outline" style={{ fontSize: '12.5px' }}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ fontSize: '12.5px' }}>
+                  Provision Ministry
+                </button>
+              </div>
             </form>
           </div>
         </div>

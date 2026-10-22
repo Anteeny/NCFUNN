@@ -223,6 +223,39 @@ export const organisationService = {
     return localOrg;
   },
 
+  /**
+   * Updates an existing organisation's settings, terminology, or custom domain.
+   */
+  async updateOrganisation(id: string, updates: Partial<Organisation>): Promise<Organisation | null> {
+    try {
+      const { data, error } = await supabase
+        .from(ORGANISATIONS_TABLE)
+        .update({
+          name: updates.name,
+          slug: updates.slug,
+          custom_domain: updates.custom_domain,
+          timezone: updates.timezone,
+          base_currency: updates.base_currency,
+          terminology: updates.terminology,
+          branding: updates.branding,
+          meeting_schedules: updates.meeting_schedules,
+          enabled_modules: updates.enabled_modules,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (!error && data) {
+        this.cacheOrganisation(data as Organisation);
+        return data as Organisation;
+      }
+    } catch (err) {
+      console.warn('[organisationService] Remote update organisation failed:', err);
+    }
+    return null;
+  },
+
   cacheOrganisation(org: Organisation) {
     try {
       localStorage.setItem(CACHED_ORG_KEY, JSON.stringify(org));
