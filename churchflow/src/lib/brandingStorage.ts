@@ -1,4 +1,6 @@
 export interface ChurchBrandingConfig {
+  workspaceSlug?: string; // e.g. 'ncfunn', 'gracecity'
+  organizationName?: string; // e.g. 'NCF UNN', 'Grace City Church'
   logoType: 'image' | 'emoji';
   logoUrl: string; // e.g. '/images.png', base64 data URL, or external link
   logoEmoji: string; // e.g. '🕊️', '⛪'
@@ -7,6 +9,8 @@ export interface ChurchBrandingConfig {
 }
 
 export const defaultBrandingConfig: ChurchBrandingConfig = {
+  workspaceSlug: 'ncfunn',
+  organizationName: 'NCF UNN',
   logoType: 'image',
   logoUrl: '/images.png',
   logoEmoji: '🕊️',
