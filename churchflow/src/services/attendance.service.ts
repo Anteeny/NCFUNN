@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import type { Member, ServiceAttendanceRecord } from '../types/database.types';
+import { getActiveOrganisationId } from './organisation.service';
 
 export interface ServiceAttendeeRecord {
   id: string;
@@ -24,11 +25,14 @@ export const attendanceService = {
    */
   async getServiceAttendance(
     serviceDate: string,
-    serviceType: string
+    serviceType: string,
+    organisationId?: string
   ): Promise<ServiceAttendanceRecord[]> {
+    const orgId = organisationId || getActiveOrganisationId();
     const { data, error } = await supabase
       .from('service_attendance')
       .select('*')
+      .eq('organisation_id', orgId)
       .eq('service_date', serviceDate)
       .eq('service_type', serviceType)
       .order('checked_in_at', { ascending: false });
@@ -42,7 +46,7 @@ export const attendanceService = {
 
   /**
    * Saves a member's check-in immediately to Supabase
-   * Enforces UNIQUE(member_id, service_date, service_type)
+   * Scoped to active organisation
    */
   async checkInMember(params: {
     member_id: string | number;
@@ -52,9 +56,12 @@ export const attendanceService = {
     zone?: string | null;
     department?: string | null;
     marked_by?: string;
+    organisation_id?: string;
   }): Promise<ServiceAttendanceRecord> {
+    const orgId = params.organisation_id || getActiveOrganisationId();
     const nowIso = new Date().toISOString();
     const payload = {
+      organisation_id: orgId,
       member_id: String(params.member_id),
       member_name: params.member_name,
       service_date: params.service_date,
@@ -84,11 +91,14 @@ export const attendanceService = {
   async undoCheckIn(
     memberId: string | number,
     serviceDate: string,
-    serviceType: string
+    serviceType: string,
+    organisationId?: string
   ): Promise<void> {
+    const orgId = organisationId || getActiveOrganisationId();
     const { error } = await supabase
       .from('service_attendance')
       .delete()
+      .eq('organisation_id', orgId)
       .eq('member_id', String(memberId))
       .eq('service_date', serviceDate)
       .eq('service_type', serviceType);
@@ -111,16 +121,19 @@ export const attendanceService = {
     serviceType: string;
     zone?: string;
     department?: string;
+    organisation_id?: string;
   }): Promise<{ member: Member; attendance: ServiceAttendanceRecord }> {
+    const orgId = params.organisation_id || getActiveOrganisationId();
     const cleanName = params.name.trim();
     const cleanPhone = params.phone.trim();
     const cleanAddress = params.schoolAddress.trim();
 
-    // 1. Create MVP record in members table
+    // 1. Create MVP record in members table scoped to org
     const { data: newMember, error: memberErr } = await supabase
       .from('members')
       .insert([
         {
+          organisation_id: orgId,
           member_name: cleanName,
           member_phone: cleanPhone,
           phone: cleanPhone,
@@ -142,6 +155,7 @@ export const attendanceService = {
 
     // 2. Immediately mark checked in
     const attendance = await this.checkInMember({
+      organisation_id: orgId,
       member_id: newMember.id,
       member_name: cleanName,
       service_date: params.serviceDate,
@@ -160,10 +174,12 @@ export const attendanceService = {
    * Fetches service attendance history grouped into service folders,
    * containing attendees with member_name and checked_in_at.
    */
-  async getServiceAttendanceHistory(): Promise<ServiceFolder[]> {
+  async getServiceAttendanceHistory(organisationId?: string): Promise<ServiceFolder[]> {
+    const orgId = organisationId || getActiveOrganisationId();
     const { data, error } = await supabase
       .from('service_attendance')
       .select('id, member_id, member_name, service_date, service_type, checked_in_at')
+      .eq('organisation_id', orgId)
       .order('service_date', { ascending: false })
       .order('checked_in_at', { ascending: true });
 

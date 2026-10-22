@@ -1,8 +1,10 @@
 import { supabase } from '../lib/supabase';
 import type { Organisation } from '../types/organisation.types';
 
+export const NCF_UNN_ID = '00000000-0000-0000-0000-000000000001';
+
 export const NCF_UNN_FLAGSHIP_ORG: Organisation = {
-  id: '00000000-0000-0000-0000-000000000001',
+  id: NCF_UNN_ID,
   name: 'NCF UNN',
   slug: 'ncfunn',
   custom_domain: 'ncfunn.site',
@@ -230,3 +232,19 @@ export const organisationService = {
     }
   },
 };
+
+/**
+ * Returns the currently active organisation ID with instant fallback to NCF UNN flagship ID.
+ */
+export function getActiveOrganisationId(): string {
+  try {
+    const cached = localStorage.getItem(CACHED_ORG_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed?.id) return parsed.id;
+    }
+  } catch (e) {
+    // ignore
+  }
+  return '00000000-0000-0000-0000-000000000001';
+}

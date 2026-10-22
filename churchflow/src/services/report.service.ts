@@ -1,14 +1,17 @@
 import { supabase } from '../lib/supabase';
 import type { G12ReportRecord, DepartmentReportRecord, CellReportRecord } from '../types/database.types';
+import { getActiveOrganisationId, NCF_UNN_ID } from './organisation.service';
 
 export const reportService = {
   /**
-   * Checks if a G12 report for a given leader, date, and service type already exists
+   * Checks if a G12 report for a given leader, date, and service type already exists scoped to org
    */
-  async checkG12ReportExists(leaderName: string, date: string, serviceType?: string): Promise<boolean> {
+  async checkG12ReportExists(leaderName: string, date: string, serviceType?: string, organisationId?: string): Promise<boolean> {
+    const orgId = organisationId || getActiveOrganisationId();
     let query = supabase
       .from('g12_reports')
       .select('id', { count: 'exact', head: true })
+      .eq('organisation_id', orgId)
       .eq('leader_name', leaderName)
       .eq('report_date', date);
 
@@ -25,39 +28,45 @@ export const reportService = {
   },
 
   /**
-   * Submits a G12 attendance report
+   * Submits a G12 attendance report scoped to active organisation
    */
-  async submitG12Report(records: G12ReportRecord[]): Promise<void> {
+  async submitG12Report(records: G12ReportRecord[], organisationId?: string): Promise<void> {
     if (!records || records.length === 0) {
       throw new Error("No attendance records to submit.");
     }
-    const { error } = await supabase.from('g12_reports').insert(records);
+    const orgId = organisationId || getActiveOrganisationId();
+    const scopedRecords = records.map(r => ({ ...r, organisation_id: r.organisation_id || orgId }));
+    const { error } = await supabase.from('g12_reports').insert(scopedRecords);
     if (error) throw error;
   },
 
   /**
-   * Submits a Department attendance report
+   * Submits a Department attendance report scoped to active organisation
    */
-  async submitDepartmentReport(records: DepartmentReportRecord[]): Promise<void> {
+  async submitDepartmentReport(records: DepartmentReportRecord[], organisationId?: string): Promise<void> {
     if (!records || records.length === 0) {
       throw new Error("No department attendance records to submit.");
     }
-    const { error } = await supabase.from('dept_reports').insert(records);
+    const orgId = organisationId || getActiveOrganisationId();
+    const scopedRecords = records.map(r => ({ ...r, organisation_id: r.organisation_id || orgId }));
+    const { error } = await supabase.from('dept_reports').insert(scopedRecords);
     if (error) throw error;
   },
 
   /**
-   * Submits a Cell Group report
+   * Submits a Cell Group report scoped to active organisation
    */
-  async submitCellReport(record: CellReportRecord): Promise<void> {
-    const { error } = await supabase.from('cell_reports').insert([record]);
+  async submitCellReport(record: CellReportRecord, organisationId?: string): Promise<void> {
+    const orgId = organisationId || getActiveOrganisationId();
+    const scopedRecord = { ...record, organisation_id: record.organisation_id || orgId };
+    const { error } = await supabase.from('cell_reports').insert([scopedRecord]);
     if (error) throw error;
   },
 
   /**
-   * Fetches summary statistics for the executive dashboard directly from verified records
+   * Fetches summary statistics for the executive dashboard scoped to active organisation
    */
-  async getDashboardStats(): Promise<{
+  async getDashboardStats(organisationId?: string): Promise<{
     totalMembers: number;
     totalWorkers: number;
     totalConnectGroups: number;
@@ -98,12 +107,16 @@ export const reportService = {
     deptReportsCount: number;
     cellReportsCount: number;
   }> {
+    const orgId = organisationId || getActiveOrganisationId();
+    const isNcf = orgId === NCF_UNN_ID;
+
     // 1. Total Members & Members distribution
     const { data: memberRows, count: totalMembersCount } = await supabase
       .from('members')
-      .select('membership_level, department', { count: 'exact' });
+      .select('membership_level, department', { count: 'exact' })
+      .eq('organisation_id', orgId);
 
-    const totalMembers = totalMembersCount || (memberRows || []).length || 358;
+    const totalMembers = totalMembersCount || (memberRows || []).length || (isNcf ? 358 : 0);
 
     // Workers: members currently assigned to a department/unit
     let totalWorkers = 0;
@@ -131,20 +144,22 @@ export const reportService = {
     });
 
     // Retention: How well we are doing in retaining MVPs to regular attendees/committed members
-    const retainedCount = totalMembers - mvpCount; // People who transitioned past MVP to regular/committed
-    const retentionPercent = totalMembers > 0 ? Math.round((retainedCount / totalMembers) * 100) : 0; // Whole numbers (no decimals)
+    const retainedCount = totalMembers - mvpCount;
+    const retentionPercent = totalMembers > 0 ? Math.round((retainedCount / totalMembers) * 100) : 0;
 
-    // 2. Connect Group Leaders directory (40 registered cell leaders)
+    // 2. Connect Group Leaders directory
     const { count: totalCellLeaders } = await supabase
       .from('cell_leaders')
-      .select('id', { count: 'exact', head: true });
+      .select('id', { count: 'exact', head: true })
+      .eq('organisation_id', orgId);
 
-    const totalConnectLeaders = totalCellLeaders || 40;
+    const totalConnectLeaders = totalCellLeaders || (isNcf ? 40 : 0);
 
     // Active groups: reporting in recent cell reports
     const { data: cellReports } = await supabase
       .from('cell_reports')
-      .select('leader_name, report_date, new_converts');
+      .select('leader_name, report_date, new_converts')
+      .eq('organisation_id', orgId);
 
     const activeLeaderSet = new Set<string>();
     let cellNewConverts = 0;
@@ -153,29 +168,31 @@ export const reportService = {
       cellNewConverts += cr.new_converts || 0;
     });
 
-    // 3. Department Leaders directory (9 departmental leaders)
+    // 3. Department Leaders directory
     const { data: deptLeaders } = await supabase
       .from('department_leaders')
-      .select('department_name, leader_name');
+      .select('department_name, leader_name')
+      .eq('organisation_id', orgId);
 
-    const totalUnitLeaders = (deptLeaders || []).length || 9;
+    const totalUnitLeaders = (deptLeaders || []).length || (isNcf ? 9 : 0);
 
     // 4. Spiritual Growth Journey Stage Counts
     const stageCounts: Record<string, number> = {
-      MVP: mvpCount || 313,
-      Member: regularMemberCount || 18,
-      Worker: totalWorkers || 101, // People currently in a unit/dept
-      'Connect Leader': totalConnectLeaders, // 40 Connect Group Leaders
-      'Unit Leader': totalUnitLeaders, // 9 Departmental Leaders
-      Core: Math.ceil(dhCoreCount / 2) || 8,
-      DH: Math.floor(dhCoreCount / 2) || 8,
-      Pastor: pastorCount || 5,
+      MVP: mvpCount || (isNcf ? 313 : 0),
+      Member: regularMemberCount || (isNcf ? 18 : 0),
+      Worker: totalWorkers || (isNcf ? 101 : 0),
+      'Connect Leader': totalConnectLeaders,
+      'Unit Leader': totalUnitLeaders,
+      Core: Math.ceil(dhCoreCount / 2) || (isNcf ? 8 : 0),
+      DH: Math.floor(dhCoreCount / 2) || (isNcf ? 8 : 0),
+      Pastor: pastorCount || (isNcf ? 5 : 0),
     };
 
     // 5. Service reports: totals, conversions, latest service
     const { data: serviceRows } = await supabase
       .from('service_reports')
       .select('date, service_type, total_attendance, new_converts, mvp')
+      .eq('organisation_id', orgId)
       .order('date', { ascending: false });
 
     // Determine current week window (Monday to Sunday)
@@ -240,6 +257,7 @@ export const reportService = {
     const { data: deptReportsData } = await supabase
       .from('dept_reports')
       .select('dept_name, status, report_date')
+      .eq('organisation_id', orgId)
       .limit(5000);
 
     const deptStatsMap = new Map<string, { present: number; total: number }>();
@@ -315,15 +333,15 @@ export const reportService = {
     };
 
     // 7. Overall Report Counts
-    const { count: g12Count } = await supabase.from('g12_reports').select('id', { count: 'exact', head: true });
-    const { count: deptCount } = await supabase.from('dept_reports').select('id', { count: 'exact', head: true });
+    const { count: g12Count } = await supabase.from('g12_reports').select('id', { count: 'exact', head: true }).eq('organisation_id', orgId);
+    const { count: deptCount } = await supabase.from('dept_reports').select('id', { count: 'exact', head: true }).eq('organisation_id', orgId);
 
     return {
       totalMembers,
       totalWorkers,
       totalConnectGroups: totalConnectLeaders,
-      activeConnectGroups: activeLeaderSet.size > 0 ? activeLeaderSet.size : 18,
-      totalMVPs: mvpCount || 313,
+      activeConnectGroups: activeLeaderSet.size > 0 ? activeLeaderSet.size : (isNcf ? 18 : 0),
+      totalMVPs: mvpCount || (isNcf ? 313 : 0),
       monthlyMVPs,
       mvpsAllTimeInReports,
       currentMonthName,
@@ -345,14 +363,15 @@ export const reportService = {
   },
 
   /**
-   * Fetches service attendance trend from saved service_reports
+   * Fetches service attendance trend from saved service_reports scoped to active org
    */
-  async getServiceAttendanceTrend(timeRange: '1M' | '3M' | '6M' | '1Y'): Promise<{
+  async getServiceAttendanceTrend(timeRange: '1M' | '3M' | '6M' | '1Y', organisationId?: string): Promise<{
     label: string;
     count: number;
     date: string;
     serviceType: string;
   }[]> {
+    const orgId = organisationId || getActiveOrganisationId();
     const daysMap: Record<'1M' | '3M' | '6M' | '1Y', number> = {
       '1M': 35,
       '3M': 95,
@@ -368,6 +387,7 @@ export const reportService = {
     const { data, error } = await supabase
       .from('service_reports')
       .select('date, service_type, total_attendance')
+      .eq('organisation_id', orgId)
       .gte('date', sinceDateStr)
       .order('date', { ascending: true });
 
@@ -409,13 +429,14 @@ export const reportService = {
   },
 
   /**
-   * Fetches real attendance data for monthly heatmap
+   * Fetches real attendance data for monthly heatmap scoped to active org
    */
-  async getMonthHeatmapData(year: number, month: number): Promise<{
+  async getMonthHeatmapData(year: number, month: number, organisationId?: string): Promise<{
     day: number;
     density: 'none' | 'low' | 'mid' | 'high';
     count: number;
   }[]> {
+    const orgId = organisationId || getActiveOrganisationId();
     const startMonth = `${year}-${String(month).padStart(2, '0')}-01`;
     const lastDay = new Date(year, month, 0).getDate();
     const endMonth = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
@@ -423,6 +444,7 @@ export const reportService = {
     const { data } = await supabase
       .from('service_reports')
       .select('date, total_attendance')
+      .eq('organisation_id', orgId)
       .gte('date', startMonth)
       .lte('date', endMonth);
 
@@ -446,12 +468,14 @@ export const reportService = {
   },
 
   /**
-   * Fetches distinct dates where department reports were submitted, with summaries
+   * Fetches distinct dates where department reports were submitted scoped to active org
    */
-  async getDepartmentReportDates(): Promise<{ date: string; totalReported: number; unitsCount: number; present: number; absent: number }[]> {
+  async getDepartmentReportDates(organisationId?: string): Promise<{ date: string; totalReported: number; unitsCount: number; present: number; absent: number }[]> {
+    const orgId = organisationId || getActiveOrganisationId();
     const { data, error } = await supabase
       .from('dept_reports')
       .select('report_date, dept_name, status')
+      .eq('organisation_id', orgId)
       .order('report_date', { ascending: false });
 
     if (error) {
@@ -491,18 +515,20 @@ export const reportService = {
   },
 
   /**
-   * Fetches all submitted department reports for a specific date, grouped by unit
+   * Fetches all submitted department reports for a specific date scoped to active org
    */
-  async getDepartmentReportsForDate(reportDate: string): Promise<{
+  async getDepartmentReportsForDate(reportDate: string, organisationId?: string): Promise<{
     dept_name: string;
     presentCount: number;
     absentCount: number;
     totalReported: number;
     records: DepartmentReportRecord[];
   }[]> {
+    const orgId = organisationId || getActiveOrganisationId();
     const { data, error } = await supabase
       .from('dept_reports')
       .select('*')
+      .eq('organisation_id', orgId)
       .eq('report_date', reportDate)
       .order('dept_name', { ascending: true })
       .order('member_name', { ascending: true });
@@ -542,12 +568,14 @@ export const reportService = {
   },
 
   /**
-   * Fetches distinct dates where G12 reports were submitted
+   * Fetches distinct dates where G12 reports were submitted scoped to active org
    */
-  async getG12ReportDates(): Promise<{ date: string; totalReported: number; leadersCount: number; present: number; absent: number }[]> {
+  async getG12ReportDates(organisationId?: string): Promise<{ date: string; totalReported: number; leadersCount: number; present: number; absent: number }[]> {
+    const orgId = organisationId || getActiveOrganisationId();
     const { data, error } = await supabase
       .from('g12_reports')
       .select('report_date, leader_name, status')
+      .eq('organisation_id', orgId)
       .order('report_date', { ascending: false });
 
     if (error) {
@@ -587,18 +615,20 @@ export const reportService = {
   },
 
   /**
-   * Fetches all submitted G12 reports for a specific date, grouped by leader
+   * Fetches all submitted G12 reports for a specific date scoped to active org
    */
-  async getG12ReportsForDate(reportDate: string): Promise<{
+  async getG12ReportsForDate(reportDate: string, organisationId?: string): Promise<{
     leader_name: string;
     presentCount: number;
     absentCount: number;
     totalReported: number;
     records: G12ReportRecord[];
   }[]> {
+    const orgId = organisationId || getActiveOrganisationId();
     const { data, error } = await supabase
       .from('g12_reports')
       .select('*')
+      .eq('organisation_id', orgId)
       .eq('report_date', reportDate)
       .order('leader_name', { ascending: true })
       .order('member_name', { ascending: true });
@@ -638,12 +668,14 @@ export const reportService = {
   },
 
   /**
-   * Fetches distinct dates where Cell / Connect Group reports were submitted
+   * Fetches distinct dates where Cell / Connect Group reports were submitted scoped to active org
    */
-  async getCellReportDates(): Promise<{ date: string; reportsCount: number; totalAttendance: number; totalConverts: number; totalOffering: number }[]> {
+  async getCellReportDates(organisationId?: string): Promise<{ date: string; reportsCount: number; totalAttendance: number; totalConverts: number; totalOffering: number }[]> {
+    const orgId = organisationId || getActiveOrganisationId();
     const { data, error } = await supabase
       .from('cell_reports')
       .select('report_date, attendance, new_converts, offering')
+      .eq('organisation_id', orgId)
       .order('report_date', { ascending: false });
 
     if (error) {
@@ -675,12 +707,14 @@ export const reportService = {
   },
 
   /**
-   * Fetches all submitted Cell / Connect Group reports for a specific date
+   * Fetches all submitted Cell / Connect Group reports for a specific date scoped to active org
    */
-  async getCellReportsForDate(reportDate: string): Promise<CellReportRecord[]> {
+  async getCellReportsForDate(reportDate: string, organisationId?: string): Promise<CellReportRecord[]> {
+    const orgId = organisationId || getActiveOrganisationId();
     const { data, error } = await supabase
       .from('cell_reports')
       .select('*')
+      .eq('organisation_id', orgId)
       .eq('report_date', reportDate)
       .order('leader_name', { ascending: true });
 

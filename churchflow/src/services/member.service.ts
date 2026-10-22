@@ -1,9 +1,10 @@
 import { supabase } from '../lib/supabase';
 import type { Member } from '../types/database.types';
+import { getActiveOrganisationId } from './organisation.service';
 
 export const memberService = {
   /**
-   * Fetches members with optional filtering, search, and pagination
+   * Fetches members scoped to the active church organisation
    */
   async getMembers(params?: {
     search?: string;
@@ -12,8 +13,13 @@ export const memberService = {
     leader?: string;
     limit?: number;
     offset?: number;
+    organisation_id?: string;
   }): Promise<{ data: Member[]; count: number }> {
-    let query = supabase.from('members').select('*', { count: 'exact' });
+    const orgId = params?.organisation_id || getActiveOrganisationId();
+    let query = supabase
+      .from('members')
+      .select('*', { count: 'exact' })
+      .eq('organisation_id', orgId);
 
     if (params?.search && params.search.trim().length > 0) {
       const term = `%${params.search.trim()}%`;
@@ -39,13 +45,15 @@ export const memberService = {
   },
 
   /**
-   * Fetches a single member by ID / Token
+   * Fetches a single member by ID / Token scoped to the active organisation
    */
-  async getMemberById(id: string | number): Promise<Member | null> {
+  async getMemberById(id: string | number, organisationId?: string): Promise<Member | null> {
+    const orgId = organisationId || getActiveOrganisationId();
     const { data, error } = await supabase
       .from('members')
       .select('*')
       .eq('id', id)
+      .eq('organisation_id', orgId)
       .maybeSingle();
 
     if (error) throw error;
@@ -92,14 +100,16 @@ export const memberService = {
   },
 
   /**
-   * Loads all active G12 Leaders (from members tagged as DH/Core or Pastor, plus all assigned G12 leaders)
+   * Loads all active G12 Leaders scoped to the active organisation
    */
-  async getActiveLeaders(): Promise<string[]> {
+  async getActiveLeaders(organisationId?: string): Promise<string[]> {
+    const orgId = organisationId || getActiveOrganisationId();
     const set = new Set<string>();
 
     const { data: tagged, error: err1 } = await supabase
       .from('members')
       .select('member_name')
+      .eq('organisation_id', orgId)
       .or('membership_level.ilike.%dh%,membership_level.ilike.%core%,membership_level.ilike.%pastor%');
 
     if (!err1 && tagged) {
@@ -112,6 +122,7 @@ export const memberService = {
     const { data: assigned, error: err2 } = await supabase
       .from('members')
       .select('g12_leader')
+      .eq('organisation_id', orgId)
       .not('g12_leader', 'is', null);
 
     if (!err2 && assigned) {
@@ -127,12 +138,14 @@ export const memberService = {
   },
 
   /**
-   * Loads members belonging to a specific G12 leader
+   * Loads members belonging to a specific G12 leader in the active organisation
    */
-  async getMembersByLeader(leaderName: string): Promise<Member[]> {
+  async getMembersByLeader(leaderName: string, organisationId?: string): Promise<Member[]> {
+    const orgId = organisationId || getActiveOrganisationId();
     const { data, error } = await supabase
       .from('members')
       .select('*')
+      .eq('organisation_id', orgId)
       .eq('g12_leader', leaderName)
       .order('member_name', { ascending: true });
 
@@ -141,10 +154,11 @@ export const memberService = {
   },
 
   /**
-   * Loads members belonging to a department, supporting database aliases
+   * Loads members belonging to a department scoped to the active organisation
    */
-  async getMembersByDepartment(deptName: string): Promise<Member[]> {
-    let query = supabase.from('members').select('*');
+  async getMembersByDepartment(deptName: string, organisationId?: string): Promise<Member[]> {
+    const orgId = organisationId || getActiveOrganisationId();
+    let query = supabase.from('members').select('*').eq('organisation_id', orgId);
     const lower = deptName.toLowerCase();
 
     if (lower.includes('choir') || lower.includes('praise') || lower.includes('angels')) {
@@ -171,12 +185,13 @@ export const memberService = {
   },
 
   /**
-   * Inserts a new member record
+   * Inserts a new member record with organisation ownership
    */
   async createMember(payload: Partial<Member>): Promise<Member> {
+    const orgId = payload.organisation_id || getActiveOrganisationId();
     const { data, error } = await supabase
       .from('members')
-      .insert([payload])
+      .insert([{ ...payload, organisation_id: orgId }])
       .select()
       .single();
 

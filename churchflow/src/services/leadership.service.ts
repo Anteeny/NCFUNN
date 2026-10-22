@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase';
 import { getBentoConfig, saveBentoConfig } from '../lib/bentoStorage';
+import { getActiveOrganisationId, NCF_UNN_ID } from './organisation.service';
 
 export interface DepartmentLeader {
   id: string;
@@ -55,21 +56,23 @@ export const leadershipService = {
   /**
    * Fetch all department leaders from Supabase with fallback to cache
    */
-  async getDepartmentLeaders(): Promise<DepartmentLeader[]> {
+  async getDepartmentLeaders(organisationId?: string): Promise<DepartmentLeader[]> {
+    const orgId = organisationId || getActiveOrganisationId();
     try {
       const { data, error } = await supabase
         .from('department_leaders')
         .select('*')
+        .eq('organisation_id', orgId)
         .order('department_name', { ascending: true });
 
       if (error || !data || data.length === 0) {
-        return DEFAULT_DEPARTMENT_LEADERS;
+        return orgId === NCF_UNN_ID ? DEFAULT_DEPARTMENT_LEADERS : [];
       }
 
       return data as DepartmentLeader[];
     } catch (err) {
       console.error('Error fetching department leaders:', err);
-      return DEFAULT_DEPARTMENT_LEADERS;
+      return orgId === NCF_UNN_ID ? DEFAULT_DEPARTMENT_LEADERS : [];
     }
   },
 
@@ -79,10 +82,12 @@ export const leadershipService = {
   async updateDepartmentLeader(
     id: string,
     updates: Partial<DepartmentLeader>,
-    oldDeptName?: string
+    oldDeptName?: string,
+    organisationId?: string
   ): Promise<void> {
+    const orgId = organisationId || getActiveOrganisationId();
     try {
-      // 1. Update in Supabase
+      // 1. Update in Supabase scoped to active org
       const { error } = await supabase
         .from('department_leaders')
         .update({
@@ -90,7 +95,8 @@ export const leadershipService = {
           leader_name: updates.leader_name,
           phone: updates.phone,
         })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('organisation_id', orgId);
 
       if (error) {
         console.error('Supabase update department_leaders error:', error);
@@ -144,13 +150,15 @@ export const leadershipService = {
   },
 
   /**
-   * Add a new department/unit leader
+   * Add a new department/unit leader scoped to active organisation
    */
   async createDepartmentLeader(leader: {
     department_name: string;
     leader_name: string;
     phone?: string;
+    organisation_id?: string;
   }): Promise<DepartmentLeader> {
+    const orgId = leader.organisation_id || getActiveOrganisationId();
     const newId = crypto.randomUUID ? crypto.randomUUID() : `dept-${Date.now()}`;
     const newRecord: DepartmentLeader = {
       id: newId,
@@ -165,6 +173,7 @@ export const leadershipService = {
         .from('department_leaders')
         .insert([{
           id: newRecord.id,
+          organisation_id: orgId,
           department_name: newRecord.department_name,
           leader_name: newRecord.leader_name,
           phone: newRecord.phone,
@@ -205,11 +214,12 @@ export const leadershipService = {
   },
 
   /**
-   * Delete a department leader
+   * Delete a department leader scoped to active org
    */
-  async deleteDepartmentLeader(id: string, departmentName: string): Promise<void> {
+  async deleteDepartmentLeader(id: string, departmentName: string, organisationId?: string): Promise<void> {
+    const orgId = organisationId || getActiveOrganisationId();
     try {
-      await supabase.from('department_leaders').delete().eq('id', id);
+      await supabase.from('department_leaders').delete().eq('id', id).eq('organisation_id', orgId);
     } catch (err) {
       console.error('Failed to delete department leader from Supabase:', err);
     }
@@ -233,13 +243,15 @@ export const leadershipService = {
   },
 
   /**
-   * Fetch all cell leaders from Supabase
+   * Fetch all cell leaders from Supabase scoped to active org
    */
-  async getCellLeaders(): Promise<CellLeaderRecord[]> {
+  async getCellLeaders(organisationId?: string): Promise<CellLeaderRecord[]> {
+    const orgId = organisationId || getActiveOrganisationId();
     try {
       const { data, error } = await supabase
         .from('cell_leaders')
         .select('*')
+        .eq('organisation_id', orgId)
         .order('cell_name', { ascending: true });
 
       if (error || !data) return [];
@@ -251,9 +263,10 @@ export const leadershipService = {
   },
 
   /**
-   * Update cell leader
+   * Update cell leader scoped to active org
    */
-  async updateCellLeader(id: string, updates: Partial<CellLeaderRecord>): Promise<void> {
+  async updateCellLeader(id: string, updates: Partial<CellLeaderRecord>, organisationId?: string): Promise<void> {
+    const orgId = organisationId || getActiveOrganisationId();
     try {
       await supabase
         .from('cell_leaders')
@@ -265,7 +278,8 @@ export const leadershipService = {
           zone: updates.zone,
           schedule: updates.schedule,
         })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('organisation_id', orgId);
 
       window.dispatchEvent(new CustomEvent('churchflow_leadership_updated'));
     } catch (err) {
@@ -274,13 +288,15 @@ export const leadershipService = {
   },
 
   /**
-   * Create a new cell leader record
+   * Create a new cell leader record scoped to active org
    */
-  async createCellLeader(cell: Partial<CellLeaderRecord>): Promise<void> {
+  async createCellLeader(cell: Partial<CellLeaderRecord> & { organisation_id?: string }): Promise<void> {
+    const orgId = cell.organisation_id || getActiveOrganisationId();
     try {
       const newId = cell.id || `c${Date.now()}`;
       await supabase.from('cell_leaders').insert([{
         id: newId,
+        organisation_id: orgId,
         cell_name: cell.cell_name,
         cell_leader: cell.cell_leader,
         assistant: cell.assistant || '—',
@@ -296,11 +312,12 @@ export const leadershipService = {
   },
 
   /**
-   * Delete a cell leader record
+   * Delete a cell leader record scoped to active org
    */
-  async deleteCellLeader(id: string): Promise<void> {
+  async deleteCellLeader(id: string, organisationId?: string): Promise<void> {
+    const orgId = organisationId || getActiveOrganisationId();
     try {
-      await supabase.from('cell_leaders').delete().eq('id', id);
+      await supabase.from('cell_leaders').delete().eq('id', id).eq('organisation_id', orgId);
       window.dispatchEvent(new CustomEvent('churchflow_leadership_updated'));
     } catch (err) {
       console.error('Error deleting cell leader:', err);
@@ -308,11 +325,13 @@ export const leadershipService = {
   },
 
   /**
-   * Fetch all campus zones with fallback to DEFAULT_CAMPUS_ZONES
+   * Fetch all campus zones with fallback to DEFAULT_CAMPUS_ZONES for NCF UNN
    */
-  getCampusZones(): CampusZoneRecord[] {
+  getCampusZones(organisationId?: string): CampusZoneRecord[] {
+    const orgId = organisationId || getActiveOrganisationId();
+    const storageKey = `churchflow_campus_zones_${orgId}`;
     try {
-      const stored = localStorage.getItem('churchflow_campus_zones');
+      const stored = localStorage.getItem(storageKey) || (orgId === NCF_UNN_ID ? localStorage.getItem('churchflow_campus_zones') : null);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -322,15 +341,22 @@ export const leadershipService = {
     } catch (e) {
       console.warn('Could not read stored campus zones', e);
     }
-    return DEFAULT_CAMPUS_ZONES;
+    return orgId === NCF_UNN_ID
+      ? DEFAULT_CAMPUS_ZONES
+      : [{ id: 'z1', name: 'Main Campus', campus_area: 'Auditorium / Worship Center', leader: 'Lead Pastor' }];
   },
 
   /**
-   * Save all campus zones to storage and dispatch event
+   * Save all campus zones to storage and dispatch event scoped to org
    */
-  saveCampusZones(zones: CampusZoneRecord[]): void {
+  saveCampusZones(zones: CampusZoneRecord[], organisationId?: string): void {
+    const orgId = organisationId || getActiveOrganisationId();
+    const storageKey = `churchflow_campus_zones_${orgId}`;
     try {
-      localStorage.setItem('churchflow_campus_zones', JSON.stringify(zones));
+      localStorage.setItem(storageKey, JSON.stringify(zones));
+      if (orgId === NCF_UNN_ID) {
+        localStorage.setItem('churchflow_campus_zones', JSON.stringify(zones));
+      }
       window.dispatchEvent(new CustomEvent('churchflow_leadership_updated'));
       window.dispatchEvent(new CustomEvent('churchflow_zones_updated'));
     } catch (e) {
@@ -341,30 +367,30 @@ export const leadershipService = {
   /**
    * Update a specific campus zone
    */
-  updateCampusZone(id: string, updates: Partial<CampusZoneRecord>): void {
-    const list = this.getCampusZones();
+  updateCampusZone(id: string, updates: Partial<CampusZoneRecord>, organisationId?: string): void {
+    const list = this.getCampusZones(organisationId);
     const updated = list.map(z => (z.id === id ? { ...z, ...updates } : z));
-    this.saveCampusZones(updated);
+    this.saveCampusZones(updated, organisationId);
   },
 
   /**
    * Create a new campus zone
    */
-  createCampusZone(zone: Omit<CampusZoneRecord, 'id'>): CampusZoneRecord {
-    const list = this.getCampusZones();
+  createCampusZone(zone: Omit<CampusZoneRecord, 'id'>, organisationId?: string): CampusZoneRecord {
+    const list = this.getCampusZones(organisationId);
     const created: CampusZoneRecord = {
       ...zone,
       id: `z-${Date.now()}`,
     };
-    this.saveCampusZones([...list, created]);
+    this.saveCampusZones([...list, created], organisationId);
     return created;
   },
 
   /**
    * Delete a campus zone
    */
-  deleteCampusZone(id: string): void {
-    const list = this.getCampusZones();
-    this.saveCampusZones(list.filter(z => z.id !== id));
+  deleteCampusZone(id: string, organisationId?: string): void {
+    const list = this.getCampusZones(organisationId);
+    this.saveCampusZones(list.filter(z => z.id !== id), organisationId);
   },
 };
