@@ -4,6 +4,7 @@ import { Calendar, Sun, Moon, PlusCircle, Menu, LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useBranding } from '../../hooks/useBranding';
 import { useAuth } from '../../context/AuthContext';
+import { useTenant } from '../../context/TenantContext';
 
 interface ExecutiveHeaderProps {
   onMenuToggle?: () => void;
@@ -19,6 +20,7 @@ export const ExecutiveHeader: React.FC<ExecutiveHeaderProps> = ({
   const todayStr = formatWATReadable();
   const { branding } = useBranding();
   const { user, userDisplayName, signOut } = useAuth();
+  const { organisation } = useTenant();
 
   return (
     <div
@@ -80,20 +82,40 @@ export const ExecutiveHeader: React.FC<ExecutiveHeaderProps> = ({
         </div>
 
         <div>
-          <h1
-            className="font-serif"
-            style={{
-              fontSize: '22px',
-              fontWeight: 700,
-              color: '#ffffff',
-              lineHeight: 1.2,
-              letterSpacing: '-0.02em',
-            }}
-          >
-            {branding.portalTitle}
-          </h1>
-          <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.75)', marginTop: '4px' }}>
-            {branding.portalSubtitle}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <h1
+              className="font-serif"
+              style={{
+                fontSize: '22px',
+                fontWeight: 700,
+                color: '#ffffff',
+                lineHeight: 1.2,
+                letterSpacing: '-0.02em',
+                margin: 0,
+              }}
+            >
+              {branding.portalTitle || `${organisation.name} Portal`}
+            </h1>
+            {organisation.slug && (
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  padding: '2px 8px',
+                  borderRadius: '6px',
+                  background: 'rgba(56, 189, 248, 0.15)',
+                  color: '#38bdf8',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  letterSpacing: '0.02em',
+                }}
+                title={`Multi-Tenant Workspace: ${organisation.name} (${organisation.slug})`}
+              >
+                🏢 {organisation.name}
+              </span>
+            )}
+          </div>
+          <p style={{ fontSize: '13px', color: 'rgba(255, 255, 255, 0.75)', marginTop: '4px', marginBottom: 0 }}>
+            {branding.portalSubtitle || 'ChurchFlow Ministry & Attendance System'}
           </p>
         </div>
       </div>

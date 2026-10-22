@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { defaultSidebarConfig, type SidebarIconName } from '../../config/sidebar.config';
 import { useAuth } from '../../context/AuthContext';
+import { useTenant } from '../../context/TenantContext';
 
 interface SidebarDrawerProps {
   isOpen: boolean;
@@ -50,6 +51,7 @@ const iconMap: Record<SidebarIconName, (size?: number) => React.ReactNode> = {
 export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ isOpen, onClose }) => {
   const cfg = defaultSidebarConfig;
   const { userDisplayName, userRole, signOut } = useAuth();
+  const { organisation } = useTenant();
 
   return (
     <>
@@ -117,9 +119,9 @@ export const SidebarDrawer: React.FC<SidebarDrawerProps> = ({ isOpen, onClose })
               {cfg.brand.symbol}
             </div>
             <div>
-              <div style={{ color: '#fff', fontSize: '15px', fontWeight: 700 }}>{cfg.brand.appName}</div>
-              <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: '10px', letterSpacing: '0.08em' }}>
-                {cfg.brand.portalName}
+              <div style={{ color: '#fff', fontSize: '15px', fontWeight: 700 }}>{organisation.name || cfg.brand.appName}</div>
+              <div style={{ color: '#38bdf8', fontSize: '10.5px', letterSpacing: '0.04em', fontWeight: 600 }}>
+                {organisation.slug ? `${organisation.slug}.churchflow.site` : cfg.brand.portalName}
               </div>
             </div>
           </div>
