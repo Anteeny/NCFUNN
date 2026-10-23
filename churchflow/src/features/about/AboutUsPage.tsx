@@ -201,20 +201,20 @@ const CORE_PASSIONS: CoreValueItem[] = [
   },
 ];
 
-// THE 12 SPIRITS / DNA OF DOMINION CITY
+// THE SPIRIT/DNA OF DOMINION CITY
 const THE_TWELVE_SPIRITS = [
-  { num: 1, title: 'The Spirit of Covenant & Love', desc: 'Unbroken loyalty and Christ-centered devotion to one another.' },
-  { num: 2, title: 'The Spirit of Faith & Possibility', desc: 'Bold reliance on God’s Word to accomplish what seems humanly impossible.' },
-  { num: 3, title: 'The Spirit of Meekness & Humility', desc: 'A teachable, lowliness of heart that attracts divine grace and exaltation.' },
-  { num: 4, title: 'The Spirit of Service & Selflessness', desc: 'Gladly pouring out our strength and gifts to bless and elevate others.' },
-  { num: 5, title: 'The Spirit of Sacrifice & Generosity', desc: 'Willingness to give our best without reservation for the Kingdom.' },
-  { num: 6, title: 'The Spirit of Integrity & Truth', desc: 'Walking in total transparency, honesty, and moral purity at all times.' },
-  { num: 7, title: 'The Spirit of Loyalty & Dependability', desc: 'Unshakable fidelity to the vision, leadership, and fellow brethren.' },
-  { num: 8, title: 'The Spirit of Unity & Teamwork', desc: 'Collaborating harmoniously as one body, eliminating envy and strife.' },
-  { num: 9, title: 'The Spirit of Development & Empowerment', desc: 'Commitment to grooming people, raising capacity, and releasing talents.' },
-  { num: 10, title: 'The Spirit of Excellence & Quality', desc: 'Doing ordinary things in an extraordinary and benchmark-setting manner.' },
-  { num: 11, title: 'The Spirit of Stewardship & Accountability', desc: 'Faithful and answerable management of God’s flock, resources, and time.' },
-  { num: 12, title: 'The Spirit of Transformation', desc: 'A catalytic life that impacts students, faculties, culture, and nations.' },
+  'The Spirit of Covenant & Love',
+  'The Spirit of Faith & Possibility',
+  'The Spirit of Meekness & Humility',
+  'The Spirit of Service & Selflessness',
+  'The Spirit of Sacrifice & Generosity',
+  'The Spirit of Integrity & Truth',
+  'The Spirit of Loyalty & Dependability',
+  'The Spirit of Unity & Teamwork',
+  'The Spirit of Development & Empowerment',
+  'The Spirit of Excellence & Quality',
+  'The Spirit of Stewardship & Accountability',
+  'The Spirit of Transformation',
 ];
 
 // THE 12 GRACES / ANOINTINGS
@@ -958,25 +958,22 @@ export const AboutUsPage: React.FC = () => {
                 Apostolic Identity
               </span>
               <h2 className="font-serif" style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text)' }}>
-                The Spirit / DNA of Dominion City (The 12 Spirits)
+                THE SPIRIT/DNA OF DOMINION CITY
               </h2>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                The twelve spiritual dimensions and culture that breathe through every Dominion City community worldwide.
-              </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
-              {THE_TWELVE_SPIRITS.map(spirit => (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
+              {THE_TWELVE_SPIRITS.map((spirit, idx) => (
                 <div
-                  key={spirit.num}
+                  key={idx}
                   style={{
                     background: 'var(--navy-soft)',
                     borderRadius: '10px',
-                    padding: '16px 18px',
+                    padding: '14px 18px',
                     border: '1px solid var(--border)',
                     display: 'flex',
+                    alignItems: 'center',
                     gap: '12px',
-                    alignItems: 'flex-start',
                   }}
                 >
                   <span
@@ -994,16 +991,11 @@ export const AboutUsPage: React.FC = () => {
                       flexShrink: 0,
                     }}
                   >
-                    {spirit.num}
+                    {idx + 1}
                   </span>
-                  <div>
-                    <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)', marginBottom: '3px' }}>
-                      {spirit.title}
-                    </h4>
-                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-                      {spirit.desc}
-                    </p>
-                  </div>
+                  <span style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>
+                    {spirit}
+                  </span>
                 </div>
               ))}
             </div>
