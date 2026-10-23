@@ -15,6 +15,7 @@ export type SidebarIconName =
   | 'Compass'
   | 'Building2'
   | 'BookOpen'
+  | 'Landmark'
   | 'Sparkles'
   | 'Settings'
   | 'FileSpreadsheet'
@@ -80,6 +81,7 @@ export const defaultSidebarConfig: SidebarConfig = {
       { id: 'g12', to: '/g12', label: 'G12 Management', iconName: 'Network', visible: true },
       { id: 'connect', to: '/connect', label: 'Connect Groups', iconName: 'Compass', visible: true },
       { id: 'departments', to: '/departments', label: 'Departments & Units', iconName: 'Building2', visible: true },
+      { id: 'finance', to: '/finance', label: 'Finance & Giving', iconName: 'Landmark', visible: true },
       { id: 'about', to: '/about', label: 'About Us', iconName: 'BookOpen', visible: true },
       { id: 'settings', to: '/settings', label: 'Settings & Admin', iconName: 'Settings', visible: true },
     ],

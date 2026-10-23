@@ -19,6 +19,7 @@ import {
   BookOpen,
   Sparkles,
   LogOut,
+  Landmark,
 } from 'lucide-react';
 import { defaultSidebarConfig, type SidebarIconName } from '../../config/sidebar.config';
 import { useAuth } from '../../context/AuthContext';
@@ -38,6 +39,7 @@ const iconMap: Record<SidebarIconName, (size?: number) => React.ReactNode> = {
   Network: size => <Network size={size || 18} />,
   Compass: size => <Compass size={size || 18} />,
   Building2: size => <Building2 size={size || 18} />,
+  Landmark: size => <Landmark size={size || 18} />,
   BookOpen: size => <BookOpen size={size || 18} />,
   Sparkles: size => <Sparkles size={size || 18} />,
   Settings: size => <Settings size={size || 18} />,

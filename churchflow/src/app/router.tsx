@@ -8,6 +8,7 @@ import { SoulWinningPage } from '../features/soulwinning/SoulWinningPage';
 import { G12ManagementPage } from '../features/g12/G12ManagementPage';
 import { ConnectGroupsPage } from '../features/connect/ConnectGroupsPage';
 import { DepartmentsUnitsPage } from '../features/departments/DepartmentsUnitsPage';
+import { FinancePage } from '../features/finance/FinancePage';
 import { AboutUsPage } from '../features/about/AboutUsPage';
 import { SettingsAdminPage } from '../features/settings/SettingsAdminPage';
 
@@ -63,6 +64,7 @@ export const router = createBrowserRouter([
       { path: 'g12', element: <G12ManagementPage /> },
       { path: 'connect', element: <ConnectGroupsPage /> },
       { path: 'departments', element: <DepartmentsUnitsPage /> },
+      { path: 'finance', element: <FinancePage /> },
       { path: 'about', element: <AboutUsPage /> },
       { path: 'settings', element: <SettingsAdminPage /> },
 
