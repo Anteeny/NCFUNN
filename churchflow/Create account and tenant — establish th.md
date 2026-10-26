@@ -1,0 +1,8 @@
+Create account and tenant — establish the church’s organization, its owner, and a unique workspace URL. We should settle on one canonical term and identifier—tenant or organization—rather than letting both become competing concepts. #use organisation. 
+Church profile and localization — official name, contact details, logo, headquarters address, timezone, base currency, and branding.
+Campuses and services — require at least one campus and one recurring service; Setup meeting days, time and type; allow more to be added later. #
+Church structure and schedules — configure departments, groups or fellowships, leadership assignments, and meeting times. Make group types and leadership models flexible enough to coexist rather than forcing a church into only one structure.
+Staff and volunteer access — invite people with scoped roles. Your example roles are a good starting point, but we’ll need to define exactly what each role can view, edit, approve, and export. Owner, Asst Pastor, Admin, Ushers, Finance lets begin with this. make the roles and priviledges flexible for orgaanisations that ru differently from the above. 
+Member directory — import from the standard CSV template, use self-registration links or QR codes, and make household grouping optional. Review imports before they become records.
+Communications — record which providers and channels the church plans to use, but defer connecting them and activating automated messages.
+Launch check — verify your five essentials: meeting times, department structure, small-group structure, membership directory, and staff/volunteer access. 
