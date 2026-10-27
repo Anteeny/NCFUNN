@@ -7,231 +7,284 @@ import type {
   FinanceReconciliation,
   FinanceSummary,
   GivingCategory,
+  ExpenseCategory,
   ExpenseStatus,
 } from '../types/finance.types';
 
-// Deterministic in-memory fallback state in case Supabase table is pending migration
-let fallbackDonors: FinanceDonor[] = [
-  {
-    id: 'd-1',
-    organisation_id: '00000000-0000-0000-0000-000000000001',
-    donor_name: 'Faithfulness Onu',
-    email: 'faithfulness@ncfunn.site',
-    phone: '08140286257',
-    notes: 'Finance Directorate Head',
-    total_giving: 150000,
-    created_at: new Date(Date.now() - 30 * 86400000).toISOString(),
-  },
-  {
-    id: 'd-2',
-    organisation_id: '00000000-0000-0000-0000-000000000001',
-    donor_name: 'Pastor Ubagu Tony',
-    email: 'tony@ncfunn.site',
-    phone: '08031234567',
-    notes: 'Resident Chapter Pastor',
-    total_giving: 280000,
-    created_at: new Date(Date.now() - 60 * 86400000).toISOString(),
-  },
-  {
-    id: 'd-3',
-    organisation_id: '00000000-0000-0000-0000-000000000001',
-    donor_name: 'Sister Amaka Obi',
-    email: 'amaka.obi@gmail.com',
-    phone: '08059876543',
-    notes: 'Dedicated Alumni Partner',
-    total_giving: 220000,
-    created_at: new Date(Date.now() - 45 * 86400000).toISOString(),
-  },
-  {
-    id: 'd-4',
-    organisation_id: '00000000-0000-0000-0000-000000000001',
-    donor_name: 'Brother Chinedu Eze',
-    email: 'chinedu.eze@unn.edu.ng',
-    phone: '08023456789',
-    notes: 'Engineering Finalist / Cell Leader',
-    total_giving: 65000,
-    created_at: new Date(Date.now() - 20 * 86400000).toISOString(),
-  },
-];
+export interface GoogleSheetConfig {
+  url: string;
+  sheetId: string;
+  sheetName?: string;
+  lastSyncedAt?: string;
+  rowCount?: number;
+}
 
-let fallbackTransactions: FinanceTransaction[] = [
-  {
-    id: 'tx-1',
-    organisation_id: '00000000-0000-0000-0000-000000000001',
-    donor_id: 'd-2',
-    donor_name: 'Pastor Ubagu Tony',
-    transaction_date: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0],
-    category: 'Tithe',
-    amount: 80000,
-    currency: 'NGN',
-    channel: 'Transfer',
-    reference: 'TRX-103948',
-    status: 'Confirmed',
-    source: 'Manual Entry',
-    notes: 'October Pastoral Tithe',
-    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-  },
-  {
-    id: 'tx-2',
-    organisation_id: '00000000-0000-0000-0000-000000000001',
-    donor_id: 'd-3',
-    donor_name: 'Sister Amaka Obi',
-    transaction_date: new Date(Date.now() - 3 * 86400000).toISOString().split('T')[0],
-    category: 'Building/Pledge',
-    amount: 150000,
-    currency: 'NGN',
-    channel: 'Transfer',
-    reference: 'TRX-847291',
-    status: 'Confirmed',
-    source: 'Manual Entry',
-    notes: 'Sound equipment pledge fulfillment',
-    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-  },
-  {
-    id: 'tx-3',
-    organisation_id: '00000000-0000-0000-0000-000000000001',
-    donor_id: null,
-    donor_name: 'Sunday Congregation',
-    transaction_date: new Date(Date.now() - 4 * 86400000).toISOString().split('T')[0],
-    category: 'Offering',
-    amount: 125400,
-    currency: 'NGN',
-    channel: 'Cash',
-    reference: 'COL-SUN-MAIN',
-    status: 'Confirmed',
-    source: 'Manual Entry',
-    notes: 'Main Service basket collection',
-    created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
-  },
-  {
-    id: 'tx-4',
-    organisation_id: '00000000-0000-0000-0000-000000000001',
-    donor_id: 'd-1',
-    donor_name: 'Faithfulness Onu',
-    transaction_date: new Date(Date.now() - 5 * 86400000).toISOString().split('T')[0],
-    category: 'Tithe',
-    amount: 50000,
-    currency: 'NGN',
-    channel: 'Transfer',
-    reference: 'TRX-948291',
-    status: 'Confirmed',
-    source: 'Manual Entry',
-    notes: 'October first tithe',
-    created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-  },
-  {
-    id: 'tx-5',
-    organisation_id: '00000000-0000-0000-0000-000000000001',
-    donor_id: null,
-    donor_name: 'Midweek Believers',
-    transaction_date: new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0],
-    category: 'Offering',
-    amount: 42000,
-    currency: 'NGN',
-    channel: 'Cash',
-    reference: 'COL-MIDWEEK',
-    status: 'Confirmed',
-    source: 'Manual Entry',
-    notes: 'Wednesday service collection',
-    created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
-  },
-];
+// In-memory state (NO DUMMY DATA — completely empty until connected or recorded)
+let fallbackDonors: FinanceDonor[] = [];
+let fallbackTransactions: FinanceTransaction[] = [];
+let fallbackExpenses: FinanceExpense[] = [];
+let fallbackReconciliations: FinanceReconciliation[] = [];
 
-let fallbackExpenses: FinanceExpense[] = [
-  {
-    id: 'exp-1',
-    organisation_id: '00000000-0000-0000-0000-000000000001',
-    expense_date: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0],
-    category: 'Operations',
-    amount: 35000,
-    currency: 'NGN',
-    beneficiary: 'Total Energies Nsukka',
-    description: 'Diesel fuel for main generator (Sunday Service)',
-    payment_method: 'Transfer',
-    status: 'Paid',
-    approved_by: 'Pastor Tony Ubagu',
-    receipt_url: null,
-    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-  },
-  {
-    id: 'exp-2',
-    organisation_id: '00000000-0000-0000-0000-000000000001',
-    expense_date: new Date(Date.now() - 4 * 86400000).toISOString().split('T')[0],
-    category: 'Equipment & Media',
-    amount: 48000,
-    currency: 'NGN',
-    beneficiary: 'AudioPro Solutions Nsukka',
-    description: 'Replacement of 3 XLR mic cables, 9V batteries, and audio jack',
-    payment_method: 'Transfer',
-    status: 'Paid',
-    approved_by: 'Faithfulness Onu',
-    receipt_url: null,
-    created_at: new Date(Date.now() - 4 * 86400000).toISOString(),
-  },
-  {
-    id: 'exp-3',
-    organisation_id: '00000000-0000-0000-0000-000000000001',
-    expense_date: new Date(Date.now() - 6 * 86400000).toISOString().split('T')[0],
-    category: 'Honorarium & Welfare',
-    amount: 60000,
-    currency: 'NGN',
-    beneficiary: 'Visiting Speaker Hospitality',
-    description: 'Guest minister transportation & accommodation honorarium',
-    payment_method: 'Transfer',
-    status: 'Paid',
-    approved_by: 'Pastor Tony Ubagu',
-    receipt_url: null,
-    created_at: new Date(Date.now() - 6 * 86400000).toISOString(),
-  },
-  {
-    id: 'exp-4',
-    organisation_id: '00000000-0000-0000-0000-000000000001',
-    expense_date: new Date(Date.now() - 1 * 86400000).toISOString().split('T')[0],
-    category: 'Outreach & Missions',
-    amount: 25000,
-    currency: 'NGN',
-    beneficiary: 'Evangelism Directorate',
-    description: 'Campus tract printing & bottled water for Soul Winning team',
-    payment_method: 'Cash',
-    status: 'Approved',
-    approved_by: 'Pastor Tony Ubagu',
-    receipt_url: null,
-    created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-  },
-];
+// Storage keys
+const GSHEET_STORAGE_KEY = 'churchflow_finance_gsheet_config';
+const TRANSACTIONS_STORAGE_KEY = 'churchflow_finance_transactions';
+const EXPENSES_STORAGE_KEY = 'churchflow_finance_expenses';
+const DONORS_STORAGE_KEY = 'churchflow_finance_donors';
 
-let fallbackReconciliations: FinanceReconciliation[] = [
-  {
-    id: 'rec-1',
-    organisation_id: '00000000-0000-0000-0000-000000000001',
-    import_batch_id: 'batch-001',
-    raw_date: new Date(Date.now() - 1 * 86400000).toISOString().split('T')[0],
-    raw_description: 'NIP/AMAKA OBI/OCTOBER-TITHE-OFFERING',
-    raw_amount: 35000,
-    suggested_category: 'Tithe',
-    suggested_donor_name: 'Sister Amaka Obi',
-    matched_donor_id: 'd-3',
-    is_pooled_deposit: false,
-    status: 'Pending',
-    created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-  },
-  {
-    id: 'rec-2',
-    organisation_id: '00000000-0000-0000-0000-000000000001',
-    import_batch_id: 'batch-001',
-    raw_date: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0],
-    raw_description: 'SUNDAY BASKET POOLED TELLER DEPOSIT',
-    raw_amount: 98500,
-    suggested_category: 'Offering',
-    suggested_donor_name: 'Sunday Congregation',
-    matched_donor_id: null,
-    is_pooled_deposit: true,
-    status: 'Pending',
-    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-  },
-];
+// Load any previously synced records from local cache
+function loadLocalCache() {
+  try {
+    const cachedTx = localStorage.getItem(TRANSACTIONS_STORAGE_KEY);
+    if (cachedTx) fallbackTransactions = JSON.parse(cachedTx);
+
+    const cachedExp = localStorage.getItem(EXPENSES_STORAGE_KEY);
+    if (cachedExp) fallbackExpenses = JSON.parse(cachedExp);
+
+    const cachedDon = localStorage.getItem(DONORS_STORAGE_KEY);
+    if (cachedDon) fallbackDonors = JSON.parse(cachedDon);
+  } catch (e) {
+    console.warn('Could not load local finance cache:', e);
+  }
+}
+
+loadLocalCache();
+
+function saveLocalCache() {
+  try {
+    localStorage.setItem(TRANSACTIONS_STORAGE_KEY, JSON.stringify(fallbackTransactions));
+    localStorage.setItem(EXPENSES_STORAGE_KEY, JSON.stringify(fallbackExpenses));
+    localStorage.setItem(DONORS_STORAGE_KEY, JSON.stringify(fallbackDonors));
+  } catch (e) {
+    console.warn('Could not save local finance cache:', e);
+  }
+}
+
+// Helper to extract Google Sheet ID from URL
+export function extractSheetId(url: string): string | null {
+  const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return match ? match[1] : null;
+}
+
+// Simple CSV parser that handles quotes and commas
+function parseCSV(text: string): string[][] {
+  const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
+  return lines.map(line => {
+    const row: string[] = [];
+    let insideQuote = false;
+    let entry = '';
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        insideQuote = !insideQuote;
+      } else if (char === ',' && !insideQuote) {
+        row.push(entry.trim().replace(/^"|"$/g, ''));
+        entry = '';
+      } else {
+        entry += char;
+      }
+    }
+    row.push(entry.trim().replace(/^"|"$/g, ''));
+    return row;
+  });
+}
 
 export const financeService = {
+  /**
+   * Retrieves the current Google Sheet configuration
+   */
+  getGoogleSheetConfig(): GoogleSheetConfig | null {
+    try {
+      const saved = localStorage.getItem(GSHEET_STORAGE_KEY);
+      if (!saved) return null;
+      return JSON.parse(saved);
+    } catch {
+      return null;
+    }
+  },
+
+  /**
+   * Saves the Google Sheet URL configuration
+   */
+  saveGoogleSheetConfig(url: string, sheetName?: string): GoogleSheetConfig {
+    const sheetId = extractSheetId(url);
+    if (!sheetId) {
+      throw new Error('Invalid Google Sheet URL. Please provide a valid Google Sheets link.');
+    }
+
+    const cfg: GoogleSheetConfig = {
+      url: url.trim(),
+      sheetId,
+      sheetName: sheetName?.trim() || undefined,
+      lastSyncedAt: new Date().toISOString(),
+      rowCount: 0,
+    };
+
+    localStorage.setItem(GSHEET_STORAGE_KEY, JSON.stringify(cfg));
+    return cfg;
+  },
+
+  /**
+   * Syncs real finance records from the connected Google Sheet
+   */
+  async syncFromGoogleSheet(urlOverride?: string): Promise<{ transactions: number; expenses: number; totalRows: number }> {
+    const cfg = urlOverride ? this.saveGoogleSheetConfig(urlOverride) : this.getGoogleSheetConfig();
+    if (!cfg || !cfg.sheetId) {
+      throw new Error('No Google Sheet connected. Please enter your Google Sheet link first.');
+    }
+
+    const exportUrl = `https://docs.google.com/spreadsheets/d/${cfg.sheetId}/gviz/tq?tqx=out:csv${
+      cfg.sheetName ? '&sheet=' + encodeURIComponent(cfg.sheetName) : ''
+    }`;
+
+    const res = await fetch(exportUrl);
+    if (!res.ok) {
+      throw new Error(
+        `Failed to fetch Google Sheet (${res.status} ${res.statusText}). Make sure the Google Sheet sharing setting is set to "Anyone with the link can view".`
+      );
+    }
+
+    const csvText = await res.text();
+    const rows = parseCSV(csvText);
+
+    if (rows.length < 2) {
+      throw new Error('Google Sheet returned no data rows. Please ensure your sheet has headers and rows.');
+    }
+
+    const headers = rows[0].map(h => h.toLowerCase());
+    
+    // Find column indexes flexibly
+    const dateIdx = headers.findIndex(h => h.includes('date'));
+    const descIdx = headers.findIndex(h => h.includes('desc') || h.includes('item') || h.includes('narration') || h.includes('particular') || h.includes('purpose') || h.includes('donor') || h.includes('beneficiary'));
+    const catIdx = headers.findIndex(h => h.includes('cat') || h.includes('type'));
+    const inflowIdx = headers.findIndex(h => h.includes('inflow') || h.includes('income') || h.includes('credit') || h.includes('giving') || h.includes('tithe') || h.includes('offering'));
+    const outflowIdx = headers.findIndex(h => h.includes('outflow') || h.includes('expense') || h.includes('debit') || h.includes('disbursement'));
+    const amountIdx = headers.findIndex(h => h.includes('amount') || h.includes('total') || h.includes('value'));
+
+    const parsedTransactions: FinanceTransaction[] = [];
+    const parsedExpenses: FinanceExpense[] = [];
+    const donorSet = new Map<string, number>();
+
+    const orgId = getActiveOrganisationId();
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length === 0) continue;
+
+      const rawDate = dateIdx >= 0 && row[dateIdx] ? row[dateIdx] : new Date().toISOString().split('T')[0];
+      const rawDesc = descIdx >= 0 && row[descIdx] ? row[descIdx] : 'Ledger Entry';
+      const rawCat = catIdx >= 0 && row[catIdx] ? row[catIdx] : '';
+
+      // Check Inflow
+      let inflowVal = 0;
+      if (inflowIdx >= 0 && row[inflowIdx]) {
+        inflowVal = parseFloat(row[inflowIdx].replace(/[^0-9.-]+/g, '')) || 0;
+      }
+
+      // Check Outflow
+      let outflowVal = 0;
+      if (outflowIdx >= 0 && row[outflowIdx]) {
+        outflowVal = parseFloat(row[outflowIdx].replace(/[^0-9.-]+/g, '')) || 0;
+      }
+
+      // Single Amount Column fallback
+      if (inflowVal === 0 && outflowVal === 0 && amountIdx >= 0 && row[amountIdx]) {
+        const val = parseFloat(row[amountIdx].replace(/[^0-9.-]+/g, '')) || 0;
+        const lowDesc = (rawDesc + ' ' + rawCat).toLowerCase();
+        if (
+          lowDesc.includes('expense') ||
+          lowDesc.includes('fuel') ||
+          lowDesc.includes('paid') ||
+          lowDesc.includes('purchase') ||
+          lowDesc.includes('honorarium')
+        ) {
+          outflowVal = Math.abs(val);
+        } else {
+          inflowVal = Math.abs(val);
+        }
+      }
+
+      // Process Inflow -> Transaction
+      if (inflowVal > 0) {
+        const lowDesc = (rawDesc + ' ' + rawCat).toLowerCase();
+        let cat: GivingCategory = 'Offering';
+        if (lowDesc.includes('tithe')) cat = 'Tithe';
+        else if (lowDesc.includes('pledge') || lowDesc.includes('building')) cat = 'Building/Pledge';
+        else if (lowDesc.includes('seed')) cat = 'Seed';
+        else if (lowDesc.includes('thanksgiving')) cat = 'Thanksgiving';
+
+        parsedTransactions.push({
+          id: `gs-tx-${i}`,
+          organisation_id: orgId,
+          donor_name: rawDesc,
+          transaction_date: rawDate,
+          category: cat,
+          amount: inflowVal,
+          currency: 'NGN',
+          channel: 'Transfer',
+          reference: `GS-${i}`,
+          status: 'Confirmed',
+          source: 'Google Sheet Sync',
+          notes: rawCat || 'Imported from Google Sheet',
+          created_at: new Date().toISOString(),
+        });
+
+        donorSet.set(rawDesc, (donorSet.get(rawDesc) || 0) + inflowVal);
+      }
+
+      // Process Outflow -> Expense
+      if (outflowVal > 0) {
+        const lowDesc = (rawDesc + ' ' + rawCat).toLowerCase();
+        let cat: ExpenseCategory = 'Operations';
+        if (lowDesc.includes('mission') || lowDesc.includes('outreach')) cat = 'Outreach & Missions';
+        else if (lowDesc.includes('honorarium') || lowDesc.includes('welfare') || lowDesc.includes('pastor')) cat = 'Honorarium & Welfare';
+        else if (lowDesc.includes('media') || lowDesc.includes('sound') || lowDesc.includes('equipment')) cat = 'Equipment & Media';
+        else if (lowDesc.includes('logistics') || lowDesc.includes('transport')) cat = 'Logistics';
+        else if (lowDesc.includes('power') || lowDesc.includes('light') || lowDesc.includes('bill')) cat = 'Utilities';
+
+        parsedExpenses.push({
+          id: `gs-exp-${i}`,
+          organisation_id: orgId,
+          expense_date: rawDate,
+          category: cat,
+          amount: outflowVal,
+          currency: 'NGN',
+          beneficiary: rawDesc,
+          description: rawCat ? `${rawCat} - ${rawDesc}` : rawDesc,
+          payment_method: 'Transfer',
+          status: 'Paid',
+          approved_by: 'Finance Committee',
+          created_at: new Date().toISOString(),
+        });
+      }
+    }
+
+    // Build unique donors
+    const parsedDonors: FinanceDonor[] = Array.from(donorSet.entries()).map(([name, total], idx) => ({
+      id: `gs-d-${idx}`,
+      organisation_id: orgId,
+      donor_name: name,
+      total_giving: total,
+      created_at: new Date().toISOString(),
+    }));
+
+    // Update in-memory state and cache
+    fallbackTransactions = parsedTransactions;
+    fallbackExpenses = parsedExpenses;
+    fallbackDonors = parsedDonors;
+    saveLocalCache();
+
+    // Update config
+    cfg.lastSyncedAt = new Date().toISOString();
+    cfg.rowCount = rows.length - 1;
+    localStorage.setItem(GSHEET_STORAGE_KEY, JSON.stringify(cfg));
+
+    return {
+      transactions: parsedTransactions.length,
+      expenses: parsedExpenses.length,
+      totalRows: rows.length - 1,
+    };
+  },
+
   /**
    * Fetches the overall financial summary for the active organisation
    */
@@ -258,8 +311,8 @@ export const financeService = {
           .eq('status', 'Pending'),
       ]);
 
-      if (txRes.error || expRes.error) {
-        throw new Error(txRes.error?.message || expRes.error?.message);
+      if (txRes.error || expRes.error || !txRes.data || !expRes.data) {
+        throw new Error(txRes.error?.message || expRes.error?.message || 'No DB table');
       }
 
       const transactions = (txRes.data || []) as { amount: number; category: GivingCategory }[];
@@ -294,7 +347,7 @@ export const financeService = {
         pending_reconciliations_count: recRes.count || 0,
       };
     } catch {
-      // Fallback calculation
+      // Local state from Google Sheet sync or manual entries
       const totalInflow = fallbackTransactions.reduce((acc, t) => acc + t.amount, 0);
       const totalExpenses = fallbackExpenses
         .filter(e => e.status === 'Paid')
@@ -413,6 +466,7 @@ export const financeService = {
         created_at: new Date().toISOString(),
       };
       fallbackTransactions = [newTx, ...fallbackTransactions];
+      saveLocalCache();
       return newTx;
     }
   },
@@ -471,6 +525,7 @@ export const financeService = {
         created_at: new Date().toISOString(),
       };
       fallbackExpenses = [newExp, ...fallbackExpenses];
+      saveLocalCache();
       return newExp;
     }
   },
@@ -493,6 +548,7 @@ export const financeService = {
       fallbackExpenses = fallbackExpenses.map(e =>
         e.id === id ? { ...e, status, approved_by: approvedBy || e.approved_by } : e
       );
+      saveLocalCache();
     }
   },
 
@@ -523,7 +579,6 @@ export const financeService = {
     const recon = fallbackReconciliations.find(r => r.id === id);
     if (recon) {
       recon.status = 'Approved';
-      // Record corresponding confirmed transaction
       await this.recordTransaction({
         transaction_date: recon.raw_date,
         category: recon.suggested_category,
@@ -537,6 +592,7 @@ export const financeService = {
         donor_id: recon.matched_donor_id || null,
         donor_name: recon.suggested_donor_name || 'Anonymous',
       });
+      saveLocalCache();
     }
 
     try {
@@ -545,7 +601,7 @@ export const financeService = {
         .update({ status: 'Approved' })
         .eq('id', id);
     } catch {
-      // Ignored for local fallback
+      // Handled in local cache
     }
   },
 };

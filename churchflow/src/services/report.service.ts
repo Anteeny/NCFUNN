@@ -333,8 +333,11 @@ export const reportService = {
     };
 
     // 7. Overall Report Counts
-    const { count: g12Count } = await supabase.from('g12_reports').select('id', { count: 'exact', head: true }).eq('organisation_id', orgId);
-    const { count: deptCount } = await supabase.from('dept_reports').select('id', { count: 'exact', head: true }).eq('organisation_id', orgId);
+    const g12Query = supabase.from('g12_reports').select('id', { count: 'exact', head: true });
+    const { count: g12Count } = await (isNcf ? g12Query.or(`organisation_id.eq.${orgId},organisation_id.is.null`) : g12Query.eq('organisation_id', orgId));
+
+    const deptQuery = supabase.from('dept_reports').select('id', { count: 'exact', head: true });
+    const { count: deptCount } = await (isNcf ? deptQuery.or(`organisation_id.eq.${orgId},organisation_id.is.null`) : deptQuery.eq('organisation_id', orgId));
 
     return {
       totalMembers,
@@ -472,11 +475,19 @@ export const reportService = {
    */
   async getDepartmentReportDates(organisationId?: string): Promise<{ date: string; totalReported: number; unitsCount: number; present: number; absent: number }[]> {
     const orgId = organisationId || getActiveOrganisationId();
-    const { data, error } = await supabase
+    const isNcf = orgId === NCF_UNN_ID;
+
+    let query = supabase
       .from('dept_reports')
-      .select('report_date, dept_name, status')
-      .eq('organisation_id', orgId)
-      .order('report_date', { ascending: false });
+      .select('report_date, dept_name, status');
+
+    if (isNcf) {
+      query = query.or(`organisation_id.eq.${orgId},organisation_id.is.null`);
+    } else {
+      query = query.eq('organisation_id', orgId);
+    }
+
+    const { data, error } = await query.order('report_date', { ascending: false });
 
     if (error) {
       console.error('Error fetching department report dates:', error);
@@ -525,11 +536,20 @@ export const reportService = {
     records: DepartmentReportRecord[];
   }[]> {
     const orgId = organisationId || getActiveOrganisationId();
-    const { data, error } = await supabase
+    const isNcf = orgId === NCF_UNN_ID;
+
+    let query = supabase
       .from('dept_reports')
       .select('*')
-      .eq('organisation_id', orgId)
-      .eq('report_date', reportDate)
+      .eq('report_date', reportDate);
+
+    if (isNcf) {
+      query = query.or(`organisation_id.eq.${orgId},organisation_id.is.null`);
+    } else {
+      query = query.eq('organisation_id', orgId);
+    }
+
+    const { data, error } = await query
       .order('dept_name', { ascending: true })
       .order('member_name', { ascending: true });
 
@@ -572,11 +592,19 @@ export const reportService = {
    */
   async getG12ReportDates(organisationId?: string): Promise<{ date: string; totalReported: number; leadersCount: number; present: number; absent: number }[]> {
     const orgId = organisationId || getActiveOrganisationId();
-    const { data, error } = await supabase
+    const isNcf = orgId === NCF_UNN_ID;
+
+    let query = supabase
       .from('g12_reports')
-      .select('report_date, leader_name, status')
-      .eq('organisation_id', orgId)
-      .order('report_date', { ascending: false });
+      .select('report_date, leader_name, status');
+
+    if (isNcf) {
+      query = query.or(`organisation_id.eq.${orgId},organisation_id.is.null`);
+    } else {
+      query = query.eq('organisation_id', orgId);
+    }
+
+    const { data, error } = await query.order('report_date', { ascending: false });
 
     if (error) {
       console.error('Error fetching G12 report dates:', error);
@@ -625,11 +653,20 @@ export const reportService = {
     records: G12ReportRecord[];
   }[]> {
     const orgId = organisationId || getActiveOrganisationId();
-    const { data, error } = await supabase
+    const isNcf = orgId === NCF_UNN_ID;
+
+    let query = supabase
       .from('g12_reports')
       .select('*')
-      .eq('organisation_id', orgId)
-      .eq('report_date', reportDate)
+      .eq('report_date', reportDate);
+
+    if (isNcf) {
+      query = query.or(`organisation_id.eq.${orgId},organisation_id.is.null`);
+    } else {
+      query = query.eq('organisation_id', orgId);
+    }
+
+    const { data, error } = await query
       .order('leader_name', { ascending: true })
       .order('member_name', { ascending: true });
 

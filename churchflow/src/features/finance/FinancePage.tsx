@@ -11,8 +11,11 @@ import {
   X,
   FileSpreadsheet,
   Printer,
+  RefreshCw,
+  ExternalLink,
+  AlertCircle,
 } from 'lucide-react';
-import { financeService } from '../../services/finance.service';
+import { financeService, type GoogleSheetConfig } from '../../services/finance.service';
 import type {
   FinanceDonor,
   FinanceTransaction,
@@ -31,6 +34,13 @@ export const FinancePage: React.FC = () => {
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
   const [expenses, setExpenses] = useState<FinanceExpense[]>([]);
   const [reconciliations, setReconciliations] = useState<FinanceReconciliation[]>([]);
+
+  // Google Sheet Sync State
+  const [sheetConfig, setSheetConfig] = useState<GoogleSheetConfig | null>(null);
+  const [sheetUrlInput, setSheetUrlInput] = useState('');
+  const [syncingSheet, setSyncingSheet] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [showSheetConfigModal, setShowSheetConfigModal] = useState(false);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,6 +87,11 @@ export const FinancePage: React.FC = () => {
       setTransactions(tx);
       setExpenses(exp);
       setReconciliations(rec);
+      const cfg = financeService.getGoogleSheetConfig();
+      setSheetConfig(cfg);
+      if (cfg?.url) {
+        setSheetUrlInput(cfg.url);
+      }
     } catch (err) {
       console.error('Failed to load finance data:', err);
     }
@@ -89,6 +104,33 @@ export const FinancePage: React.FC = () => {
   // Format Currency
   const formatNaira = (amount: number) => {
     return '₦' + Number(amount || 0).toLocaleString('en-NG', { minimumFractionDigits: 2 });
+  };
+
+  // Sync from Google Sheet
+  const handleSyncGoogleSheet = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const targetUrl = sheetUrlInput.trim() || sheetConfig?.url;
+    if (!targetUrl) return;
+
+    try {
+      setSyncingSheet(true);
+      setSyncMessage(null);
+      const result = await financeService.syncFromGoogleSheet(targetUrl);
+      setSyncMessage({
+        type: 'success',
+        text: `Successfully synced! Imported ${result.transactions} giving records and ${result.expenses} expense records (${result.totalRows} sheet rows).`,
+      });
+      setShowSheetConfigModal(false);
+      await loadData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to sync from Google Sheet. Make sure sheet is shared with "Anyone with the link can view".';
+      setSyncMessage({
+        type: 'error',
+        text: msg,
+      });
+    } finally {
+      setSyncingSheet(false);
+    }
   };
 
   // Submit Giving
@@ -204,11 +246,31 @@ export const FinancePage: React.FC = () => {
               Finance, Giving & Disbursements
             </h1>
             <p style={{ fontSize: '13.5px', color: 'var(--text-muted)' }}>
-              Comprehensive multi-tenant financial reporting, auditable tithes & offerings, and expense workflows.
+              Connected to church Google Sheet ledger, tracking auditable tithes, offerings, and expenses.
             </p>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={() => setShowSheetConfigModal(true)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 16px',
+                borderRadius: '8px',
+                fontSize: '13px',
+                fontWeight: 700,
+                background: sheetConfig?.url ? 'rgba(22,163,74,0.12)' : 'rgba(37,99,235,0.12)',
+                color: sheetConfig?.url ? '#16a34a' : 'var(--blue)',
+                border: '1px solid var(--border)',
+                cursor: 'pointer',
+              }}
+            >
+              <FileSpreadsheet size={16} />
+              {sheetConfig?.url ? 'Google Sheet Connected' : 'Connect Google Sheet'}
+            </button>
+
             <button
               onClick={() => setShowRecordGivingModal(true)}
               className="btn btn-primary"
@@ -250,13 +312,39 @@ export const FinancePage: React.FC = () => {
           </div>
         </div>
 
+        {/* SYNC NOTIFICATION BANNER */}
+        {syncMessage && (
+          <div
+            style={{
+              marginTop: '16px',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              background: syncMessage.type === 'success' ? 'rgba(22,163,74,0.12)' : 'rgba(225,29,72,0.12)',
+              border: `1px solid ${syncMessage.type === 'success' ? '#16a34a' : '#e11d48'}`,
+              color: syncMessage.type === 'success' ? '#166534' : '#991b1b',
+              fontSize: '13px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {syncMessage.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+              <span>{syncMessage.text}</span>
+            </div>
+            <button onClick={() => setSyncMessage(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}>
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
         {/* TOP METRIC CARDS */}
         {summary && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginTop: '24px' }}>
             {/* Total Inflow */}
             <div style={{ background: 'var(--card)', padding: '18px 20px', borderRadius: '12px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Total Inflow (M-T-D)</span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Total Inflow</span>
                 <span style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(22,163,74,0.12)', color: '#16a34a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <ArrowUpRight size={16} />
                 </span>
@@ -265,14 +353,14 @@ export const FinancePage: React.FC = () => {
                 {formatNaira(summary.total_inflow)}
               </div>
               <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                Tithes: {formatNaira(summary.tithe_total)}
+                Tithes: {formatNaira(summary.tithe_total)} | Offerings: {formatNaira(summary.offering_total)}
               </div>
             </div>
 
             {/* Total Disbursements */}
             <div style={{ background: 'var(--card)', padding: '18px 20px', borderRadius: '12px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Total Expenses Paid</span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Total Disbursements</span>
                 <span style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(225,29,72,0.12)', color: '#e11d48', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <ArrowDownRight size={16} />
                 </span>
@@ -281,7 +369,7 @@ export const FinancePage: React.FC = () => {
                 {formatNaira(summary.total_expenses)}
               </div>
               <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                Verified disbursements
+                {expenses.length} recorded expense vouchers
               </div>
             </div>
 
@@ -297,23 +385,23 @@ export const FinancePage: React.FC = () => {
                 {formatNaira(summary.net_balance)}
               </div>
               <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                Active operating surplus
+                Active operating balance
               </div>
             </div>
 
-            {/* Reconciliation Queue Alert */}
+            {/* Reconciliation / Donor Folders */}
             <div style={{ background: 'var(--card)', padding: '18px 20px', borderRadius: '12px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Reconciliation Queue</span>
-                <span style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(245,158,11,0.12)', color: 'var(--amber)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Active Donor Folders</span>
+                <span style={{ width: '28px', height: '28px', borderRadius: '8px', background: 'rgba(139,92,246,0.12)', color: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <Clock size={16} />
                 </span>
               </div>
-              <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--amber)' }}>
-                {summary.pending_reconciliations_count} Pending
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#8b5cf6' }}>
+                {summary.total_donors_count} Donors
               </div>
               <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                Bank statement drafts to resolve
+                {transactions.length} total verified transactions
               </div>
             </div>
           </div>
@@ -326,8 +414,8 @@ export const FinancePage: React.FC = () => {
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
         {[
           { id: 'overview', label: 'Financial Overview & Reports' },
-          { id: 'giving', label: 'Giving & Donor Folders' },
-          { id: 'expenses', label: 'Expenses & Disbursements' },
+          { id: 'giving', label: `Giving & Donor Folders (${transactions.length})` },
+          { id: 'expenses', label: `Expenses & Disbursements (${expenses.length})` },
           { id: 'reconciliation', label: `Statement Reconciliation (${reconciliations.length})` },
         ].map(tab => (
           <button
@@ -360,83 +448,200 @@ export const FinancePage: React.FC = () => {
             <h2 className="font-serif" style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text)', marginBottom: '16px' }}>
               Inflow Breakdown by Category
             </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
-                  <span style={{ fontWeight: 600 }}>Tithes</span>
-                  <strong>{formatNaira(summary.tithe_total)}</strong>
+            {summary.total_inflow > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
+                    <span style={{ fontWeight: 600 }}>Tithes</span>
+                    <strong>{formatNaira(summary.tithe_total)}</strong>
+                  </div>
+                  <div style={{ height: '8px', borderRadius: '4px', background: 'var(--navy-soft)', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        height: '100%',
+                        width: `${(summary.tithe_total / summary.total_inflow) * 100}%`,
+                        background: 'var(--blue)',
+                      }}
+                    />
+                  </div>
                 </div>
-                <div style={{ height: '8px', borderRadius: '4px', background: 'var(--navy-soft)', overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      height: '100%',
-                      width: `${summary.total_inflow > 0 ? (summary.tithe_total / summary.total_inflow) * 100 : 0}%`,
-                      background: 'var(--blue)',
-                    }}
-                  />
-                </div>
-              </div>
 
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
-                  <span style={{ fontWeight: 600 }}>Sunday & Midweek Offerings</span>
-                  <strong>{formatNaira(summary.offering_total)}</strong>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
+                    <span style={{ fontWeight: 600 }}>Sunday & Midweek Offerings</span>
+                    <strong>{formatNaira(summary.offering_total)}</strong>
+                  </div>
+                  <div style={{ height: '8px', borderRadius: '4px', background: 'var(--navy-soft)', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        height: '100%',
+                        width: `${(summary.offering_total / summary.total_inflow) * 100}%`,
+                        background: '#16a34a',
+                      }}
+                    />
+                  </div>
                 </div>
-                <div style={{ height: '8px', borderRadius: '4px', background: 'var(--navy-soft)', overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      height: '100%',
-                      width: `${summary.total_inflow > 0 ? (summary.offering_total / summary.total_inflow) * 100 : 0}%`,
-                      background: '#16a34a',
-                    }}
-                  />
-                </div>
-              </div>
 
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
-                  <span style={{ fontWeight: 600 }}>Building, Seeds & Pledges</span>
-                  <strong>{formatNaira(summary.seed_and_other_total)}</strong>
-                </div>
-                <div style={{ height: '8px', borderRadius: '4px', background: 'var(--navy-soft)', overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      height: '100%',
-                      width: `${summary.total_inflow > 0 ? (summary.seed_and_other_total / summary.total_inflow) * 100 : 0}%`,
-                      background: '#8b5cf6',
-                    }}
-                  />
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '6px' }}>
+                    <span style={{ fontWeight: 600 }}>Building, Seeds & Pledges</span>
+                    <strong>{formatNaira(summary.seed_and_other_total)}</strong>
+                  </div>
+                  <div style={{ height: '8px', borderRadius: '4px', background: 'var(--navy-soft)', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        height: '100%',
+                        width: `${(summary.seed_and_other_total / summary.total_inflow) * 100}%`,
+                        background: '#8b5cf6',
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)' }}>
+                <p style={{ fontSize: '13px', marginBottom: '12px' }}>
+                  No giving records yet. Connect your Google Sheet or record a contribution to see categories breakdown.
+                </p>
+                <button
+                  onClick={() => setShowRecordGivingModal(true)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    background: 'var(--blue)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Record Contribution
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Connected Google Sheets Status */}
+          {/* Connected Google Sheets Status & Sync Widget */}
           <div className="portal-card" style={{ padding: '24px 28px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-              <FileSpreadsheet size={20} color="var(--blue)" />
-              <h2 className="font-serif" style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text)' }}>
-                Financial Ledger Source
-              </h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FileSpreadsheet size={20} color="var(--blue)" />
+                <h2 className="font-serif" style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text)' }}>
+                  Google Sheet Integration
+                </h2>
+              </div>
+              <button
+                onClick={() => setShowSheetConfigModal(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--blue)',
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                {sheetConfig?.url ? 'Change Sheet' : 'Configure'}
+              </button>
             </div>
+
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '16px' }}>
-              As specified in the ChurchFlow Framework, finance reports can read from the church’s configured Google Sheet or operate in native database mode.
+              As specified in Section 11 of the ChurchFlow Framework, finance records are connected to the church’s financial Google Sheet.
             </p>
-            <div style={{ background: 'var(--navy-soft)', padding: '14px 16px', borderRadius: '10px', border: '1px solid var(--border)', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>Source Mode:</span>
-                <span style={{ fontSize: '11.5px', fontWeight: 800, color: '#16a34a', background: 'rgba(22,163,74,0.12)', padding: '2px 8px', borderRadius: '12px' }}>
-                  Native Database (PostgreSQL)
-                </span>
+
+            {sheetConfig?.url ? (
+              <div style={{ background: 'var(--navy-soft)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border)', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>Status:</span>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#16a34a', background: 'rgba(22,163,74,0.12)', padding: '2px 8px', borderRadius: '12px' }}>
+                    Connected & Live
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>Sheet ID:</span>
+                  <span style={{ fontSize: '11.5px', fontFamily: 'monospace', color: 'var(--text-muted)' }}>{sheetConfig.sheetId.slice(0, 16)}...</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>Last Synced:</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    {sheetConfig.lastSyncedAt ? new Date(sheetConfig.lastSyncedAt).toLocaleTimeString() : 'Never'}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => handleSyncGoogleSheet()}
+                    disabled={syncingSheet}
+                    style={{
+                      flex: 1,
+                      padding: '8px 14px',
+                      borderRadius: '8px',
+                      background: 'var(--blue)',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontSize: '12.5px',
+                      fontWeight: 700,
+                      cursor: syncingSheet ? 'wait' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    <RefreshCw size={14} className={syncingSheet ? 'animate-spin' : ''} />
+                    {syncingSheet ? 'Syncing...' : 'Sync Now'}
+                  </button>
+
+                  <a
+                    href={sheetConfig.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      background: 'var(--card)',
+                      border: '1px solid var(--border)',
+                      color: 'var(--text)',
+                      fontSize: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <ExternalLink size={14} /> Open Sheet
+                  </a>
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>RLS Multi-Tenant Scope:</span>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>00000000-...-0001 (NCF UNN)</span>
+            ) : (
+              <div style={{ background: 'var(--navy-soft)', padding: '16px', borderRadius: '10px', border: '1px dashed var(--border)', textAlign: 'center' }}>
+                <p style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 600, marginBottom: '6px' }}>
+                  No Google Sheet Connected Yet
+                </p>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px' }}>
+                  Connect your church’s income and expense spreadsheet to load live financial records.
+                </p>
+                <button
+                  onClick={() => setShowSheetConfigModal(true)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    background: 'var(--blue)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <FileSpreadsheet size={15} /> Connect Google Sheet
+                </button>
               </div>
-            </div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              Bank account numbers and sensitive balances are masked in general directories.
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -454,11 +659,11 @@ export const FinancePage: React.FC = () => {
                   Donor Folders & Contribution Profiles
                 </h2>
                 <p style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
-                  Dedicated confidential donor histories. Selecting a donor opens their itemized giving statement.
+                  Confidential donor histories. Selecting a donor opens their itemized giving statement.
                 </p>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {donors.length > 0 && (
                 <div style={{ position: 'relative' }}>
                   <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                   <input
@@ -476,64 +681,90 @@ export const FinancePage: React.FC = () => {
                     }}
                   />
                 </div>
-              </div>
+              )}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
-              {donors.map(donor => (
-                <div
-                  key={donor.id}
+            {donors.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '14px' }}>
+                {donors.map(donor => (
+                  <div
+                    key={donor.id}
+                    style={{
+                      background: 'var(--card)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '12px',
+                      padding: '16px 18px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      boxShadow: 'var(--shadow-sm)',
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <strong style={{ fontSize: '14.5px', color: 'var(--text)' }}>{donor.donor_name}</strong>
+                        <span style={{ fontSize: '10.5px', color: 'var(--blue)', fontWeight: 700, background: 'var(--blue-soft)', padding: '2px 8px', borderRadius: '10px' }}>
+                          FOLDER
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>{donor.email || donor.phone || 'Covenant Partner'}</div>
+                      <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '12px' }}>{donor.notes || 'Recorded Donor'}</div>
+                    </div>
+
+                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Recorded Total</div>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: '#16a34a' }}>
+                          {formatNaira(donor.total_giving || 0)}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setSelectedDonorFolder(donor)}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          background: 'var(--navy-soft)',
+                          border: '1px solid var(--border)',
+                          color: 'var(--text)',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
+                      >
+                        <Eye size={13} /> View Statement
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '36px 20px', color: 'var(--text-muted)' }}>
+                <p style={{ fontSize: '13.5px', color: 'var(--text)', fontWeight: 600, marginBottom: '6px' }}>
+                  No Donor Folders Yet
+                </p>
+                <p style={{ fontSize: '12.5px', maxWidth: '440px', margin: '0 auto 16px' }}>
+                  Donor folders are automatically generated as contributions are synced from your Google Sheet or entered manually.
+                </p>
+                <button
+                  onClick={() => setShowRecordGivingModal(true)}
                   style={{
-                    background: 'var(--card)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '12px',
-                    padding: '16px 18px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    boxShadow: 'var(--shadow-sm)',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    background: 'var(--blue)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
                   }}
                 >
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                      <strong style={{ fontSize: '14.5px', color: 'var(--text)' }}>{donor.donor_name}</strong>
-                      <span style={{ fontSize: '10.5px', color: 'var(--blue)', fontWeight: 700, background: 'var(--blue-soft)', padding: '2px 8px', borderRadius: '10px' }}>
-                        FOLDER
-                      </span>
-                    </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>{donor.email || donor.phone || 'No contact provided'}</div>
-                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontStyle: 'italic', marginBottom: '12px' }}>{donor.notes || 'Covenant partner'}</div>
-                  </div>
-
-                  <div style={{ borderTop: '1px solid var(--border)', paddingTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div>
-                      <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Recorded Total</div>
-                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#16a34a' }}>
-                        {formatNaira(donor.total_giving || 0)}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setSelectedDonorFolder(donor)}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: '6px',
-                        background: 'var(--navy-soft)',
-                        border: '1px solid var(--border)',
-                        color: 'var(--text)',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                      }}
-                    >
-                      <Eye size={13} /> View Statement
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  Record First Contribution
+                </button>
+              </div>
+            )}
           </div>
 
           {/* ALL TRANSACTIONS TABLE */}
@@ -543,82 +774,95 @@ export const FinancePage: React.FC = () => {
                 Recent Contributions & Inflows
               </h2>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Category:</span>
-                {(['All', 'Tithe', 'Offering', 'Building/Pledge'] as const).map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => setGivingFilter(cat)}
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      fontWeight: givingFilter === cat ? 700 : 500,
-                      background: givingFilter === cat ? 'var(--blue)' : 'var(--navy-soft)',
-                      color: givingFilter === cat ? '#ffffff' : 'var(--text)',
-                      border: 'none',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
+              {transactions.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Category:</span>
+                  {(['All', 'Tithe', 'Offering', 'Building/Pledge'] as const).map(cat => (
+                    <button
+                      key={cat}
+                      onClick={() => setGivingFilter(cat)}
+                      style={{
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: givingFilter === cat ? 700 : 500,
+                        background: givingFilter === cat ? 'var(--blue)' : 'var(--navy-soft)',
+                        color: givingFilter === cat ? '#ffffff' : 'var(--text)',
+                        border: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid var(--border)', textAlign: 'left', color: 'var(--text-muted)', fontSize: '11.5px', textTransform: 'uppercase' }}>
-                    <th style={{ padding: '10px 12px' }}>Date</th>
-                    <th style={{ padding: '10px 12px' }}>Donor / Source</th>
-                    <th style={{ padding: '10px 12px' }}>Category</th>
-                    <th style={{ padding: '10px 12px' }}>Channel</th>
-                    <th style={{ padding: '10px 12px' }}>Reference</th>
-                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredTransactions.map(tx => (
-                    <tr key={tx.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                      <td style={{ padding: '12px' }}>{tx.transaction_date}</td>
-                      <td style={{ padding: '12px', fontWeight: 600 }}>{tx.donor_name}</td>
-                      <td style={{ padding: '12px' }}>
-                        <span
-                          style={{
-                            padding: '3px 8px',
-                            borderRadius: '10px',
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            background:
-                              tx.category === 'Tithe'
-                                ? 'var(--blue-soft)'
-                                : tx.category === 'Offering'
-                                ? 'rgba(22,163,74,0.12)'
-                                : 'rgba(139,92,246,0.12)',
-                            color:
-                              tx.category === 'Tithe'
-                                ? 'var(--blue)'
-                                : tx.category === 'Offering'
-                                ? '#16a34a'
-                                : '#8b5cf6',
-                          }}
-                        >
-                          {tx.category}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{tx.channel}</td>
-                      <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-muted)' }}>
-                        {tx.reference || '-'}
-                      </td>
-                      <td style={{ padding: '12px', textAlign: 'right', fontWeight: 800, color: '#16a34a' }}>
-                        {formatNaira(tx.amount)}
-                      </td>
+            {filteredTransactions.length > 0 ? (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid var(--border)', textAlign: 'left', color: 'var(--text-muted)', fontSize: '11.5px', textTransform: 'uppercase' }}>
+                      <th style={{ padding: '10px 12px' }}>Date</th>
+                      <th style={{ padding: '10px 12px' }}>Donor / Source</th>
+                      <th style={{ padding: '10px 12px' }}>Category</th>
+                      <th style={{ padding: '10px 12px' }}>Channel / Source</th>
+                      <th style={{ padding: '10px 12px' }}>Reference</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'right' }}>Amount</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filteredTransactions.map(tx => (
+                      <tr key={tx.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '12px' }}>{tx.transaction_date}</td>
+                        <td style={{ padding: '12px', fontWeight: 600 }}>{tx.donor_name}</td>
+                        <td style={{ padding: '12px' }}>
+                          <span
+                            style={{
+                              padding: '3px 8px',
+                              borderRadius: '10px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              background:
+                                tx.category === 'Tithe'
+                                  ? 'var(--blue-soft)'
+                                  : tx.category === 'Offering'
+                                  ? 'rgba(22,163,74,0.12)'
+                                  : 'rgba(139,92,246,0.12)',
+                              color:
+                                tx.category === 'Tithe'
+                                  ? 'var(--blue)'
+                                  : tx.category === 'Offering'
+                                  ? '#16a34a'
+                                  : '#8b5cf6',
+                            }}
+                          >
+                            {tx.category}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{tx.source || tx.channel}</td>
+                        <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-muted)' }}>
+                          {tx.reference || '-'}
+                        </td>
+                        <td style={{ padding: '12px', textAlign: 'right', fontWeight: 800, color: '#16a34a' }}>
+                          {formatNaira(tx.amount)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                <p style={{ fontSize: '13.5px', color: 'var(--text)', fontWeight: 600, marginBottom: '6px' }}>
+                  No Contributions Recorded
+                </p>
+                <p style={{ fontSize: '12.5px', maxWidth: '420px', margin: '0 auto 16px' }}>
+                  Click &ldquo;Connect Google Sheet&rdquo; in the Overview tab to load records from your spreadsheet, or click &ldquo;Record Contribution&rdquo; to add entries.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -638,85 +882,113 @@ export const FinancePage: React.FC = () => {
               </p>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {(['All', 'Paid', 'Approved', 'Requested'] as const).map(st => (
-                <button
-                  key={st}
-                  onClick={() => setExpenseFilter(st)}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    fontSize: '12px',
-                    fontWeight: expenseFilter === st ? 700 : 500,
-                    background: expenseFilter === st ? 'var(--blue)' : 'var(--navy-soft)',
-                    color: expenseFilter === st ? '#ffffff' : 'var(--text)',
-                    border: 'none',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {st}
-                </button>
-              ))}
-            </div>
+            {expenses.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {(['All', 'Paid', 'Approved', 'Requested'] as const).map(st => (
+                  <button
+                    key={st}
+                    onClick={() => setExpenseFilter(st)}
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      fontWeight: expenseFilter === st ? 700 : 500,
+                      background: expenseFilter === st ? 'var(--blue)' : 'var(--navy-soft)',
+                      color: expenseFilter === st ? '#ffffff' : 'var(--text)',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid var(--border)', textAlign: 'left', color: 'var(--text-muted)', fontSize: '11.5px', textTransform: 'uppercase' }}>
-                  <th style={{ padding: '10px 12px' }}>Date</th>
-                  <th style={{ padding: '10px 12px' }}>Beneficiary / Vendor</th>
-                  <th style={{ padding: '10px 12px' }}>Description</th>
-                  <th style={{ padding: '10px 12px' }}>Category</th>
-                  <th style={{ padding: '10px 12px' }}>Approved By</th>
-                  <th style={{ padding: '10px 12px' }}>Status</th>
-                  <th style={{ padding: '10px 12px', textAlign: 'right' }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredExpenses.map(exp => (
-                  <tr key={exp.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '12px' }}>{exp.expense_date}</td>
-                    <td style={{ padding: '12px', fontWeight: 700 }}>{exp.beneficiary}</td>
-                    <td style={{ padding: '12px', color: 'var(--text)' }}>{exp.description}</td>
-                    <td style={{ padding: '12px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '8px', background: 'var(--navy-soft)', color: 'var(--text)' }}>
-                        {exp.category}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{exp.approved_by || '-'}</td>
-                    <td style={{ padding: '12px' }}>
-                      <span
-                        style={{
-                          padding: '3px 8px',
-                          borderRadius: '10px',
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          background:
-                            exp.status === 'Paid'
-                              ? 'rgba(22,163,74,0.12)'
-                              : exp.status === 'Approved'
-                              ? 'var(--blue-soft)'
-                              : 'rgba(245,158,11,0.12)',
-                          color:
-                            exp.status === 'Paid'
-                              ? '#16a34a'
-                              : exp.status === 'Approved'
-                              ? 'var(--blue)'
-                              : 'var(--amber)',
-                        }}
-                      >
-                        {exp.status}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px', textAlign: 'right', fontWeight: 800, color: '#e11d48' }}>
-                      {formatNaira(exp.amount)}
-                    </td>
+          {filteredExpenses.length > 0 ? (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid var(--border)', textAlign: 'left', color: 'var(--text-muted)', fontSize: '11.5px', textTransform: 'uppercase' }}>
+                    <th style={{ padding: '10px 12px' }}>Date</th>
+                    <th style={{ padding: '10px 12px' }}>Beneficiary / Vendor</th>
+                    <th style={{ padding: '10px 12px' }}>Description</th>
+                    <th style={{ padding: '10px 12px' }}>Category</th>
+                    <th style={{ padding: '10px 12px' }}>Approved By</th>
+                    <th style={{ padding: '10px 12px' }}>Status</th>
+                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>Amount</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredExpenses.map(exp => (
+                    <tr key={exp.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '12px' }}>{exp.expense_date}</td>
+                      <td style={{ padding: '12px', fontWeight: 700 }}>{exp.beneficiary}</td>
+                      <td style={{ padding: '12px', color: 'var(--text)' }}>{exp.description}</td>
+                      <td style={{ padding: '12px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '8px', background: 'var(--navy-soft)', color: 'var(--text)' }}>
+                          {exp.category}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{exp.approved_by || '-'}</td>
+                      <td style={{ padding: '12px' }}>
+                        <span
+                          style={{
+                            padding: '3px 8px',
+                            borderRadius: '10px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            background:
+                              exp.status === 'Paid'
+                                ? 'rgba(22,163,74,0.12)'
+                                : exp.status === 'Approved'
+                                ? 'var(--blue-soft)'
+                                : 'rgba(245,158,11,0.12)',
+                            color:
+                              exp.status === 'Paid'
+                                ? '#16a34a'
+                                : exp.status === 'Approved'
+                                ? 'var(--blue)'
+                                : 'var(--amber)',
+                          }}
+                        >
+                          {exp.status}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px', textAlign: 'right', fontWeight: 800, color: '#e11d48' }}>
+                        {formatNaira(exp.amount)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+              <p style={{ fontSize: '13.5px', color: 'var(--text)', fontWeight: 600, marginBottom: '6px' }}>
+                No Disbursements Recorded Yet
+              </p>
+              <p style={{ fontSize: '12.5px', maxWidth: '420px', margin: '0 auto 16px' }}>
+                Expenses synced from your Google Sheet or entered via &ldquo;Record Expense&rdquo; will be tracked here with verification status.
+              </p>
+              <button
+                onClick={() => setShowRecordExpenseModal(true)}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  background: '#e11d48',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                Record First Expense
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -733,7 +1005,7 @@ export const FinancePage: React.FC = () => {
               </h2>
             </div>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', maxWidth: '850px' }}>
-              As required by Section 11 of the framework, imported bank statement rows are parsed into reviewable drafts. Authorized staff confirm categories and match senders to donor profiles before committing rows into verified totals.
+              As specified in Section 11 of the ChurchFlow Framework, bank statement drafts require authorized review to confirm categories and match senders before affecting live donor totals.
             </p>
 
             <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -805,6 +1077,79 @@ export const FinancePage: React.FC = () => {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* MODAL: CONFIGURE GOOGLE SHEET                                        */}
+      {/* ==================================================================== */}
+      {showSheetConfigModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ background: 'var(--card)', borderRadius: '16px', maxWidth: '520px', width: '100%', padding: '28px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-hover)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <FileSpreadsheet size={20} color="var(--blue)" />
+                <h2 className="font-serif" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text)' }}>
+                  Connect Google Sheet
+                </h2>
+              </div>
+              <button onClick={() => setShowSheetConfigModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '16px' }}>
+              Paste your Church Financial Google Sheet URL below. Ensure the sheet sharing is set to <strong>&ldquo;Anyone with the link can view&rdquo;</strong> so ChurchFlow can read your rows.
+            </p>
+
+            <form onSubmit={handleSyncGoogleSheet} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}>Google Sheets URL *</label>
+                <input
+                  type="url"
+                  required
+                  placeholder="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit"
+                  value={sheetUrlInput}
+                  onChange={e => setSheetUrlInput(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-app)', color: 'var(--text)', fontSize: '13px' }}
+                />
+              </div>
+
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                💡 <strong>Tip:</strong> ChurchFlow automatically identifies columns matching <em>Date</em>, <em>Description / Particulars</em>, <em>Category</em>, <em>Inflow / Income</em>, and <em>Outflow / Expense</em>.
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowSheetConfigModal(false)}
+                  style={{ padding: '10px 16px', borderRadius: '8px', background: 'var(--card)', border: '1px solid var(--border)', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={syncingSheet}
+                  style={{
+                    padding: '10px 18px',
+                    borderRadius: '8px',
+                    background: 'var(--blue)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: syncingSheet ? 'wait' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <RefreshCw size={14} className={syncingSheet ? 'animate-spin' : ''} />
+                  {syncingSheet ? 'Connecting & Syncing...' : 'Connect & Sync'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -1056,7 +1401,7 @@ export const FinancePage: React.FC = () => {
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Contact Information</div>
-                <div style={{ fontSize: '13px', fontWeight: 600 }}>{selectedDonorFolder.email || selectedDonorFolder.phone || 'Alumni Partner'}</div>
+                <div style={{ fontSize: '13px', fontWeight: 600 }}>{selectedDonorFolder.email || selectedDonorFolder.phone || 'Covenant Partner'}</div>
               </div>
             </div>
 
