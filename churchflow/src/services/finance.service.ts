@@ -7,8 +7,6 @@ import type {
   FinanceReconciliation,
   FinanceSummary,
   GivingCategory,
-  ExpenseCategory,
-  PaymentChannel,
   ExpenseStatus,
 } from '../types/finance.types';
 

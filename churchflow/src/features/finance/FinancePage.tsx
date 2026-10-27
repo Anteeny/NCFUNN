@@ -31,7 +31,6 @@ export const FinancePage: React.FC = () => {
   const [transactions, setTransactions] = useState<FinanceTransaction[]>([]);
   const [expenses, setExpenses] = useState<FinanceExpense[]>([]);
   const [reconciliations, setReconciliations] = useState<FinanceReconciliation[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // Search & Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,7 +65,6 @@ export const FinancePage: React.FC = () => {
   // Load all finance data
   const loadData = async () => {
     try {
-      setLoading(true);
       const [sum, don, tx, exp, rec] = await Promise.all([
         financeService.getSummary(),
         financeService.getDonors(),
@@ -81,8 +79,6 @@ export const FinancePage: React.FC = () => {
       setReconciliations(rec);
     } catch (err) {
       console.error('Failed to load finance data:', err);
-    } finally {
-      setLoading(false);
     }
   };
 
