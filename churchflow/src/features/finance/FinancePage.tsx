@@ -15,7 +15,7 @@ import {
   ExternalLink,
   AlertCircle,
 } from 'lucide-react';
-import { financeService, type GoogleSheetConfig } from '../../services/finance.service';
+import { financeService, DEFAULT_SHEET_URL, type GoogleSheetConfig } from '../../services/finance.service';
 import type {
   FinanceDonor,
   FinanceTransaction,
@@ -72,14 +72,27 @@ export const FinancePage: React.FC = () => {
     approvedBy: '',
   });
 
-  // Load all finance data
-  const loadData = async () => {
+  // Month & Sheet Tab Filter
+  const [selectedMonth, setSelectedMonth] = useState<string>('ALL');
+  const [availableMonths, setAvailableMonths] = useState<string[]>([
+    'ALL',
+    'JUNE',
+    'MAY',
+    'APRIL',
+    'MARCH',
+    'FEBRUARY',
+    'JANUARY',
+  ]);
+
+  // Load all finance data (with optional month filter)
+  const loadData = async (monthToLoad?: string) => {
+    const targetMonth = monthToLoad !== undefined ? monthToLoad : selectedMonth;
     try {
       const [sum, don, tx, exp, rec] = await Promise.all([
-        financeService.getSummary(),
+        financeService.getSummary(undefined, targetMonth),
         financeService.getDonors(),
-        financeService.getTransactions(),
-        financeService.getExpenses(),
+        financeService.getTransactions(undefined, undefined, targetMonth),
+        financeService.getExpenses(undefined, undefined, targetMonth),
         financeService.getReconciliations(),
       ]);
       setSummary(sum);
@@ -92,13 +105,36 @@ export const FinancePage: React.FC = () => {
       if (cfg?.url) {
         setSheetUrlInput(cfg.url);
       }
+      if (cfg?.availableSheets && cfg.availableSheets.length > 0) {
+        setAvailableMonths(cfg.availableSheets);
+      }
     } catch (err) {
       console.error('Failed to load finance data:', err);
     }
   };
 
+  const handleMonthChange = (month: string) => {
+    setSelectedMonth(month);
+    loadData(month);
+  };
+
   useEffect(() => {
-    loadData();
+    const cfg = financeService.getGoogleSheetConfig();
+    if (cfg?.url) {
+      setSheetUrlInput(cfg.url);
+      // Auto-sync on start if no records loaded yet
+      financeService
+        .syncFromGoogleSheet(cfg.url)
+        .then(res => {
+          if (res.months?.length) setAvailableMonths(res.months);
+          loadData('ALL');
+        })
+        .catch(() => {
+          loadData('ALL');
+        });
+    } else {
+      loadData('ALL');
+    }
   }, []);
 
   // Format Currency
@@ -116,12 +152,15 @@ export const FinancePage: React.FC = () => {
       setSyncingSheet(true);
       setSyncMessage(null);
       const result = await financeService.syncFromGoogleSheet(targetUrl);
+      if (result.months?.length) {
+        setAvailableMonths(result.months);
+      }
       setSyncMessage({
         type: 'success',
-        text: `Successfully synced! Imported ${result.transactions} giving records and ${result.expenses} expense records (${result.totalRows} sheet rows).`,
+        text: `Successfully synced! Imported ${result.transactions} giving entries and ${result.expenses} disbursements across ${result.months.length - 1} monthly tabs (${result.totalRows} records).`,
       });
       setShowSheetConfigModal(false);
-      await loadData();
+      await loadData(selectedMonth);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to sync from Google Sheet. Make sure sheet is shared with "Anyone with the link can view".';
       setSyncMessage({
@@ -337,6 +376,74 @@ export const FinancePage: React.FC = () => {
             </button>
           </div>
         )}
+
+        {/* MONTH TABS / PERIOD SELECTOR */}
+        <div
+          style={{
+            marginTop: '20px',
+            padding: '12px 16px',
+            background: 'var(--bg-app)',
+            borderRadius: '12px',
+            border: '1px solid var(--border)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <Clock size={14} /> Month / Period:
+            </span>
+            {availableMonths.map(m => {
+              const isActive = selectedMonth === m;
+              return (
+                <button
+                  key={m}
+                  onClick={() => handleMonthChange(m)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '20px',
+                    fontSize: '12px',
+                    fontWeight: isActive ? 800 : 600,
+                    background: isActive ? 'var(--blue)' : 'var(--card)',
+                    color: isActive ? '#ffffff' : 'var(--text)',
+                    border: isActive ? '1px solid var(--blue)' : '1px solid var(--border)',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    boxShadow: isActive ? '0 2px 6px rgba(37,99,235,0.25)' : 'none',
+                  }}
+                >
+                  {m === 'ALL' ? '📅 All Months (YTD)' : m}
+                </button>
+              );
+            })}
+          </div>
+
+          {sheetConfig?.url && (
+            <button
+              onClick={() => handleSyncGoogleSheet()}
+              disabled={syncingSheet}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 14px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 700,
+                background: 'var(--card)',
+                color: 'var(--blue)',
+                border: '1px solid var(--border)',
+                cursor: syncingSheet ? 'wait' : 'pointer',
+              }}
+            >
+              <RefreshCw size={12} className={syncingSheet ? 'animate-spin' : ''} />
+              {syncingSheet ? 'Syncing...' : 'Sync Sheet Now'}
+            </button>
+          )}
+        </div>
 
         {/* TOP METRIC CARDS */}
         {summary && (
@@ -1109,15 +1216,15 @@ export const FinancePage: React.FC = () => {
                 <input
                   type="url"
                   required
-                  placeholder="https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit"
-                  value={sheetUrlInput}
+                  placeholder={DEFAULT_SHEET_URL}
+                  value={sheetUrlInput || DEFAULT_SHEET_URL}
                   onChange={e => setSheetUrlInput(e.target.value)}
                   style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--bg-app)', color: 'var(--text)', fontSize: '13px' }}
                 />
               </div>
 
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-                💡 <strong>Tip:</strong> ChurchFlow automatically identifies columns matching <em>Date</em>, <em>Description / Particulars</em>, <em>Category</em>, <em>Inflow / Income</em>, and <em>Outflow / Expense</em>.
+                💡 <strong>Multi-Month Support:</strong> ChurchFlow automatically scans all monthly tabs (January, February, March, April, May, June, July, etc.) in your document, reading both monthly day-matrices (Tithes, Offerings, Welfare, Honour, Tcrew, Buses, Light, Charges) and standard ledger rows.
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>

@@ -9,17 +9,22 @@ import type {
   GivingCategory,
   ExpenseCategory,
   ExpenseStatus,
+  PaymentChannel,
 } from '../types/finance.types';
+
+export const DEFAULT_SHEET_URL =
+  'https://docs.google.com/spreadsheets/d/1dWdZfNeAhbXkVdnlR0sYXsrxxcC1YgN4pAfoTMjfsS0/edit?usp=sharing';
 
 export interface GoogleSheetConfig {
   url: string;
   sheetId: string;
   sheetName?: string;
+  availableSheets?: string[];
   lastSyncedAt?: string;
   rowCount?: number;
 }
 
-// In-memory state (NO DUMMY DATA — completely empty until connected or recorded)
+// In-memory state (NO DUMMY DATA)
 let fallbackDonors: FinanceDonor[] = [];
 let fallbackTransactions: FinanceTransaction[] = [];
 let fallbackExpenses: FinanceExpense[] = [];
@@ -31,7 +36,23 @@ const TRANSACTIONS_STORAGE_KEY = 'churchflow_finance_transactions';
 const EXPENSES_STORAGE_KEY = 'churchflow_finance_expenses';
 const DONORS_STORAGE_KEY = 'churchflow_finance_donors';
 
-// Load any previously synced records from local cache
+// Month map for dates and sorting
+const MONTH_INDEX: Record<string, number> = {
+  JANUARY: 1,
+  FEBRUARY: 2,
+  MARCH: 3,
+  APRIL: 4,
+  MAY: 5,
+  JUNE: 6,
+  JULY: 7,
+  AUGUST: 8,
+  SEPTEMBER: 9,
+  OCTOBER: 10,
+  NOVEMBER: 11,
+  DECEMBER: 12,
+};
+
+// Load previously synced records from local cache
 function loadLocalCache() {
   try {
     const cachedTx = localStorage.getItem(TRANSACTIONS_STORAGE_KEY);
@@ -65,7 +86,14 @@ export function extractSheetId(url: string): string | null {
   return match ? match[1] : null;
 }
 
-// Simple CSV parser that handles quotes and commas
+// Clean numerical currency amount from string
+function cleanAmount(val: string | number | undefined | null): number {
+  if (!val) return 0;
+  const cleaned = String(val).replace(/[^0-9.-]+/g, '');
+  return parseFloat(cleaned) || 0;
+}
+
+// RFC-compliant CSV line parser handling quotes
 function parseCSV(text: string): string[][] {
   const lines = text.split(/\r?\n/).filter(line => line.trim().length > 0);
   return lines.map(line => {
@@ -88,18 +116,51 @@ function parseCSV(text: string): string[][] {
   });
 }
 
+// Helper to check if a record matches a selected month
+function recordMatchesMonth(dateStr: string, notes: string | null | undefined, month: string): boolean {
+  if (!month || month === 'ALL') return true;
+  const mIndex = MONTH_INDEX[month.toUpperCase()];
+  if (mIndex) {
+    const padM = String(mIndex).padStart(2, '0');
+    if (dateStr.includes(`-${padM}-`)) return true;
+  }
+  if (notes && notes.toUpperCase().includes(month.toUpperCase())) return true;
+  return false;
+}
+
 export const financeService = {
   /**
-   * Retrieves the current Google Sheet configuration
+   * Retrieves the current Google Sheet configuration (defaults to church sheet if unset)
    */
-  getGoogleSheetConfig(): GoogleSheetConfig | null {
+  getGoogleSheetConfig(): GoogleSheetConfig {
     try {
       const saved = localStorage.getItem(GSHEET_STORAGE_KEY);
-      if (!saved) return null;
-      return JSON.parse(saved);
+      if (saved) {
+        return JSON.parse(saved);
+      }
     } catch {
-      return null;
+      // ignore
     }
+
+    const defaultId = extractSheetId(DEFAULT_SHEET_URL) || '1dWdZfNeAhbXkVdnlR0sYXsrxxcC1YgN4pAfoTMjfsS0';
+    return {
+      url: DEFAULT_SHEET_URL,
+      sheetId: defaultId,
+      sheetName: 'ALL',
+      availableSheets: ['ALL', 'JUNE', 'MAY', 'APRIL', 'MARCH', 'FEBRUARY', 'JANUARY'],
+      rowCount: fallbackTransactions.length + fallbackExpenses.length,
+    };
+  },
+
+  /**
+   * Returns discovered months available from the sheet
+   */
+  getAvailableSheetMonths(): string[] {
+    const cfg = this.getGoogleSheetConfig();
+    if (cfg?.availableSheets && cfg.availableSheets.length > 0) {
+      return cfg.availableSheets;
+    }
+    return ['ALL', 'JUNE', 'MAY', 'APRIL', 'MARCH', 'FEBRUARY', 'JANUARY'];
   },
 
   /**
@@ -111,12 +172,14 @@ export const financeService = {
       throw new Error('Invalid Google Sheet URL. Please provide a valid Google Sheets link.');
     }
 
+    const prev = this.getGoogleSheetConfig();
     const cfg: GoogleSheetConfig = {
       url: url.trim(),
       sheetId,
-      sheetName: sheetName?.trim() || undefined,
+      sheetName: sheetName?.trim() || prev.sheetName || 'ALL',
+      availableSheets: prev.availableSheets || ['ALL', 'JUNE', 'MAY', 'APRIL', 'MARCH', 'FEBRUARY', 'JANUARY'],
       lastSyncedAt: new Date().toISOString(),
-      rowCount: 0,
+      rowCount: fallbackTransactions.length + fallbackExpenses.length,
     };
 
     localStorage.setItem(GSHEET_STORAGE_KEY, JSON.stringify(cfg));
@@ -124,181 +187,418 @@ export const financeService = {
   },
 
   /**
-   * Syncs real finance records from the connected Google Sheet
+   * Syncs real finance records from the connected Google Sheet across monthly tabs
    */
-  async syncFromGoogleSheet(urlOverride?: string): Promise<{ transactions: number; expenses: number; totalRows: number }> {
+  async syncFromGoogleSheet(
+    urlOverride?: string
+  ): Promise<{ transactions: number; expenses: number; totalRows: number; months: string[] }> {
     const cfg = urlOverride ? this.saveGoogleSheetConfig(urlOverride) : this.getGoogleSheetConfig();
     if (!cfg || !cfg.sheetId) {
       throw new Error('No Google Sheet connected. Please enter your Google Sheet link first.');
     }
 
-    const exportUrl = `https://docs.google.com/spreadsheets/d/${cfg.sheetId}/gviz/tq?tqx=out:csv${
-      cfg.sheetName ? '&sheet=' + encodeURIComponent(cfg.sheetName) : ''
-    }`;
+    const orgId = getActiveOrganisationId();
+    const sheetId = cfg.sheetId;
 
-    const res = await fetch(exportUrl);
-    if (!res.ok) {
+    // 1. Fetch default sheet to test against and parse
+    const defaultUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv`;
+    const defaultRes = await fetch(defaultUrl);
+    if (!defaultRes.ok) {
       throw new Error(
-        `Failed to fetch Google Sheet (${res.status} ${res.statusText}). Make sure the Google Sheet sharing setting is set to "Anyone with the link can view".`
+        `Failed to fetch Google Sheet (${defaultRes.status} ${defaultRes.statusText}). Make sure the Google Sheet sharing setting is set to "Anyone with the link can view".`
       );
     }
+    const defaultText = await defaultRes.text();
 
-    const csvText = await res.text();
-    const rows = parseCSV(csvText);
+    // 2. Discover available monthly tabs
+    const candidateMonths = [
+      'JANUARY',
+      'FEBRUARY',
+      'MARCH',
+      'APRIL',
+      'MAY',
+      'JUNE',
+      'JULY',
+      'AUGUST',
+      'SEPTEMBER',
+      'OCTOBER',
+      'NOVEMBER',
+      'DECEMBER',
+      'FEB',
+      'MAR',
+      'APR',
+      'JUN',
+      'JUL',
+      'AUG',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DEC',
+    ];
 
-    if (rows.length < 2) {
-      throw new Error('Google Sheet returned no data rows. Please ensure your sheet has headers and rows.');
-    }
+    const discoveredTabs: { name: string; csv: string }[] = [];
 
-    const headers = rows[0].map(h => h.toLowerCase());
-    
-    // Find column indexes flexibly
-    const dateIdx = headers.findIndex(h => h.includes('date'));
-    const descIdx = headers.findIndex(h => h.includes('desc') || h.includes('item') || h.includes('narration') || h.includes('particular') || h.includes('purpose') || h.includes('donor') || h.includes('beneficiary'));
-    const catIdx = headers.findIndex(h => h.includes('cat') || h.includes('type'));
-    const inflowIdx = headers.findIndex(h => h.includes('inflow') || h.includes('income') || h.includes('credit') || h.includes('giving') || h.includes('tithe') || h.includes('offering'));
-    const outflowIdx = headers.findIndex(h => h.includes('outflow') || h.includes('expense') || h.includes('debit') || h.includes('disbursement'));
-    const amountIdx = headers.findIndex(h => h.includes('amount') || h.includes('total') || h.includes('value'));
+    // Always inspect default sheet first
+    discoveredTabs.push({ name: 'JANUARY', csv: defaultText });
+
+    // Check other candidate months
+    await Promise.all(
+      candidateMonths.map(async m => {
+        try {
+          const tabUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(m)}`;
+          const res = await fetch(tabUrl);
+          if (res.ok) {
+            const text = await res.text();
+            // In Google Sheets, a non-existent sheet echoes the default first sheet exactly
+            if (text !== defaultText && text.length > 50 && !text.includes('<!DOCTYPE html>')) {
+              discoveredTabs.push({ name: m, csv: text });
+            }
+          }
+        } catch {
+          // ignore individual tab failure
+        }
+      })
+    );
+
+    // Sort tabs chronologically by month
+    discoveredTabs.sort((a, b) => {
+      const ma = MONTH_INDEX[a.name.toUpperCase()] || 0;
+      const mb = MONTH_INDEX[b.name.toUpperCase()] || 0;
+      return mb - ma; // Newest first
+    });
 
     const parsedTransactions: FinanceTransaction[] = [];
     const parsedExpenses: FinanceExpense[] = [];
-    const donorSet = new Map<string, number>();
+    const donorTotals = new Map<string, number>();
 
-    const orgId = getActiveOrganisationId();
+    const year = 2026;
 
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      if (!row || row.length === 0) continue;
+    // 3. Parse each discovered tab
+    for (const tab of discoveredTabs) {
+      const cleanTab = tab.name.trim();
+      const monthNum = MONTH_INDEX[cleanTab.toUpperCase()] || 1;
+      const monthStr = String(monthNum).padStart(2, '0');
+      const rows = parseCSV(tab.csv);
 
-      const rawDate = dateIdx >= 0 && row[dateIdx] ? row[dateIdx] : new Date().toISOString().split('T')[0];
-      const rawDesc = descIdx >= 0 && row[descIdx] ? row[descIdx] : 'Ledger Entry';
-      const rawCat = catIdx >= 0 && row[catIdx] ? row[catIdx] : '';
+      if (rows.length === 0) continue;
 
-      // Check Inflow
-      let inflowVal = 0;
-      if (inflowIdx >= 0 && row[inflowIdx]) {
-        inflowVal = parseFloat(row[inflowIdx].replace(/[^0-9.-]+/g, '')) || 0;
-      }
+      const firstRowStr = (rows[0] || []).join(' ').toLowerCase();
 
-      // Check Outflow
-      let outflowVal = 0;
-      if (outflowIdx >= 0 && row[outflowIdx]) {
-        outflowVal = parseFloat(row[outflowIdx].replace(/[^0-9.-]+/g, '')) || 0;
-      }
+      // Check if this sheet is a Monthly Day Matrix (e.g. "INCOME Days" or has day columns)
+      const isMatrix = firstRowStr.includes('income') || firstRowStr.includes('1st') || firstRowStr.includes('days');
 
-      // Single Amount Column fallback
-      if (inflowVal === 0 && outflowVal === 0 && amountIdx >= 0 && row[amountIdx]) {
-        const val = parseFloat(row[amountIdx].replace(/[^0-9.-]+/g, '')) || 0;
-        const lowDesc = (rawDesc + ' ' + rawCat).toLowerCase();
-        if (
-          lowDesc.includes('expense') ||
-          lowDesc.includes('fuel') ||
-          lowDesc.includes('paid') ||
-          lowDesc.includes('purchase') ||
-          lowDesc.includes('honorarium')
-        ) {
-          outflowVal = Math.abs(val);
-        } else {
-          inflowVal = Math.abs(val);
+      if (isMatrix) {
+        // --- MATRIX PARSER ---
+        let isExpenseSection = false;
+        const dayColumns: Record<number, number> = {};
+
+        // Populate standard 1..31 day map for columns
+        for (let c = 1; c <= 31; c++) {
+          dayColumns[c] = c;
         }
-      }
 
-      // Process Inflow -> Transaction
-      if (inflowVal > 0) {
-        const lowDesc = (rawDesc + ' ' + rawCat).toLowerCase();
-        let cat: GivingCategory = 'Offering';
-        if (lowDesc.includes('tithe')) cat = 'Tithe';
-        else if (lowDesc.includes('pledge') || lowDesc.includes('building')) cat = 'Building/Pledge';
-        else if (lowDesc.includes('seed')) cat = 'Seed';
-        else if (lowDesc.includes('thanksgiving')) cat = 'Thanksgiving';
+        for (let r = 0; r < rows.length; r++) {
+          const row = rows[r];
+          if (!row || row.length === 0 || !row[0]) continue;
+          const firstCell = row[0].trim();
+          const firstUpper = firstCell.toUpperCase();
 
-        parsedTransactions.push({
-          id: `gs-tx-${i}`,
-          organisation_id: orgId,
-          donor_name: rawDesc,
-          transaction_date: rawDate,
-          category: cat,
-          amount: inflowVal,
-          currency: 'NGN',
-          channel: 'Transfer',
-          reference: `GS-${i}`,
-          status: 'Confirmed',
-          source: 'Google Sheet Sync',
-          notes: rawCat || 'Imported from Google Sheet',
-          created_at: new Date().toISOString(),
-        });
+          if (firstUpper.includes('EXPENSES')) {
+            isExpenseSection = true;
+            continue;
+          }
 
-        donorSet.set(rawDesc, (donorSet.get(rawDesc) || 0) + inflowVal);
-      }
+          if (firstUpper.includes('INCOME DAYS')) {
+            for (let c = 1; c < row.length; c++) {
+              const header = row[c].trim();
+              const match = header.match(/^([0-9]{1,2})/);
+              if (match) {
+                dayColumns[c] = parseInt(match[1], 10);
+              }
+            }
+            continue;
+          }
 
-      // Process Outflow -> Expense
-      if (outflowVal > 0) {
-        const lowDesc = (rawDesc + ' ' + rawCat).toLowerCase();
-        let cat: ExpenseCategory = 'Operations';
-        if (lowDesc.includes('mission') || lowDesc.includes('outreach')) cat = 'Outreach & Missions';
-        else if (lowDesc.includes('honorarium') || lowDesc.includes('welfare') || lowDesc.includes('pastor')) cat = 'Honorarium & Welfare';
-        else if (lowDesc.includes('media') || lowDesc.includes('sound') || lowDesc.includes('equipment')) cat = 'Equipment & Media';
-        else if (lowDesc.includes('logistics') || lowDesc.includes('transport')) cat = 'Logistics';
-        else if (lowDesc.includes('power') || lowDesc.includes('light') || lowDesc.includes('bill')) cat = 'Utilities';
+          if (firstUpper === 'TOTAL' || firstUpper.startsWith('DAYS') || firstCell === '') {
+            continue;
+          }
 
-        parsedExpenses.push({
-          id: `gs-exp-${i}`,
-          organisation_id: orgId,
-          expense_date: rawDate,
-          category: cat,
-          amount: outflowVal,
-          currency: 'NGN',
-          beneficiary: rawDesc,
-          description: rawCat ? `${rawCat} - ${rawDesc}` : rawDesc,
-          payment_method: 'Transfer',
-          status: 'Paid',
-          approved_by: 'Finance Committee',
-          created_at: new Date().toISOString(),
-        });
+          if (!isExpenseSection) {
+            // INCOME ENTRY
+            const categoryName = firstCell;
+            let mappedCategory: GivingCategory = 'Offering';
+            const low = categoryName.toLowerCase();
+
+            if (low.includes('tithe') || low.includes('first fruit')) {
+              mappedCategory = 'Tithe';
+            } else if (low.includes('altar') || low.includes('seed') || low.includes('sacrifice')) {
+              mappedCategory = 'Seed';
+            } else if (low.includes('thanksgiving')) {
+              mappedCategory = 'Thanksgiving';
+            } else if (low.includes('building') || low.includes('pledge')) {
+              mappedCategory = 'Building/Pledge';
+            } else if (low.includes('zone')) {
+              mappedCategory = 'Offering';
+            }
+
+            const channel: PaymentChannel = low.includes('cash') ? 'Cash' : 'Transfer';
+            const donorName =
+              low.includes('first fruit')
+                ? 'First Fruit Contributors'
+                : low.includes('tithe')
+                ? 'NCF Tithers'
+                : low.includes('altar')
+                ? 'Altar Seed Partners'
+                : low.includes('thanksgiving')
+                ? 'Thanksgiving Worshippers'
+                : low.includes('zone')
+                ? 'Zones Fellowship'
+                : 'Sunday Congregation';
+
+            for (let c = 1; c < row.length; c++) {
+              const dayNum = dayColumns[c];
+              if (!dayNum || dayNum > 31) continue;
+              const amt = cleanAmount(row[c]);
+              if (amt > 0) {
+                const dateStr = `${year}-${monthStr}-${String(dayNum).padStart(2, '0')}`;
+                parsedTransactions.push({
+                  id: `tx-matrix-${cleanTab}-${r}-${c}`,
+                  organisation_id: orgId,
+                  donor_name: donorName,
+                  transaction_date: dateStr,
+                  category: mappedCategory,
+                  amount: amt,
+                  currency: 'NGN',
+                  channel,
+                  reference: `GS-${cleanTab.slice(0, 3).toUpperCase()}-${String(dayNum).padStart(2, '0')}-${mappedCategory.toUpperCase().slice(0, 4)}`,
+                  status: 'Confirmed',
+                  source: 'Google Sheet Sync',
+                  notes: `${cleanTab} ${dayNum}, ${year}: ${categoryName}`,
+                  created_at: new Date().toISOString(),
+                });
+
+                donorTotals.set(donorName, (donorTotals.get(donorName) || 0) + amt);
+              }
+            }
+          } else {
+            // EXPENSE ENTRY
+            const expenseName = firstCell;
+            let mappedCategory: ExpenseCategory = 'Operations';
+            const low = expenseName.toLowerCase();
+
+            if (low.includes('honour') || low.includes('welfare') || low.includes('pastor')) {
+              mappedCategory = 'Honorarium & Welfare';
+            } else if (low.includes('town')) {
+              mappedCategory = 'Outreach & Missions';
+            } else if (low.includes('tcrew') || low.includes('sound') || low.includes('media') || low.includes('mic')) {
+              mappedCategory = 'Equipment & Media';
+            } else if (low.includes('bus') || low.includes('transport') || low.includes('fuel') || low.includes('logistics')) {
+              mappedCategory = 'Logistics';
+            } else if (low.includes('light') || low.includes('hall') || low.includes('power') || low.includes('nepa')) {
+              mappedCategory = 'Utilities';
+            } else if (low.includes('charge') || low.includes('30%')) {
+              mappedCategory = 'Operations';
+            }
+
+            const beneficiary =
+              low.includes('honour')
+                ? 'Honourarium / Minister Support'
+                : low.includes('brethren welfare')
+                ? 'Brethren Welfare & Relief'
+                : low.includes('pastor')
+                ? 'Pastoral Care Allowance'
+                : low.includes('tcrew')
+                ? 'Technical Crew & Sound'
+                : low.includes('town')
+                ? 'Town Fellowship & Outreach'
+                : low.includes('light')
+                ? 'Electricity / Generator Light'
+                : low.includes('hall')
+                ? 'Church Hall Rent'
+                : low.includes('bus')
+                ? 'Transportation & Buses'
+                : low.includes('charge')
+                ? 'Bank Charges & Fees'
+                : low.includes('30%')
+                ? '30% Headquarters Remittance'
+                : expenseName;
+
+            for (let c = 1; c < row.length; c++) {
+              const dayNum = dayColumns[c];
+              if (!dayNum || dayNum > 31) continue;
+              const amt = cleanAmount(row[c]);
+              if (amt > 0) {
+                const dateStr = `${year}-${monthStr}-${String(dayNum).padStart(2, '0')}`;
+                parsedExpenses.push({
+                  id: `exp-matrix-${cleanTab}-${r}-${c}`,
+                  organisation_id: orgId,
+                  expense_date: dateStr,
+                  category: mappedCategory,
+                  amount: amt,
+                  currency: 'NGN',
+                  beneficiary,
+                  description: `${cleanTab} ${dayNum}, ${year}: ${expenseName} disbursement`,
+                  payment_method: 'Transfer',
+                  status: 'Paid',
+                  approved_by: 'Finance Directorate',
+                  created_at: new Date().toISOString(),
+                });
+              }
+            }
+          }
+        }
+      } else {
+        // --- STANDARD FLAT LEDGER PARSER ---
+        const headers = (rows[0] || []).map(h => h.toLowerCase());
+        const dateIdx = headers.findIndex(h => h.includes('date'));
+        const descIdx = headers.findIndex(
+          h => h.includes('desc') || h.includes('item') || h.includes('narration') || h.includes('particular')
+        );
+        const donorIdx = headers.findIndex(h => h.includes('donor') || h.includes('member') || h.includes('name'));
+        const catIdx = headers.findIndex(h => h.includes('cat') || h.includes('type'));
+        const inflowIdx = headers.findIndex(
+          h => h.includes('inflow') || h.includes('income') || h.includes('credit') || h.includes('giving')
+        );
+        const outflowIdx = headers.findIndex(
+          h => h.includes('outflow') || h.includes('expense') || h.includes('debit') || h.includes('disbursement')
+        );
+        const amountIdx = headers.findIndex(h => h.includes('amount') || h.includes('total') || h.includes('value'));
+
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row || row.length === 0) continue;
+
+          const rawDate = dateIdx >= 0 && row[dateIdx] ? row[dateIdx] : `${year}-${monthStr}-01`;
+          const rawDesc = descIdx >= 0 && row[descIdx] ? row[descIdx] : 'Church Ledger Item';
+          const rawDonor = donorIdx >= 0 && row[donorIdx] ? row[donorIdx] : rawDesc;
+          const rawCat = catIdx >= 0 && row[catIdx] ? row[catIdx] : '';
+
+          let inflowVal = inflowIdx >= 0 ? cleanAmount(row[inflowIdx]) : 0;
+          let outflowVal = outflowIdx >= 0 ? cleanAmount(row[outflowIdx]) : 0;
+
+          if (inflowVal === 0 && outflowVal === 0 && amountIdx >= 0 && row[amountIdx]) {
+            const val = cleanAmount(row[amountIdx]);
+            const low = (rawDesc + ' ' + rawCat).toLowerCase();
+            if (
+              low.includes('expense') ||
+              low.includes('fuel') ||
+              low.includes('paid') ||
+              low.includes('honorarium') ||
+              low.includes('welfare') ||
+              low.includes('light') ||
+              low.includes('repair') ||
+              low.includes('transport')
+            ) {
+              outflowVal = Math.abs(val);
+            } else {
+              inflowVal = Math.abs(val);
+            }
+          }
+
+          if (inflowVal > 0) {
+            const low = (rawDesc + ' ' + rawCat).toLowerCase();
+            let cat: GivingCategory = 'Offering';
+            if (low.includes('tithe') || low.includes('first fruit')) cat = 'Tithe';
+            else if (low.includes('pledge') || low.includes('building')) cat = 'Building/Pledge';
+            else if (low.includes('seed') || low.includes('altar')) cat = 'Seed';
+            else if (low.includes('thanksgiving')) cat = 'Thanksgiving';
+
+            parsedTransactions.push({
+              id: `gs-tx-${cleanTab}-${i}`,
+              organisation_id: orgId,
+              donor_name: rawDonor,
+              transaction_date: rawDate,
+              category: cat,
+              amount: inflowVal,
+              currency: 'NGN',
+              channel: 'Transfer',
+              reference: `GS-${cleanTab.slice(0, 3)}-${i}`,
+              status: 'Confirmed',
+              source: 'Google Sheet Sync',
+              notes: `${cleanTab}: ${rawDesc}`,
+              created_at: new Date().toISOString(),
+            });
+
+            donorTotals.set(rawDonor, (donorTotals.get(rawDonor) || 0) + inflowVal);
+          }
+
+          if (outflowVal > 0) {
+            const low = (rawDesc + ' ' + rawCat).toLowerCase();
+            let cat: ExpenseCategory = 'Operations';
+            if (low.includes('mission') || low.includes('outreach') || low.includes('town')) cat = 'Outreach & Missions';
+            else if (low.includes('honorarium') || low.includes('welfare') || low.includes('pastor') || low.includes('honour')) cat = 'Honorarium & Welfare';
+            else if (low.includes('media') || low.includes('sound') || low.includes('tcrew') || low.includes('instrument')) cat = 'Equipment & Media';
+            else if (low.includes('logistics') || low.includes('transport') || low.includes('bus') || low.includes('fuel')) cat = 'Logistics';
+            else if (low.includes('power') || low.includes('light') || low.includes('hall') || low.includes('bill')) cat = 'Utilities';
+
+            parsedExpenses.push({
+              id: `gs-exp-${cleanTab}-${i}`,
+              organisation_id: orgId,
+              expense_date: rawDate,
+              category: cat,
+              amount: outflowVal,
+              currency: 'NGN',
+              beneficiary: rawDonor,
+              description: `${cleanTab}: ${rawDesc}`,
+              payment_method: 'Transfer',
+              status: 'Paid',
+              approved_by: 'Finance Committee',
+              created_at: new Date().toISOString(),
+            });
+          }
+        }
       }
     }
 
     // Build unique donors
-    const parsedDonors: FinanceDonor[] = Array.from(donorSet.entries()).map(([name, total], idx) => ({
-      id: `gs-d-${idx}`,
+    const parsedDonors: FinanceDonor[] = Array.from(donorTotals.entries()).map(([name, total], idx) => ({
+      id: `gs-donor-${idx}`,
       organisation_id: orgId,
       donor_name: name,
       total_giving: total,
       created_at: new Date().toISOString(),
     }));
 
-    // Update in-memory state and cache
+    // Sort transactions and expenses newest first
+    parsedTransactions.sort((a, b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime());
+    parsedExpenses.sort((a, b) => new Date(b.expense_date).getTime() - new Date(a.expense_date).getTime());
+
+    // Update in-memory state and local cache
     fallbackTransactions = parsedTransactions;
     fallbackExpenses = parsedExpenses;
     fallbackDonors = parsedDonors;
     saveLocalCache();
 
+    const uniqueMonths = ['ALL', ...discoveredTabs.map(t => t.name.toUpperCase())];
+
     // Update config
     cfg.lastSyncedAt = new Date().toISOString();
-    cfg.rowCount = rows.length - 1;
+    cfg.rowCount = parsedTransactions.length + parsedExpenses.length;
+    cfg.availableSheets = uniqueMonths;
     localStorage.setItem(GSHEET_STORAGE_KEY, JSON.stringify(cfg));
 
     return {
       transactions: parsedTransactions.length,
       expenses: parsedExpenses.length,
-      totalRows: rows.length - 1,
+      totalRows: parsedTransactions.length + parsedExpenses.length,
+      months: uniqueMonths,
     };
   },
 
   /**
-   * Fetches the overall financial summary for the active organisation
+   * Fetches the overall financial summary for the active organisation (with optional month filter)
    */
-  async getSummary(organisationId?: string): Promise<FinanceSummary> {
+  async getSummary(organisationId?: string, month?: string): Promise<FinanceSummary> {
     const orgId = organisationId || getActiveOrganisationId();
     try {
       const [txRes, expRes, donorRes, recRes] = await Promise.all([
         supabase
           .from('finance_transactions')
-          .select('amount, category')
+          .select('amount, category, transaction_date, notes')
           .eq('organisation_id', orgId),
         supabase
           .from('finance_expenses')
-          .select('amount, status')
+          .select('amount, status, expense_date, description')
           .eq('organisation_id', orgId),
         supabase
           .from('finance_donors')
@@ -315,8 +615,23 @@ export const financeService = {
         throw new Error(txRes.error?.message || expRes.error?.message || 'No DB table');
       }
 
-      const transactions = (txRes.data || []) as { amount: number; category: GivingCategory }[];
-      const expenses = (expRes.data || []) as { amount: number; status: ExpenseStatus }[];
+      let transactions = (txRes.data || []) as {
+        amount: number;
+        category: GivingCategory;
+        transaction_date: string;
+        notes?: string;
+      }[];
+      let expenses = (expRes.data || []) as {
+        amount: number;
+        status: ExpenseStatus;
+        expense_date: string;
+        description?: string;
+      }[];
+
+      if (month && month !== 'ALL') {
+        transactions = transactions.filter(t => recordMatchesMonth(t.transaction_date, t.notes, month));
+        expenses = expenses.filter(e => recordMatchesMonth(e.expense_date, e.description, month));
+      }
 
       const totalInflow = transactions.reduce((acc, t) => acc + Number(t.amount || 0), 0);
       const totalExpenses = expenses
@@ -343,25 +658,33 @@ export const financeService = {
         offering_total: offeringTotal,
         seed_and_other_total: seedTotal,
         currency: 'NGN',
-        total_donors_count: donorRes.count || 0,
+        total_donors_count: donorRes.count || fallbackDonors.length,
         pending_reconciliations_count: recRes.count || 0,
       };
     } catch {
       // Local state from Google Sheet sync or manual entries
-      const totalInflow = fallbackTransactions.reduce((acc, t) => acc + t.amount, 0);
-      const totalExpenses = fallbackExpenses
+      let txList = fallbackTransactions;
+      let expList = fallbackExpenses;
+
+      if (month && month !== 'ALL') {
+        txList = txList.filter(t => recordMatchesMonth(t.transaction_date, t.notes, month));
+        expList = expList.filter(e => recordMatchesMonth(e.expense_date, e.description, month));
+      }
+
+      const totalInflow = txList.reduce((acc, t) => acc + t.amount, 0);
+      const totalExpenses = expList
         .filter(e => e.status === 'Paid')
         .reduce((acc, e) => acc + e.amount, 0);
 
-      const titheTotal = fallbackTransactions
+      const titheTotal = txList
         .filter(t => t.category === 'Tithe')
         .reduce((acc, t) => acc + t.amount, 0);
 
-      const offeringTotal = fallbackTransactions
+      const offeringTotal = txList
         .filter(t => t.category === 'Offering')
         .reduce((acc, t) => acc + t.amount, 0);
 
-      const seedTotal = fallbackTransactions
+      const seedTotal = txList
         .filter(t => t.category !== 'Tithe' && t.category !== 'Offering')
         .reduce((acc, t) => acc + t.amount, 0);
 
@@ -408,9 +731,13 @@ export const financeService = {
   },
 
   /**
-   * Fetches all transactions / contributions
+   * Fetches all transactions / contributions (with optional month filter)
    */
-  async getTransactions(category?: GivingCategory, organisationId?: string): Promise<FinanceTransaction[]> {
+  async getTransactions(
+    category?: GivingCategory,
+    organisationId?: string,
+    month?: string
+  ): Promise<FinanceTransaction[]> {
     const orgId = organisationId || getActiveOrganisationId();
     try {
       let query = supabase
@@ -426,14 +753,26 @@ export const financeService = {
       const { data, error } = await query;
       if (error) throw error;
 
-      return (data || []).map((row: Record<string, unknown>) => ({
+      let list = (data || []).map((row: Record<string, unknown>) => ({
         ...(row as unknown as FinanceTransaction),
         donor_name:
           (row.finance_donors as { donor_name?: string } | null)?.donor_name || 'Anonymous / General',
       }));
+
+      if (month && month !== 'ALL') {
+        list = list.filter(t => recordMatchesMonth(t.transaction_date, t.notes, month));
+      }
+
+      return list;
     } catch {
-      if (!category) return fallbackTransactions;
-      return fallbackTransactions.filter(t => t.category === category);
+      let list = fallbackTransactions;
+      if (category) {
+        list = list.filter(t => t.category === category);
+      }
+      if (month && month !== 'ALL') {
+        list = list.filter(t => recordMatchesMonth(t.transaction_date, t.notes, month));
+      }
+      return list;
     }
   },
 
@@ -472,9 +811,13 @@ export const financeService = {
   },
 
   /**
-   * Fetches all expenses
+   * Fetches all expenses (with optional month filter)
    */
-  async getExpenses(status?: ExpenseStatus, organisationId?: string): Promise<FinanceExpense[]> {
+  async getExpenses(
+    status?: ExpenseStatus,
+    organisationId?: string,
+    month?: string
+  ): Promise<FinanceExpense[]> {
     const orgId = organisationId || getActiveOrganisationId();
     try {
       let query = supabase
@@ -489,10 +832,21 @@ export const financeService = {
 
       const { data, error } = await query;
       if (error) throw error;
-      return (data as FinanceExpense[]) || [];
+
+      let list = (data as FinanceExpense[]) || [];
+      if (month && month !== 'ALL') {
+        list = list.filter(e => recordMatchesMonth(e.expense_date, e.description, month));
+      }
+      return list;
     } catch {
-      if (!status) return fallbackExpenses;
-      return fallbackExpenses.filter(e => e.status === status);
+      let list = fallbackExpenses;
+      if (status) {
+        list = list.filter(e => e.status === status);
+      }
+      if (month && month !== 'ALL') {
+        list = list.filter(e => recordMatchesMonth(e.expense_date, e.description, month));
+      }
+      return list;
     }
   },
 
