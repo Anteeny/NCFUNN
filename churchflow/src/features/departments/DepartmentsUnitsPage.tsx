@@ -19,6 +19,11 @@ import {
   CheckCircle2,
   Download,
   Printer,
+  Lock,
+  KeyRound,
+  Eye,
+  EyeOff,
+  AlertCircle,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { exportToCSV, printTable } from '../../utils/exportUtils';
@@ -173,6 +178,37 @@ function getUnitDetails(name: string, leadName: string, phone?: string, id?: str
 
 export const DepartmentsUnitsPage: React.FC = () => {
   const { departmentLeaders, loading: loadingLeaders } = useLeadership();
+
+  // PIN Protection State (Authorized: nkechi & chioma)
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
+    return (
+      sessionStorage.getItem('churchflow_departments_unlocked') === 'true' ||
+      sessionStorage.getItem('churchflow_settings_unlocked') === 'true'
+    );
+  });
+  const [pinInput, setPinInput] = useState<string>('');
+  const [pinError, setPinError] = useState<string>('');
+  const [showPin, setShowPin] = useState<boolean>(false);
+
+  const handleUnlock = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const cleanPin = pinInput.trim().toLowerCase();
+    if (cleanPin === 'nkechi' || cleanPin === 'chioma') {
+      setIsUnlocked(true);
+      setPinError('');
+      sessionStorage.setItem('churchflow_departments_unlocked', 'true');
+    } else {
+      setPinError('Incorrect PIN passcode. Access denied.');
+    }
+  };
+
+  const handleLock = () => {
+    setIsUnlocked(false);
+    setPinInput('');
+    setPinError('');
+    sessionStorage.removeItem('churchflow_departments_unlocked');
+  };
+
   const [selectedUnit, setSelectedUnit] = useState<UnitInfo | null>(null);
   const [roster, setRoster] = useState<Member[]>([]);
   const [loadingRoster, setLoadingRoster] = useState(false);
@@ -316,6 +352,141 @@ export const DepartmentsUnitsPage: React.FC = () => {
     );
   };
 
+
+  // Render PIN Lock Screen if unauthorized
+  if (!isUnlocked) {
+    return (
+      <div
+        className="animate-fade-in"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '65vh',
+          padding: '24px',
+        }}
+      >
+        <div
+          className="portal-card"
+          style={{
+            maxWidth: '430px',
+            width: '100%',
+            padding: '36px 30px',
+            textAlign: 'center',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.45)',
+            border: '1px solid rgba(147, 51, 234, 0.25)',
+            borderRadius: '16px',
+            background: 'var(--navy-soft, #0f172a)',
+          }}
+        >
+          <div
+            style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              background: 'rgba(147, 51, 234, 0.12)',
+              border: '1px solid rgba(147, 51, 234, 0.3)',
+              color: '#c084fc',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 18px',
+            }}
+          >
+            <Lock size={30} />
+          </div>
+
+          <h2 className="font-serif" style={{ fontSize: '22px', fontWeight: 700, marginBottom: '8px', color: 'var(--text)' }}>
+            Departments Directory Protected
+          </h2>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px', lineHeight: '1.5' }}>
+            Department rosters, worker assignments, and ministerial leadership details are protected. Enter your authorized PIN to proceed.
+          </p>
+
+          <form onSubmit={handleUnlock}>
+            <div style={{ marginBottom: '16px', position: 'relative' }}>
+              <input
+                type={showPin ? 'text' : 'password'}
+                autoFocus
+                placeholder="Enter PIN passcode..."
+                value={pinInput}
+                onChange={(e) => {
+                  setPinInput(e.target.value);
+                  if (pinError) setPinError('');
+                }}
+                className="portal-input"
+                style={{
+                  width: '100%',
+                  padding: '12px 42px 12px 16px',
+                  fontSize: '15px',
+                  letterSpacing: showPin ? 'normal' : '2px',
+                  textAlign: 'center',
+                  borderColor: pinError ? '#f87171' : 'var(--border)',
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  color: 'var(--text)',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPin(!showPin)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
+                title={showPin ? 'Hide PIN' : 'Show PIN'}
+              >
+                {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+
+            {pinError && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  color: '#f87171',
+                  fontSize: '12.5px',
+                  marginBottom: '16px',
+                }}
+              >
+                <AlertCircle size={14} />
+                <span>{pinError}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+              style={{
+                width: '100%',
+                padding: '12px',
+                fontSize: '14px',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                borderRadius: '8px',
+              }}
+            >
+              <KeyRound size={16} />
+              <span>Unlock Departments</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in" style={{ maxWidth: '1150px', margin: '0 auto' }}>
       {/* Top Banner */}
@@ -344,6 +515,14 @@ export const DepartmentsUnitsPage: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            onClick={handleLock}
+            className="btn btn-outline"
+            style={{ fontSize: '12.5px', padding: '8px 14px', color: '#f87171', borderColor: 'rgba(248, 113, 113, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            title="Lock departments access"
+          >
+            <Lock size={14} /> Lock
+          </button>
           <Link to="/reports/department" className="btn btn-outline" style={{ fontSize: '12.5px', padding: '8px 16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
             <FileText size={14} /> View Submitted Reports
           </Link>

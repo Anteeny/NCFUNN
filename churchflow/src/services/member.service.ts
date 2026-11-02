@@ -153,13 +153,17 @@ export const memberService = {
    */
   async getMembersByLeader(leaderName: string, organisationId?: string): Promise<Member[]> {
     const orgId = organisationId || getActiveOrganisationId();
-    const { data, error } = await supabase
+    let query = supabase
       .from('members')
       .select('*')
-      .eq('organisation_id', orgId)
-      .eq('g12_leader', leaderName)
+      .ilike('g12_leader', leaderName.trim())
       .order('member_name', { ascending: true });
 
+    if (orgId) {
+      query = query.or('organisation_id.eq.' + orgId + ',organisation_id.is.null');
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     return (data as Member[]) || [];
   },
@@ -294,7 +298,6 @@ export const memberService = {
       const leaderPayload: Record<string, any> = {};
       if (trimmedNew !== trimmedOld) leaderPayload.member_name = trimmedNew;
       if (updates.phone !== undefined) {
-        leaderPayload.phone = updates.phone;
         leaderPayload.member_phone = updates.phone;
       }
       if (updates.department !== undefined) leaderPayload.department = updates.department;
@@ -328,12 +331,19 @@ export const memberService = {
    */
   async getG12LeadersWithStats(organisationId?: string): Promise<G12LeaderStats[]> {
     const orgId = organisationId || getActiveOrganisationId();
-    const { data: allMembers, error } = await supabase
+    let query = supabase
       .from('members')
-      .select('id, member_name, phone, member_phone, department, zone, g12_leader, membership_level, leader_type')
-      .eq('organisation_id', orgId);
+      .select('id, member_name, member_phone, department, zone, g12_leader, membership_level');
 
-    if (error) throw error;
+    if (orgId) {
+      query = query.or('organisation_id.eq.' + orgId + ',organisation_id.is.null');
+    }
+
+    const { data: allMembers, error } = await query;
+    if (error) {
+      console.error('getG12LeadersWithStats error:', error);
+      throw error;
+    }
     const members = (allMembers as Member[]) || [];
 
     const statsMap: Record<string, { count: number; profile?: Member }> = {};
@@ -351,7 +361,7 @@ export const memberService = {
       // Leader profile detection
       const mName = (m.member_name || '').trim();
       const level = (m.membership_level || '').toLowerCase();
-      const isLeader = level.includes('dh') || level.includes('core') || level.includes('pastor') || (m as any).leader_type === 'G12';
+      const isLeader = level.includes('dh') || level.includes('core') || level.includes('pastor');
       if (isLeader && mName) {
         if (!statsMap[mName]) {
           statsMap[mName] = { count: 0 };
@@ -369,7 +379,7 @@ export const memberService = {
           leaderName: name,
           count: item.count,
           discipleCount: item.count,
-          phone: prof?.phone || prof?.member_phone || undefined,
+          phone: prof?.member_phone || undefined,
           department: prof?.department || undefined,
           zone: prof?.zone || undefined,
           memberId: prof?.id,
@@ -390,18 +400,21 @@ export const memberService = {
     if (!searchTerm || searchTerm.trim().length < 2) return [];
 
     const term = '%' + searchTerm.trim() + '%';
-    const { data, error } = await supabase
+    let query = supabase
       .from('members')
-      .select('id, member_name, phone, member_phone, department, zone, g12_leader, membership_level')
-      .eq('organisation_id', orgId)
-      .or('member_name.ilike.' + term + ',phone.ilike.' + term + ',member_phone.ilike.' + term)
-      .limit(20);
+      .select('id, member_name, member_phone, department, zone, g12_leader, membership_level')
+      .or('member_name.ilike.' + term + ',member_phone.ilike.' + term);
 
+    if (orgId) {
+      query = query.or('organisation_id.eq.' + orgId + ',organisation_id.is.null');
+    }
+
+    const { data, error } = await query.limit(20);
     if (error) throw error;
     const results = (data as Member[]) || [];
 
     if (currentLeaderName) {
-      return results.filter(m => (m.g12_leader || '').trim() !== currentLeaderName.trim());
+      return results.filter(m => (m.g12_leader || '').trim().toLowerCase() !== currentLeaderName.trim().toLowerCase());
     }
     return results;
   },
