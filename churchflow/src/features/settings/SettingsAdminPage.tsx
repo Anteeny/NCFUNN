@@ -21,6 +21,11 @@ import {
   Sparkles,
   Upload,
   Check,
+  Lock,
+  KeyRound,
+  Eye,
+  EyeOff,
+  AlertCircle,
 } from 'lucide-react';
 import { useBentoConfig } from '../../hooks/useBentoConfig';
 import { useLeadership } from '../../hooks/useLeadership';
@@ -38,11 +43,64 @@ import { settingsService, type AdminProfile } from '../../services/settings.serv
 import { organisationService, NCF_UNN_ID } from '../../services/organisation.service';
 import type { Organisation } from '../../types/organisation.types';
 import type { BentoGridDashboardConfig } from '../../config/bentoGrid.config';
+import { G12LeaderModal } from './G12LeaderModal';
+import { memberService, type G12LeaderStats } from '../../services/member.service';
 
 export const SettingsAdminPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'cards' | 'ticker' | 'units' | 'branding' | 'users' | 'workspace'>('units');
   const [leadershipSubTab, setLeadershipSubTab] = useState<'depts' | 'cells' | 'zones' | 'g12'>('depts');
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // PIN Protection State (Authorized: nkechi & chioma)
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
+    return sessionStorage.getItem('churchflow_settings_unlocked') === 'true';
+  });
+  const [pinInput, setPinInput] = useState<string>('');
+  const [pinError, setPinError] = useState<string>('');
+  const [showPin, setShowPin] = useState<boolean>(false);
+
+  const handleUnlock = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const cleanPin = pinInput.trim().toLowerCase();
+    if (cleanPin === 'nkechi' || cleanPin === 'chioma') {
+      setIsUnlocked(true);
+      setPinError('');
+      sessionStorage.setItem('churchflow_settings_unlocked', 'true');
+    } else {
+      setPinError('Incorrect PIN passcode. Access denied.');
+    }
+  };
+
+  const handleLockSettings = () => {
+    setIsUnlocked(false);
+    setPinInput('');
+    setPinError('');
+    sessionStorage.removeItem('churchflow_settings_unlocked');
+  };
+
+  // G12 Shepherds roster state
+  const [g12Leaders, setG12Leaders] = useState<G12LeaderStats[]>([]);
+  const [loadingG12, setLoadingG12] = useState<boolean>(false);
+  const [g12Search, setG12Search] = useState<string>('');
+  const [selectedG12Leader, setSelectedG12Leader] = useState<G12LeaderStats | null>(null);
+
+  const loadG12Leaders = async () => {
+    setLoadingG12(true);
+    try {
+      const data = await memberService.getG12LeadersWithStats();
+      setG12Leaders(data);
+    } catch (err) {
+      console.error('Failed to load G12 leaders:', err);
+    } finally {
+      setLoadingG12(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'units' && leadershipSubTab === 'g12') {
+      loadG12Leaders();
+    }
+  }, [activeTab, leadershipSubTab]);
   const [copiedSuccess, setCopiedSuccess] = useState(false);
   const [saveMessage, setSaveMessage] = useState('Changes saved successfully! Dashboard, Departments, and Connect pages have updated.');
 
@@ -507,6 +565,141 @@ export const SettingsAdminPage: React.FC = () => {
     exportToCSV('Settings_Admin_Users', headers, rows);
   };
 
+
+  // Render PIN Lock Screen if unauthorized
+  if (!isUnlocked) {
+    return (
+      <div
+        className="animate-fade-in"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '65vh',
+          padding: '24px',
+        }}
+      >
+        <div
+          className="portal-card"
+          style={{
+            maxWidth: '430px',
+            width: '100%',
+            padding: '36px 30px',
+            textAlign: 'center',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.45)',
+            border: '1px solid rgba(56, 189, 248, 0.25)',
+            borderRadius: '16px',
+            background: 'var(--navy-soft, #0f172a)',
+          }}
+        >
+          <div
+            style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '50%',
+              background: 'rgba(56, 189, 248, 0.12)',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
+              color: '#38bdf8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 18px',
+            }}
+          >
+            <Lock size={30} />
+          </div>
+
+          <h2 className="font-serif" style={{ fontSize: '22px', fontWeight: 700, marginBottom: '8px', color: 'var(--text)' }}>
+            Settings Protected
+          </h2>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '24px', lineHeight: '1.5' }}>
+            Administrative settings and member details are locked to prevent unauthorized changes. Enter your authorized PIN to proceed.
+          </p>
+
+          <form onSubmit={handleUnlock}>
+            <div style={{ marginBottom: '16px', position: 'relative' }}>
+              <input
+                type={showPin ? 'text' : 'password'}
+                autoFocus
+                placeholder="Enter PIN passcode..."
+                value={pinInput}
+                onChange={(e) => {
+                  setPinInput(e.target.value);
+                  if (pinError) setPinError('');
+                }}
+                className="portal-input"
+                style={{
+                  width: '100%',
+                  padding: '12px 42px 12px 16px',
+                  fontSize: '15px',
+                  letterSpacing: showPin ? 'normal' : '2px',
+                  textAlign: 'center',
+                  borderColor: pinError ? '#f87171' : 'var(--border)',
+                  background: 'rgba(15, 23, 42, 0.6)',
+                  color: 'var(--text)',
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPin(!showPin)}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                }}
+                title={showPin ? 'Hide PIN' : 'Show PIN'}
+              >
+                {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+
+            {pinError && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  color: '#f87171',
+                  fontSize: '12.5px',
+                  marginBottom: '16px',
+                }}
+              >
+                <AlertCircle size={14} />
+                <span>{pinError}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+              style={{
+                width: '100%',
+                padding: '12px',
+                fontSize: '14px',
+                fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                borderRadius: '8px',
+              }}
+            >
+              <KeyRound size={16} />
+              <span>Unlock Settings</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-in">
       {/* Header */}
@@ -536,6 +729,15 @@ export const SettingsAdminPage: React.FC = () => {
 
         {/* Global Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            onClick={handleLockSettings}
+            className="btn btn-outline"
+            style={{ fontSize: '12.5px', padding: '8px 14px', color: '#f87171', borderColor: 'rgba(248, 113, 113, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            title="Lock settings access"
+          >
+            <Lock size={14} /> Lock Settings
+          </button>
+
           <button
             onClick={handleCopyJSON}
             className="btn btn-outline"
@@ -646,7 +848,7 @@ export const SettingsAdminPage: React.FC = () => {
                 className={`btn ${leadershipSubTab === 'g12' ? 'btn-primary' : 'btn-outline'}`}
                 style={{ fontSize: '12.5px', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
               >
-                <Network size={14} /> G12 Discipleship Shepherds
+                <Network size={14} /> G12 Discipleship Shepherds {g12Leaders.length > 0 ? `(${g12Leaders.length})` : ''}
               </button>
             </div>
 
@@ -1086,42 +1288,115 @@ export const SettingsAdminPage: React.FC = () => {
           {/* SUBTAB 4: G12 SHEPHERDS ROSTER */}
           {leadershipSubTab === 'g12' && (
             <div className="portal-card" style={{ padding: '24px' }}>
-              <h3 className="font-serif" style={{ fontSize: '18px', fontWeight: 700, marginBottom: '6px' }}>
-                G12 Discipleship Shepherds & Hierarchy
-              </h3>
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '18px' }}>
-                Review active G12 network leaders mapped from discipleship report logs and member hierarchy.
-              </p>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
-                {[
-                  'Emmanuella Okonkwo', 'Favour Nsoke', 'Cynthia Edeh', 'Ifeyinwa Umeadi',
-                  'Ebube Wilfred', 'Vivian Nwolisa', 'Faithfulness Onu', 'Ebuka Aziekwe',
-                  'Janefrancis Igwilo', 'Kenechukwu Offiah', 'Winner Richards', 'David Ugwu',
-                ].map((name, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      background: 'var(--navy-soft)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '10px',
-                      padding: '14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                    }}
-                  >
-                    <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '12px' }}>
-                      G12
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: '13.5px' }}>{name}</div>
-                      <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>Assigned G12 Shepherd</div>
-                    </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                <div>
+                  <h3 className="font-serif" style={{ fontSize: '18px', fontWeight: 700, marginBottom: '4px' }}>
+                    G12 Discipleship Shepherds & Network Management
+                  </h3>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+                    Click any G12 shepherd to edit disciples, reassign members, or update leader profile. Saves directly to Supabase and immediately reflects on reporting sites.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ position: 'relative', minWidth: '220px' }}>
+                    <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                    <input
+                      type="text"
+                      placeholder="Search shepherd..."
+                      value={g12Search}
+                      onChange={(e) => setG12Search(e.target.value)}
+                      className="portal-input"
+                      style={{ paddingLeft: '32px', fontSize: '12.5px', height: '34px' }}
+                    />
                   </div>
-                ))}
+                </div>
               </div>
+
+              {loadingG12 ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                  Loading G12 network leaders from database...
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px' }}>
+                  {g12Leaders
+                    .filter((item) => !g12Search.trim() || item.leaderName.toLowerCase().includes(g12Search.toLowerCase().trim()))
+                    .map((item, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => setSelectedG12Leader(item)}
+                        style={{
+                          background: 'var(--navy-soft)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '10px',
+                          padding: '14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '12px',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--blue)';
+                          e.currentTarget.style.transform = 'translateY(-2px)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--border)';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                          <div style={{
+                            width: '38px',
+                            height: '38px',
+                            borderRadius: '50%',
+                            background: 'rgba(56, 189, 248, 0.15)',
+                            color: '#38bdf8',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 700,
+                            fontSize: '12px',
+                            flexShrink: 0,
+                          }}>
+                            G12
+                          </div>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: '13.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {item.leaderName}
+                            </div>
+                            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ color: 'var(--text)', fontWeight: 500 }}>{item.discipleCount} disciples</span>
+                              {item.zone && <span>• {item.zone}</span>}
+                            </div>
+                          </div>
+                        </div>
+
+                        <span style={{ fontSize: '11px', color: 'var(--blue)', fontWeight: 600, padding: '4px 10px', background: 'rgba(56, 189, 248, 0.1)', borderRadius: '6px', whiteSpace: 'nowrap' }}>
+                          Manage
+                        </span>
+                      </div>
+                    ))}
+                  {g12Leaders.filter((item) => !g12Search.trim() || item.leaderName.toLowerCase().includes(g12Search.toLowerCase().trim())).length === 0 && (
+                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '30px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                      {g12Leaders.length === 0 ? 'No active G12 leaders found in database.' : 'No G12 leaders matching search.'}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
+          )}
+
+          {/* G12 Shepherd Action & Disciples Management Modal */}
+          {selectedG12Leader && (
+            <G12LeaderModal
+              leader={selectedG12Leader}
+              allLeaders={g12Leaders}
+              onClose={() => setSelectedG12Leader(null)}
+              onUpdated={() => {
+                loadG12Leaders();
+              }}
+            />
           )}
 
           {/* Spiritual Growth Stages Settings */}

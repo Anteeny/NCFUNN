@@ -581,7 +581,7 @@ export const AboutUsPage: React.FC = () => {
           </div>
 
           <h1 className="font-serif" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--text)', marginBottom: '8px', letterSpacing: '-0.5px' }}>
-            Dominion City — NCF UNN Chapter
+            NCF UNN Chapter
           </h1>
 
           <div
@@ -773,7 +773,7 @@ export const AboutUsPage: React.FC = () => {
               The 4 S&rsquo;s: Service, Sacrifice, Submission, Seed (Honour)
             </h2>
             <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', marginTop: '4px', maxWidth: '850px' }}>
-              The four foundational spiritual pillars and identity markers of every student, leader, and family member in New Covenant Fellowship (NCF UNN).
+              The DNA of an NCF member is summarized into these four foundational pillars.
             </p>
           </div>
 
